@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: ${DAGSTER_POSTGRES_DB}
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DAGSTER_POSTGRES_USER} -d ${DAGSTER_POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
     networks:
       - dagster-poc-network
     restart: unless-stopped
@@ -44,7 +49,10 @@ services:
       - postgres
 
   dagster_webserver:
-    image: jayefee/dagster_webserver:latest
+    build:
+      context: ./deploy
+      dockerfile: Dockerfile.authkit-webserver
+    image: dagster-webserver-authkit:latest
     container_name: dagster_webserver
     environment:
       DAGSTER_POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
@@ -52,6 +60,17 @@ services:
       DAGSTER_POSTGRES_DB: ${DAGSTER_POSTGRES_DB}
       DAGSTER_CURRENT_IMAGE: dagster-code:latest
       DAGSTER_HOME: /opt/dagster/dagster_home
+      DAGSTER_AUTH_BACKEND: ${DAGSTER_AUTH_BACKEND:-sql}
+      DAGSTER_AUTH_DATABASE_URL: postgresql://${DAGSTER_POSTGRES_USER}:${DAGSTER_POSTGRES_PASSWORD}@postgres:5432/${DAGSTER_POSTGRES_DB}
+      DAGSTER_AUTH_SECRET_KEY: ${DAGSTER_AUTH_SECRET_KEY}
+      DAGSTER_AUTH_ADMIN_USERNAME: ${DAGSTER_AUTH_ADMIN_USERNAME:-admin}
+      DAGSTER_AUTH_ADMIN_PASSWORD: ${DAGSTER_AUTH_ADMIN_PASSWORD}
+      DAGSTER_AUTH_ENV: ${DAGSTER_AUTH_ENV:-production}
+      DAGSTER_AUTH_COOKIE_SECURE: ${DAGSTER_AUTH_COOKIE_SECURE:-false}
+      DAGSTER_AUTH_COOKIE_SAMESITE: ${DAGSTER_AUTH_COOKIE_SAMESITE:-lax}
+      DAGSTER_AUTH_COOKIE_NAME: ${DAGSTER_AUTH_COOKIE_NAME:-dagster_session}
+      DAGSTER_AUTH_SESSION_MAX_AGE: ${DAGSTER_AUTH_SESSION_MAX_AGE:-86400}
+      DAGSTER_AUTH_AUDIT_LOG: ${DAGSTER_AUTH_AUDIT_LOG:-true}
     ports:
       - "3080:3000"
     networks:
@@ -60,10 +79,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./deploy/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml
       - ./deploy/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml
-    command: dagster-webserver -h 0.0.0.0 -p 3000 -w /opt/dagster/dagster_home/workspace.yaml
+    command: >
+      sh -ec '
+        dagster-authkit init-db --db-path "$$DAGSTER_AUTH_DATABASE_URL" || true
+        dagster-authkit add-user "$$DAGSTER_AUTH_ADMIN_USERNAME" --password "$$DAGSTER_AUTH_ADMIN_PASSWORD" --role admin --db-path "$$DAGSTER_AUTH_DATABASE_URL" ||
+        dagster-authkit change-password "$$DAGSTER_AUTH_ADMIN_USERNAME" --password "$$DAGSTER_AUTH_ADMIN_PASSWORD" --db-path "$$DAGSTER_AUTH_DATABASE_URL"
+        unset DAGSTER_AUTH_ADMIN_PASSWORD
+        exec dagster-authkit -h 0.0.0.0 -p 3000 -w /opt/dagster/dagster_home/workspace.yaml
+      '
     depends_on:
-      - postgres
-      - dagster_code
+      postgres:
+        condition: service_healthy
+      dagster_code:
+        condition: service_started
 
   dagster_daemon:
     image: jayefee/dagster_daemon:latest
