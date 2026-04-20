@@ -1,0 +1,44 @@
+scheduler:
+  module: dagster.core.scheduler
+  class: DagsterDaemonScheduler
+
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 10
+    tag_concurrency_limits: []
+    dequeue_interval_seconds: 1
+
+storage:
+  postgres:
+    postgres_db:
+      hostname: dagster-poc-postgres
+      username:
+        env: DAGSTER_POSTGRES_USER
+      password:
+        env: DAGSTER_POSTGRES_PASSWORD
+      db_name:
+        env: DAGSTER_POSTGRES_DB
+      port: 5432
+
+run_launcher:
+  # DefaultRunLauncher: Runs tasks within the dagster_code container process (faster, less isolation)
+  module: dagster
+  class: DefaultRunLauncher
+  # DockerRunLauncher: Spawns a new container for each task execution (better isolation, more overhead)
+  # module: dagster_docker
+  # class: DockerRunLauncher
+  # config:
+  #   image: dagster-code:latest
+  #   network: dagster-poc-network
+  #   env_vars:
+  #     - DAGSTER_POSTGRES_USER
+  #     - DAGSTER_POSTGRES_PASSWORD
+  #     - DAGSTER_POSTGRES_DB
+  #     - DBT_POSTGRES_HOST
+  #     - DBT_POSTGRES_PORT
+  #     - DBT_POSTGRES_USER
+  #     - DBT_POSTGRES_PASSWORD
+  #     - DBT_POSTGRES_DBNAME
+  #     - DBT_POSTGRES_SCHEMA

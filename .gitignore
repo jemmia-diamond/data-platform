@@ -1,0 +1,48 @@
+# Environment
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# DLT
+secrets.toml
+*.secrets.toml
+.dlt/profile-name
+.dlt/.var
+_local
+*.duckdb
+*.wal
+
+# Logs
+/logs
+*.log
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# IDEs
+.idea/
+.vscode/
+.DS_Store
+
+# Package managers
+uv.lock
+poetry.lock
+Pipfile.lock

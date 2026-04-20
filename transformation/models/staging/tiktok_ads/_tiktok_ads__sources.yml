@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: tiktok_marketing
+    schema: raw_tiktok_marketing  # Points to the schema containing raw data in your database
+    tables:
+      - name: campaigns_reports_daily
+        description: "Dữ liệu báo cáo chiến dịch hàng ngày từ Tiktok"

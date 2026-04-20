@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: dagster-poc-postgres
+    environment:
+      POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DAGSTER_POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    networks:
+      - dagster-poc-network
+    restart: unless-stopped
+
+  dagster_code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dagster-code:latest
+    container_name: dagster_code
+    environment:
+      DAGSTER_POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_DB: ${DAGSTER_POSTGRES_DB}
+      DBT_POSTGRES_HOST: ${DBT_POSTGRES_HOST}
+      DBT_POSTGRES_PORT: ${DBT_POSTGRES_PORT}
+      DBT_POSTGRES_USER: ${DBT_POSTGRES_USER}
+      DBT_POSTGRES_PASSWORD: ${DBT_POSTGRES_PASSWORD}
+      DBT_POSTGRES_DBNAME: ${DBT_POSTGRES_DBNAME}
+      DBT_POSTGRES_SCHEMA: ${DBT_POSTGRES_SCHEMA}
+      DESTINATION__POSTGRES__CREDENTIALS__DATABASE: ${DESTINATION__POSTGRES__CREDENTIALS__DATABASE}
+      DESTINATION__POSTGRES__CREDENTIALS__USERNAME: ${DESTINATION__POSTGRES__CREDENTIALS__USERNAME}
+      DESTINATION__POSTGRES__CREDENTIALS__PASSWORD: ${DESTINATION__POSTGRES__CREDENTIALS__PASSWORD}
+      DESTINATION__POSTGRES__CREDENTIALS__HOST: ${DESTINATION__POSTGRES__CREDENTIALS__HOST}
+      DESTINATION__POSTGRES__CREDENTIALS__PORT: ${DESTINATION__POSTGRES__CREDENTIALS__PORT}
+      DESTINATION__POSTGRES__CREDENTIALS__CONNECT_TIMEOUT: ${DESTINATION__POSTGRES__CREDENTIALS__CONNECT_TIMEOUT}
+      SOURCES__HARAVAN__BASE_URL: ${SOURCES__HARAVAN__BASE_URL:-https://apis.haravan.com/com/}
+      SOURCES__HARAVAN__API_TOKEN: ${SOURCES__HARAVAN__API_TOKEN}
+    ports:
+      - "4000:4000"
+    networks:
+      - dagster-poc-network
+    depends_on:
+      - postgres
+
+  dagster_webserver:
+    image: jayefee/dagster_webserver:latest
+    container_name: dagster_webserver
+    environment:
+      DAGSTER_POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_DB: ${DAGSTER_POSTGRES_DB}
+      DAGSTER_CURRENT_IMAGE: dagster-code:latest
+      DAGSTER_HOME: /opt/dagster/dagster_home
+    ports:
+      - "3080:3000"
+    networks:
+      - dagster-poc-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./deploy/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml
+      - ./deploy/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml
+    command: dagster-webserver -h 0.0.0.0 -p 3000 -w /opt/dagster/dagster_home/workspace.yaml
+    depends_on:
+      - postgres
+      - dagster_code
+
+  dagster_daemon:
+    image: jayefee/dagster_daemon:latest
+    container_name: dagster_daemon
+    environment:
+      DAGSTER_POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_DB: ${DAGSTER_POSTGRES_DB}
+      DAGSTER_CURRENT_IMAGE: dagster-code:latest
+      DAGSTER_HOME: /opt/dagster/dagster_home
+    networks:
+      - dagster-poc-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./deploy/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml
+      - ./deploy/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml
+    command: dagster-daemon run
+    depends_on:
+      - dagster_webserver
+
+networks:
+  dagster-poc-network:
+    name: dagster-poc-network
+    driver: bridge

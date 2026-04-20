@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: facebook_marketing
+    schema: raw_fb_marketing
+    tables:
+      - name: custom_campaign_daily
+      - name: campaigns
+      - name: ad_sets
+      - name: ads
+      - name: ads_insights
