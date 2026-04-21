@@ -51,7 +51,7 @@ def haravan_assets(
         ),
         dlt_pipeline=build_haravan_pipeline(),
         refresh=refresh,
-    ).fetch_row_count()
+    )
 
 
 __all__ = ["HaravanIngestionConfig", "haravan_assets"]

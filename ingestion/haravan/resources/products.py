@@ -9,7 +9,7 @@ DEFAULT_PAGE_LIMIT = 50
 DEFAULT_ORDER_FIELD = "updated_at"
 
 
-def build_orders_resource(
+def build_products_resource(
     *,
     base_url: str,
     api_token: str,
@@ -35,13 +35,13 @@ def build_orders_resource(
         },
         "resources": [
             {
-                "name": "orders",
+                "name": "products",
                 "primary_key": "id",
                 "write_disposition": "merge",
                 "endpoint": {
-                    "path": "orders.json",
+                    "path": "products.json",
                     "params": endpoint_params,
-                    "data_selector": "orders",
+                    "data_selector": "products",
                     "paginator": {
                         "type": "page_number",
                         "page_param": "page",
@@ -57,6 +57,7 @@ def build_orders_resource(
             }
         ],
     }
+
     resource = rest_api_resources(config)[0]
     resource.add_map(lambda item: {**item, "_db_updated_at": sync_timestamp})
     resource.apply_hints(
@@ -71,4 +72,4 @@ def build_orders_resource(
     return resource
 
 
-__all__ = ["build_orders_resource"]
+__all__ = ["build_products_resource"]

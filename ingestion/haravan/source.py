@@ -4,7 +4,7 @@ from typing import Optional
 
 import dlt
 
-from .resources import build_orders_resource
+from .resources import build_orders_resource, build_customers_resource, build_products_resource
 
 DEFAULT_HARAVAN_BASE_URL = "https://apis.haravan.com/com/"
 DEFAULT_START_DATE = "2026-01-01T00:00:00.000Z"
@@ -20,6 +20,18 @@ def haravan_source(
     """Build the Haravan source and let dlt resolve config from env vars."""
     return (
         build_orders_resource(
+            base_url=base_url,
+            api_token=api_token,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+        build_customers_resource(
+            base_url=base_url,
+            api_token=api_token,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+        build_products_resource(
             base_url=base_url,
             api_token=api_token,
             start_date=start_date,
