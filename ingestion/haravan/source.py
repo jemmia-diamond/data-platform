@@ -13,6 +13,7 @@ from .resources import (
     build_users_resource,
     build_custom_collections_resource,
     build_smart_collections_resource,
+    build_inventory_locations_resource,
 )
 
 DEFAULT_HARAVAN_BASE_URL = "https://apis.haravan.com/com/"
@@ -27,51 +28,65 @@ def haravan_source(
     api_token: str = dlt.secrets.value,
 ):
     """Build the Haravan source and let dlt resolve config from env vars."""
+    orders_resource = build_orders_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    customers_resource = build_customers_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    products_resource = build_products_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    locations_resource = build_locations_resource(
+        base_url=base_url,
+        api_token=api_token,
+    )
+    events_resource = build_events_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    users_resource = build_users_resource(
+        base_url=base_url,
+        api_token=api_token,
+    )
+    custom_collections_resource = build_custom_collections_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    smart_collections_resource = build_smart_collections_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    inventory_locations_resource = build_inventory_locations_resource(
+        base_url=base_url,
+        api_token=api_token,
+    )
+
     return (
-        build_orders_resource(
-            base_url=base_url,
-            api_token=api_token,
-            start_date=start_date,
-            end_date=end_date,
-        ),
-        build_customers_resource(
-            base_url=base_url,
-            api_token=api_token,
-            start_date=start_date,
-            end_date=end_date,
-        ),
-        build_products_resource(
-            base_url=base_url,
-            api_token=api_token,
-            start_date=start_date,
-            end_date=end_date,
-        ),
-        build_locations_resource(
-            base_url=base_url,
-            api_token=api_token
-        ),
-        build_events_resource(
-            base_url=base_url,
-            api_token=api_token,
-            start_date=start_date,
-            end_date=end_date,
-        ),
-        build_users_resource(
-            base_url=base_url,
-            api_token=api_token
-        ),
-        build_custom_collections_resource(
-            base_url=base_url,
-            api_token=api_token,
-            start_date=start_date,
-            end_date=end_date,
-        ),
-        build_smart_collections_resource(
-            base_url=base_url,
-            api_token=api_token,
-            start_date=start_date,
-            end_date=end_date,
-        ),
+        orders_resource,
+        customers_resource,
+        products_resource,
+        locations_resource,
+        inventory_locations_resource,
+        events_resource,
+        users_resource,
+        custom_collections_resource,
+        smart_collections_resource,
     )
 
 
@@ -94,4 +109,8 @@ def build_haravan_source(
     return haravan_source(**source_kwargs)
 
 
-__all__ = ["DEFAULT_HARAVAN_BASE_URL", "DEFAULT_START_DATE", "build_haravan_source"]
+__all__ = [
+    "DEFAULT_HARAVAN_BASE_URL",
+    "DEFAULT_START_DATE",
+    "build_haravan_source",
+]

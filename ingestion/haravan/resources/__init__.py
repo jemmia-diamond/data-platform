@@ -6,6 +6,7 @@ from .events import build_events_resource
 from .users import build_users_resource
 from .custom_collections import build_custom_collections_resource
 from .smart_collections import build_smart_collections_resource
+from .inventory_locations import build_inventory_locations_resource
 
 __all__ = [
     "build_orders_resource",
@@ -16,4 +17,5 @@ __all__ = [
     "build_users_resource",
     "build_custom_collections_resource",
     "build_smart_collections_resource",
+    "build_inventory_locations_resource",
 ]
