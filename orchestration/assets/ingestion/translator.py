@@ -26,4 +26,23 @@ class IngestionDagsterDltTranslator(DagsterDltTranslator):
         )
 
 
-__all__ = ["IngestionDagsterDltTranslator"]
+class FrappeDagsterDltTranslator(DagsterDltTranslator):
+    """Place Frappe assets under the ERPNext path in Dagster catalog."""
+
+    def get_asset_spec(self, data: DltResourceTranslatorData):
+        spec = super().get_asset_spec(data)
+        deps = []
+        if data.resource.is_transformer:
+            pipe = data.resource._pipe  # noqa: SLF001
+            while pipe.has_parent:
+                pipe = pipe.parent
+            deps = [AssetKey(["ingestion", "frappe", "erpnext", pipe.name])]
+
+        return spec.replace_attributes(
+            key=AssetKey(["ingestion", "frappe", "erpnext", data.resource.name]),
+            deps=deps,
+            group_name="ingestion",
+        )
+
+
+__all__ = ["FrappeDagsterDltTranslator", "IngestionDagsterDltTranslator"]
