@@ -17,7 +17,7 @@ from .resources import (
 )
 
 DEFAULT_HARAVAN_BASE_URL = "https://apis.haravan.com/com/"
-DEFAULT_START_DATE = "2026-01-01T00:00:00.000Z"
+DEFAULT_START_DATE = "2026-04-01T00:00:00.000Z"
 
 
 @dlt.source(name="haravan")
@@ -75,6 +75,8 @@ def haravan_source(
     inventory_locations_resource = build_inventory_locations_resource(
         base_url=base_url,
         api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
     )
 
     return (
