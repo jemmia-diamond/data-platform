@@ -21,6 +21,16 @@ class HaravanIngestionConfig(Config):
     full_refresh: bool = False
 
 
+def _selected_haravan_resources(context: AssetExecutionContext) -> list[str]:
+    return sorted(
+        {
+            key.path[2]
+            for key in context.selected_asset_keys
+            if len(key.path) >= 3 and key.path[0] == "ingestion" and key.path[1] == "haravan"
+        }
+    )
+
+
 @dlt_assets(
     dlt_source=build_haravan_source(
         base_url=DEFAULT_HARAVAN_BASE_URL,
@@ -36,22 +46,38 @@ def haravan_assets(
     config: HaravanIngestionConfig,
 ):
     """Run Haravan ingestion through dagster-dlt."""
-    context.log.info(
-        f"Running Haravan sync with start_date={config.start_date} "
-        f"end_date={config.end_date} full_refresh={config.full_refresh}"
-    )
-
     refresh = "drop_data" if config.full_refresh else None
+    selected_resources = _selected_haravan_resources(context)
 
-    yield from dlt.run(
-        context=context,
-        dlt_source=build_haravan_source(
-            start_date=config.start_date,
-            end_date=config.end_date,
-        ),
-        dlt_pipeline=build_haravan_pipeline(),
-        refresh=refresh,
-    )
+    if not selected_resources:
+        context.log.warning("No selected Haravan resources; run with default pipeline.")
+        yield from dlt.run(
+            context=context,
+            dlt_source=build_haravan_source(
+                start_date=config.start_date,
+                end_date=config.end_date,
+            ),
+            dlt_pipeline=build_haravan_pipeline(),
+            refresh=refresh,
+        )
+        return
+
+    for resource_name in selected_resources:
+        pipeline_name = f"haravan_{resource_name}"
+        context.log.info(
+            f"Running Haravan resource={resource_name} "
+            f"with start_date={config.start_date} end_date={config.end_date} "
+            f"full_refresh={config.full_refresh} pipeline_name={pipeline_name}"
+        )
+        yield from dlt.run(
+            context=context,
+            dlt_source=build_haravan_source(
+                start_date=config.start_date,
+                end_date=config.end_date,
+            ).with_resources(resource_name),
+            dlt_pipeline=build_haravan_pipeline(pipeline_name=pipeline_name),
+            refresh=refresh,
+        )
 
 
 __all__ = ["HaravanIngestionConfig", "haravan_assets"]

@@ -14,9 +14,9 @@ HARAVAN_PIPELINE_NAME = "haravan"
 HARAVAN_DATASET_NAME = "raw_haravan"
 
 
-def build_haravan_pipeline():
+def build_haravan_pipeline(pipeline_name: str = HARAVAN_PIPELINE_NAME):
     return build_dlt_pipeline(
-        connector_name=HARAVAN_PIPELINE_NAME,
+        connector_name=pipeline_name,
         dataset_name=HARAVAN_DATASET_NAME,
     )
 
