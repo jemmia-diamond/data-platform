@@ -5,8 +5,7 @@ from typing import Optional
 
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 
-DEFAULT_PAGE_LIMIT = 50
-DEFAULT_ORDER_FIELD = "created_at"
+DEFAULT_PAGE_LIMIT = 250
 
 
 def build_events_resource(
@@ -20,7 +19,6 @@ def build_events_resource(
     sync_timestamp = datetime.now(timezone.utc).isoformat()
     endpoint_params = {
         "limit": DEFAULT_PAGE_LIMIT,
-        "order": DEFAULT_ORDER_FIELD,  # created_at ASC default
     }
     if end_date:
         endpoint_params["created_at_max"] = end_date
@@ -48,6 +46,9 @@ def build_events_resource(
                         "base_page": 1,
                         "total_path": None,
                     },
+                    "response_actions": [
+                        {"status_code": 422, "action": "ignore"},
+                    ],
                     "incremental": {
                         "start_param": "created_at_min",
                         "cursor_path": "created_at",
