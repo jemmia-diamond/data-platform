@@ -7,7 +7,11 @@ run_coordinator:
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 10
-    tag_concurrency_limits: []
+    tag_concurrency_limits:
+      - key: "dagster/schedule_name"
+        value:
+          applyLimitPerUniqueValue: true
+        limit: 1
     dequeue_interval_seconds: 1
 
 storage:

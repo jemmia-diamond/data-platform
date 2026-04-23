@@ -173,6 +173,22 @@ docker-compose logs -f dagster_daemon
 docker-compose down -v
 ```
 
+### Scheduled Run Queueing
+Dagster is configured to prevent overlapping scheduled runs for the same schedule.
+
+- If a new scheduled tick arrives while the previous run from that same schedule is still active, the new run will be placed in `QUEUED`.
+- As soon as the older run finishes, Dagster Daemon will launch the queued run.
+- This protects stateful ingestion pipelines such as `dlt` resources from colliding with an in-flight run.
+- This is queue behavior, not skip behavior. No scheduled tick is discarded automatically.
+
+The configuration lives in `deploy/dagster.yaml` using `dagster/schedule_name` with a per-schedule concurrency limit of `1`.
+
+After updating the config, restart Dagster services so the new run coordinator settings take effect:
+
+```bash
+docker-compose up --build -d
+```
+
 ### Reset Admin Password
 Update `.env`:
 
