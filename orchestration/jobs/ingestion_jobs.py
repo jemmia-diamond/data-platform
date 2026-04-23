@@ -96,7 +96,6 @@ ingestion__frappe__erpnext__crm_pipeline_entities__job = define_tagged_asset_job
 ingestion__frappe__erpnext__crm_activity_entities__job = define_tagged_asset_job(
     name="ingestion__frappe__erpnext__crm_activity_entities__job",
     selection=_frappe_erpnext_selection(
-        "communications",
         "call_logs",
     ),
     description="Refresh ERPNext CRM activity entities",
