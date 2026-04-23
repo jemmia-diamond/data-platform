@@ -1,6 +1,7 @@
 from pathlib import Path
 from dagster import Definitions
 from .assets import all_assets
+from .jobs import all_jobs
 from .resources import all_resources
 from .schedules import all_schedules
 
@@ -9,6 +10,7 @@ DBT_PROJECT_DIR = Path(__file__).parent.parent / "transformation"
 
 defs = Definitions(
     assets=all_assets,
+    jobs=all_jobs,
     schedules=all_schedules,
     resources=all_resources(DBT_PROJECT_DIR, target="dev"),
 )
