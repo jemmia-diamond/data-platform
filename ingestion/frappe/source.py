@@ -8,7 +8,7 @@ from .apps.erpnext import build_erpnext_resources
 
 DEFAULT_FRAPPE_BASE_URL = "https://example.com"
 # Keep as string so it can be passed directly into filters if needed.
-DEFAULT_START_DATE = "2025-01-01"
+DEFAULT_START_DATE = "2026-04-20"
 
 @dlt.source(name="frappe")
 def frappe_source(

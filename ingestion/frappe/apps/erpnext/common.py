@@ -18,6 +18,72 @@ from dlt.extract.resource import DltResource
 from ingestion.frappe.client import FrappeClient, normalize_frappe_datetime
 
 DEFAULT_PAGE_SIZE = 200
+# Resource and Doctype
+SIMPLE_DOCTYPES = (
+    # === CRM Module ===
+    ("leads", "Lead"),
+    ("lead_products", "Lead Product"),
+    ("regions", "Region"),
+    ("lead_sources", "Lead Source"),
+    ("sales_stages", "Sales Stage"),
+    ("market_segments", "Market Segment"),
+    ("opportunity_types", "Opportunity Type"),
+    ("provinces", "Province"),
+    ("opportunities", "Opportunity"),
+    ("lead_budgets", "Lead Budget"),
+    ("lead_demands", "Lead Demand"),
+    ("property_setters","Property Setter"),
+
+    # === Core Module ===
+    ("deleted_documents", "Deleted Document"),
+    ("users", "User"),
+    ("view_logs", "View Log"),
+    ("access_logs", "Access Log"),
+    ("files", "File"),
+    ("comments", "Comment"),
+    ("reports", "Report"),
+    ("roles", "Role"),
+    ("translations", "Translation"),
+    ("user_permissions", "User Permission"),
+    ("communications", "Communication"),
+    ("role_profiles", "Role Profile"),
+
+    # === Contact ===
+    ("contacts", "Contact"),
+    ("address", "Address"),
+
+    # ==== Account ===
+    ("payment_entries", "Payment Entry"),
+    ("bank_accounts", "Bank Account"),
+    ("monthly_distributions", "Monthly Distribution"),
+    ("accounts", "Account"),
+    ("process_subscriptions", "Process Subscription"),
+    ("bank_transactions", "Bank Transaction"),
+
+    # ==== Desk module ===
+    ("todos", "ToDo"),
+    ("tags", "Tag"),
+    ("notification_settings", "Notification Settings"),
+
+    # === Selling ===
+    ("product_categories", "Product Category"),
+    ("serials", "Serial"),
+    ("purchase_purposes", "Purchase Purpose"),
+    ("policies", "Policy"),
+    ("customers", "Customer"),
+    ("sales_orders", "Sales Order"),
+    ("promotions", "Promotion"),
+    ("sales_partner_types", "Sales Partner Type"),
+    ("buyback_exchanges", "Buyback Exchange"),
+    ("promotion_groups", "Promotion Group"),
+    ("sales_persons", "Sales Person"),
+    ("uom_conversion_factors", "UOM Conversion Factor"),
+    ("employees", "Employee"),
+
+    # === Telephony ====
+    ("call_logs", "Call Log"),
+    ("web_forms", "Web Form"),
+)
 
 
 def _build_modified_doctype_resource(
@@ -107,104 +173,24 @@ def build_erpnext_resources(
 ) -> tuple[DltResource, ...]:
     """Default ERPNext resources loaded into the raw layer."""
 
-    return (
-        _build_modified_doctype_resource(
-            resource_name="sales_order",
-            doctype="Sales Order",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="customer",
-            doctype="Customer",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="lead",
-            doctype="Lead",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="contact",
-            doctype="Contact",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="province",
-            doctype="Province",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="region",
-            doctype="Region",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="promotion",
-            doctype="Promotion",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
-        _build_modified_doctype_resource(
-            resource_name="payment_entry",
-            doctype="Payment Entry",
-            base_url=base_url,
-            api_key=api_key,
-            api_secret=api_secret,
-            api_auth_scheme=api_auth_scheme,
-            start_date=start_date,
-            end_date=end_date,
-            verify=verify,
-            fetch_full_docs=fetch_full_docs,
-        ),
+    shared_kwargs = {
+        "base_url": base_url,
+        "api_key": api_key,
+        "api_secret": api_secret,
+        "api_auth_scheme": api_auth_scheme,
+        "start_date": start_date,
+        "end_date": end_date,
+        "verify": verify,
+        "fetch_full_docs": fetch_full_docs,
+    }
 
+    return tuple(
+        _build_modified_doctype_resource(
+            resource_name=resource_name,
+            doctype=doctype,
+            **shared_kwargs,
+        )
+        for resource_name, doctype in SIMPLE_DOCTYPES
     )
 
 
