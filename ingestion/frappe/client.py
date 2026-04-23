@@ -3,12 +3,12 @@ from __future__ import annotations
 import base64
 import json
 from datetime import datetime, timezone
-from typing import Any, Iterable, Optional
-from urllib.parse import quote
+from typing import Any, Optional
 
 import requests
 
 DEFAULT_TIMEOUT_SECONDS = 60
+SYSTEM_CONSOLE_EXECUTE_CMD = "frappe.desk.doctype.system_console.system_console.execute_code"
 
 
 def normalize_frappe_datetime(value: Optional[str]) -> Optional[str]:
@@ -84,51 +84,41 @@ class FrappeClient:
             _build_auth_header(api_key=api_key, api_secret=api_secret, api_auth_scheme=api_auth_scheme)
         )
 
-    def _get(self, *, path: str, params: Optional[dict[str, Any]] = None) -> Any:
+    def _post(self, *, path: str = "", data: Optional[dict[str, Any]] = None) -> Any:
         url = self.base_url + path
-        response = self.session.get(url, params=params, timeout=self.timeout_seconds, verify=self.verify)
+        response = self.session.post(url, data=data, timeout=self.timeout_seconds, verify=self.verify)
         response.raise_for_status()
         return _extract_payload(response.json())
 
-    def get_doc(self, *, doctype: str, name: str) -> Any:
-        return self._get(path=f"/api/resource/{quote(doctype)}/{quote(name)}")
+    def execute_sql(self, sql: str) -> list[dict[str, Any]]:
+        """Execute SQL through the ERPNext System Console API."""
+        payload = {
+            "cmd": SYSTEM_CONSOLE_EXECUTE_CMD,
+            "doc": json.dumps(
+                {
+                    "name": "System Console",
+                    "docstatus": 0,
+                    "type": "SQL",
+                    "doctype": "System Console",
+                    "console": sql,
+                }
+            ),
+        }
+        result = self._post(data=payload)
 
-    def iter_list(
-        self,
-        *,
-        doctype: str,
-        fields: list[str],
-        filters: Optional[list[list[Any]]] = None,
-        order_by: Optional[str] = None,
-        page_size: int = 200,
-    ) -> Iterable[dict[str, Any]]:
-        limit_start = 0
-        path = f"/api/resource/{quote(doctype)}"
+        output = result.get("output") if isinstance(result, dict) else result
 
-        while True:
-            params: dict[str, Any] = {
-                "fields": json.dumps(fields),
-                "limit_start": limit_start,
-                "limit_page_length": page_size,
-            }
-            if filters:
-                params["filters"] = json.dumps(filters)
-            if order_by:
-                params["order_by"] = order_by
+        if output in (None, ""):
+            return []
+        if isinstance(output, list):
+            return [row for row in output if isinstance(row, dict)]
+        if isinstance(output, str):
+            parsed = json.loads(output)
+            if isinstance(parsed, list):
+                return [row for row in parsed if isinstance(row, dict)]
+            raise RuntimeError("Unexpected SQL output shape from Frappe System Console")
 
-            data = self._get(path=path, params=params)
-            rows = data or []
-            if not rows:
-                return
-
-            for row in rows:
-                if isinstance(row, dict):
-                    yield row
-
-            if len(rows) < page_size:
-                return
-            limit_start += page_size
+        raise RuntimeError("Unexpected SQL output type from Frappe System Console")
 
 
 __all__ = ["DEFAULT_TIMEOUT_SECONDS", "FrappeClient", "normalize_frappe_datetime"]
-

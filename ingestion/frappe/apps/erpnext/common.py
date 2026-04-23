@@ -1,95 +1,141 @@
 from __future__ import annotations
 
-"""
-ERPNext resources built on top of the Frappe REST API.
-
-This module contains "simple" resources where the pattern is:
-1) Call list endpoint to get document names (paged)
-2) Optionally fetch full document per name
-3) Incremental sync by `modified`
-"""
-
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Optional
 
 import dlt
 from dlt.extract.resource import DltResource
 
 from ingestion.frappe.client import FrappeClient, normalize_frappe_datetime
 
-DEFAULT_PAGE_SIZE = 200
-# Resource and Doctype
-SIMPLE_DOCTYPES = (
+DEFAULT_PAGE_SIZE = 1000
+
+
+@dataclass(frozen=True)
+class ResourceSpec:
+    resource_name: str
+    doctype: str
+
+    @property
+    def table_name(self) -> str:
+        return f"tab{self.doctype}"
+
+
+RESOURCE_SPECS = (
     # === CRM Module ===
-    ("leads", "Lead"),
-    ("lead_products", "Lead Product"),
-    ("regions", "Region"),
-    ("lead_sources", "Lead Source"),
-    ("sales_stages", "Sales Stage"),
-    ("market_segments", "Market Segment"),
-    ("opportunity_types", "Opportunity Type"),
-    ("provinces", "Province"),
-    ("opportunities", "Opportunity"),
-    ("lead_budgets", "Lead Budget"),
-    ("lead_demands", "Lead Demand"),
-    ("property_setters","Property Setter"),
+    ResourceSpec("leads", "Lead"),
+    ResourceSpec("lead_products", "Lead Product"),
+    ResourceSpec("regions", "Region"),
+    ResourceSpec("lead_sources", "Lead Source"),
+    ResourceSpec("sales_stages", "Sales Stage"),
+    ResourceSpec("market_segments", "Market Segment"),
+    ResourceSpec("opportunity_types", "Opportunity Type"),
+    ResourceSpec("provinces", "Province"),
+    ResourceSpec("opportunities", "Opportunity"),
+    ResourceSpec("lead_budgets", "Lead Budget"),
+    ResourceSpec("lead_demands", "Lead Demand"),
+    ResourceSpec("property_setters", "Property Setter"),
 
     # === Core Module ===
-    ("deleted_documents", "Deleted Document"),
-    ("users", "User"),
-    ("view_logs", "View Log"),
-    ("access_logs", "Access Log"),
-    ("files", "File"),
-    ("comments", "Comment"),
-    ("reports", "Report"),
-    ("roles", "Role"),
-    ("translations", "Translation"),
-    ("user_permissions", "User Permission"),
-    ("communications", "Communication"),
-    ("role_profiles", "Role Profile"),
+    ResourceSpec("deleted_documents", "Deleted Document"),
+    ResourceSpec("users", "User"),
+    ResourceSpec("view_logs", "View Log"),
+    ResourceSpec("access_logs", "Access Log"),
+    ResourceSpec("files", "File"),
+    ResourceSpec("comments", "Comment"),
+    ResourceSpec("reports", "Report"),
+    ResourceSpec("roles", "Role"),
+    ResourceSpec("translations", "Translation"),
+    ResourceSpec("user_permissions", "User Permission"),
+    ResourceSpec("communications", "Communication"),
+    ResourceSpec("role_profiles", "Role Profile"),
 
     # === Contact ===
-    ("contacts", "Contact"),
-    ("address", "Address"),
+    ResourceSpec("contacts", "Contact"),
+    ResourceSpec("address", "Address"),
 
     # ==== Account ===
-    ("payment_entries", "Payment Entry"),
-    ("bank_accounts", "Bank Account"),
-    ("monthly_distributions", "Monthly Distribution"),
-    ("accounts", "Account"),
-    ("process_subscriptions", "Process Subscription"),
-    ("bank_transactions", "Bank Transaction"),
+    ResourceSpec("payment_entries", "Payment Entry"),
+    ResourceSpec("bank_accounts", "Bank Account"),
+    ResourceSpec("monthly_distributions", "Monthly Distribution"),
+    ResourceSpec("accounts", "Account"),
+    ResourceSpec("process_subscriptions", "Process Subscription"),
+    ResourceSpec("bank_transactions", "Bank Transaction"),
 
     # ==== Desk module ===
-    ("todos", "ToDo"),
-    ("tags", "Tag"),
-    ("notification_settings", "Notification Settings"),
+    ResourceSpec("todos", "ToDo"),
+    ResourceSpec("tags", "Tag"),
+    ResourceSpec("notification_settings", "Notification Settings"),
 
     # === Selling ===
-    ("product_categories", "Product Category"),
-    ("serials", "Serial"),
-    ("purchase_purposes", "Purchase Purpose"),
-    ("policies", "Policy"),
-    ("customers", "Customer"),
-    ("sales_orders", "Sales Order"),
-    ("promotions", "Promotion"),
-    ("sales_partner_types", "Sales Partner Type"),
-    ("buyback_exchanges", "Buyback Exchange"),
-    ("promotion_groups", "Promotion Group"),
-    ("sales_persons", "Sales Person"),
-    ("uom_conversion_factors", "UOM Conversion Factor"),
-    ("employees", "Employee"),
+    ResourceSpec("product_categories", "Product Category"),
+    ResourceSpec("serials", "Serial"),
+    ResourceSpec("purchase_purposes", "Purchase Purpose"),
+    ResourceSpec("policies", "Policy"),
+    ResourceSpec("customers", "Customer"),
+    ResourceSpec("sales_orders", "Sales Order"),
+    ResourceSpec("sales_order_items", "Sales Order Item"),
+    ResourceSpec("promotions", "Promotion"),
+    ResourceSpec("sales_partner_types", "Sales Partner Type"),
+    ResourceSpec("buyback_exchanges", "Buyback Exchange"),
+    ResourceSpec("promotion_groups", "Promotion Group"),
+    ResourceSpec("sales_persons", "Sales Person"),
+    ResourceSpec("uom_conversion_factors", "UOM Conversion Factor"),
+    ResourceSpec("employees", "Employee"),
+    ResourceSpec("sales_teams", "Sales Team"),
+
 
     # === Telephony ====
-    ("call_logs", "Call Log"),
-    ("web_forms", "Web Form"),
+    ResourceSpec("call_logs", "Call Log"),
+    ResourceSpec("web_forms", "Web Form"),
 )
 
 
-def _build_modified_doctype_resource(
+def _quote_identifier(value: str) -> str:
+    return f"`{value.replace('`', '``')}`"
+
+
+def _quote_literal(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _build_incremental_query(
     *,
-    resource_name: str,
-    doctype: str,
+    spec: ResourceSpec,
+    start_value: Optional[str],
+    end_value: Optional[str],
+    last_modified: Optional[str],
+    last_name: Optional[str],
+) -> str:
+    table_name = _quote_identifier(spec.table_name)
+    filters: list[str] = []
+
+    if start_value is not None:
+        filters.append(f"`modified` >= {_quote_literal(start_value)}")
+    if end_value is not None:
+        filters.append(f"`modified` < {_quote_literal(end_value)}")
+    if last_modified is not None and last_name is not None:
+        filters.append(
+            "("
+            f"`modified` > {_quote_literal(last_modified)} "
+            "OR "
+            f"(`modified` = {_quote_literal(last_modified)} AND `name` > {_quote_literal(last_name)})"
+            ")"
+        )
+
+    where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+    return (
+        f"SELECT * FROM {table_name} "
+        f"{where_sql} "
+        "ORDER BY `modified` ASC, `name` ASC "
+        f"LIMIT {DEFAULT_PAGE_SIZE}"
+    )
+
+
+def _build_resource(
+    *,
+    spec: ResourceSpec,
     base_url: str,
     api_key: str,
     api_secret: str,
@@ -97,9 +143,7 @@ def _build_modified_doctype_resource(
     start_date: str,
     end_date: Optional[str],
     verify: bool,
-    fetch_full_docs: bool,
 ) -> DltResource:
-    sync_timestamp = datetime.now(timezone.utc).isoformat()
     client = FrappeClient(
         base_url=base_url,
         api_key=api_key,
@@ -107,46 +151,42 @@ def _build_modified_doctype_resource(
         api_auth_scheme=api_auth_scheme,
         verify=verify,
     )
+    sync_timestamp = datetime.now(timezone.utc).isoformat()
 
-    @dlt.resource(
-        name=resource_name,
-        primary_key="name",
-        write_disposition="merge",
-    )
+    @dlt.resource(name=spec.resource_name, primary_key="name", write_disposition="merge")
     def rows(
         modified=dlt.sources.incremental("modified", initial_value=start_date, end_value=end_date),  # type: ignore[valid-type]
     ):
-        modified_start = normalize_frappe_datetime(str(modified.start_value) if modified.start_value else None)
-        modified_end = normalize_frappe_datetime(str(modified.end_value) if modified.end_value else None)
+        start_value = normalize_frappe_datetime(str(modified.start_value) if modified.start_value else None)
+        end_value = normalize_frappe_datetime(str(modified.end_value) if modified.end_value else None)
+        last_modified: Optional[str] = None
+        last_name: Optional[str] = None
 
-        filters: list[list[Any]] = []
-        if modified_start:
-            filters.append(["modified", ">=", modified_start])
-        if modified_end:
-            filters.append(["modified", "<", modified_end])
+        while True:
+            sql = _build_incremental_query(
+                spec=spec,
+                start_value=start_value,
+                end_value=end_value,
+                last_modified=last_modified,
+                last_name=last_name,
+            )
+            batch_rows = client.execute_sql(sql)
+            if not batch_rows:
+                return
 
-        list_rows = client.iter_list(
-            doctype=doctype,
-            fields=["name", "modified"],
-            filters=filters or None,
-            order_by="modified asc",
-            page_size=DEFAULT_PAGE_SIZE,
-        )
+            for row in batch_rows:
+                name = row.get("name")
+                row_modified = row.get("modified")
+                if name is None or row_modified is None:
+                    continue
 
-        for row in list_rows:
-            document_name = row.get("name")
-            if not document_name:
-                continue
+                last_name = str(name)
+                last_modified = str(row_modified)
+                row["_db_updated_at"] = sync_timestamp
+                yield row
 
-            if fetch_full_docs:
-                document = client.get_doc(doctype=doctype, name=str(document_name))
-                if isinstance(document, dict):
-                    document["_db_updated_at"] = sync_timestamp
-                    yield document
-                continue
-
-            row["_db_updated_at"] = sync_timestamp
-            yield row
+            if len(batch_rows) < DEFAULT_PAGE_SIZE:
+                return
 
     rows.apply_hints(
         columns={
@@ -169,9 +209,8 @@ def build_erpnext_resources(
     start_date: str,
     end_date: Optional[str] = None,
     verify: bool = True,
-    fetch_full_docs: bool = True,
 ) -> tuple[DltResource, ...]:
-    """Default ERPNext resources loaded into the raw layer."""
+    """Build the default ERPNext raw resources."""
 
     shared_kwargs = {
         "base_url": base_url,
@@ -181,16 +220,14 @@ def build_erpnext_resources(
         "start_date": start_date,
         "end_date": end_date,
         "verify": verify,
-        "fetch_full_docs": fetch_full_docs,
     }
 
     return tuple(
-        _build_modified_doctype_resource(
-            resource_name=resource_name,
-            doctype=doctype,
+        _build_resource(
+            spec=spec,
             **shared_kwargs,
         )
-        for resource_name, doctype in SIMPLE_DOCTYPES
+        for spec in RESOURCE_SPECS
     )
 
 

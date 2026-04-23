@@ -19,9 +19,8 @@ def frappe_source(
     api_secret: str = dlt.secrets.value,
     api_auth_scheme: str = "token",
     verify: bool = True,
-    fetch_full_docs: bool = True,
 ):
-    """Build the Frappe source and let dlt resolve config from env vars."""
+    """Build the ERPNext source backed by the SQL execution API."""
     return build_erpnext_resources(
         base_url=base_url,
         api_key=api_key,
@@ -30,7 +29,6 @@ def frappe_source(
         start_date=start_date,
         end_date=end_date,
         verify=verify,
-        fetch_full_docs=fetch_full_docs,
     )
 
 
@@ -43,7 +41,6 @@ def build_frappe_source(
     api_secret: Optional[str] = None,
     api_auth_scheme: Optional[str] = None,
     verify: Optional[bool] = None,
-    fetch_full_docs: Optional[bool] = None,
 ):
     """Helper for creating a Frappe source with optional explicit overrides."""
     source_kwargs: dict = {
@@ -60,8 +57,6 @@ def build_frappe_source(
         source_kwargs["api_auth_scheme"] = api_auth_scheme
     if verify is not None:
         source_kwargs["verify"] = verify
-    if fetch_full_docs is not None:
-        source_kwargs["fetch_full_docs"] = fetch_full_docs
     return frappe_source(**source_kwargs)
 
 

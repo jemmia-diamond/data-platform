@@ -1,5 +1,5 @@
 """
-ERPNext resources built on top of the Frappe framework.
+ERPNext resources backed by the Frappe SQL execution API.
 """
 
 from .common import build_erpnext_resources
