@@ -1,59 +1,25 @@
-"""
-Schedules module - all Dagster schedule definitions
-"""
-from .ingestion_schedules import (
-    ingestion__frappe__erpnext__address__every_20m__schedule,
-    ingestion__frappe__erpnext__activity_entities__hourly__schedule,
-    ingestion__frappe__erpnext__contacts__every_20m__schedule,
-    ingestion__frappe__erpnext__crm_activity_entities__every_10m__schedule,
-    ingestion__frappe__erpnext__crm_pipeline_entities__every_10m__schedule,
-    ingestion__frappe__erpnext__customers__every_20m__schedule,
-    ingestion__frappe__erpnext__document_entities__every_20m__schedule,
-    ingestion__frappe__erpnext__leads__every_10m__schedule,
-    ingestion__frappe__erpnext__reference_entities__daily_01utc__schedule,
-    ingestion__frappe__erpnext__sales_orders__every_10m__schedule,
-    ingestion__frappe__erpnext__transactional_entities__every_20m__schedule,
-    ingestion__haravan__core_entities__every_10m__schedule,
-    ingestion__haravan__inventory_locations__every_5m__schedule,
-    ingestion__haravan__reference_entities__daily_01utc__schedule,
-)
-from .transformation_schedules import (
-    transformation__marketing__marts__twice_daily__schedule,
-)
+from ..catalogs import all_execution_units
+from ..catalogs.ingestion import all_execution_units as ingestion_execution_units
+from ..catalogs.transformation import all_execution_units as transformation_execution_units
+from ..jobs import jobs_by_name
+from .common import build_schedules_by_name
 
-all_schedules = [
-    transformation__marketing__marts__twice_daily__schedule,
-    ingestion__haravan__inventory_locations__every_5m__schedule,
-    ingestion__haravan__core_entities__every_10m__schedule,
-    ingestion__haravan__reference_entities__daily_01utc__schedule,
-    ingestion__frappe__erpnext__leads__every_10m__schedule,
-    ingestion__frappe__erpnext__sales_orders__every_10m__schedule,
-    ingestion__frappe__erpnext__crm_pipeline_entities__every_10m__schedule,
-    ingestion__frappe__erpnext__crm_activity_entities__every_10m__schedule,
-    ingestion__frappe__erpnext__customers__every_20m__schedule,
-    ingestion__frappe__erpnext__contacts__every_20m__schedule,
-    ingestion__frappe__erpnext__address__every_20m__schedule,
-    ingestion__frappe__erpnext__transactional_entities__every_20m__schedule,
-    ingestion__frappe__erpnext__document_entities__every_20m__schedule,
-    ingestion__frappe__erpnext__activity_entities__hourly__schedule,
-    ingestion__frappe__erpnext__reference_entities__daily_01utc__schedule,
-]
+schedules_by_name = build_schedules_by_name(all_execution_units, jobs_by_name)
+transformation_schedules = tuple(
+    schedules_by_name[spec.schedule_name]
+    for spec in transformation_execution_units
+    if spec.has_schedule
+)
+ingestion_schedules = tuple(
+    schedules_by_name[spec.schedule_name]
+    for spec in ingestion_execution_units
+    if spec.has_schedule
+)
+all_schedules = transformation_schedules + ingestion_schedules
 
 __all__ = [
     "all_schedules",
-    "transformation__marketing__marts__twice_daily__schedule",
-    "ingestion__haravan__inventory_locations__every_5m__schedule",
-    "ingestion__haravan__core_entities__every_10m__schedule",
-    "ingestion__haravan__reference_entities__daily_01utc__schedule",
-    "ingestion__frappe__erpnext__leads__every_10m__schedule",
-    "ingestion__frappe__erpnext__sales_orders__every_10m__schedule",
-    "ingestion__frappe__erpnext__crm_pipeline_entities__every_10m__schedule",
-    "ingestion__frappe__erpnext__crm_activity_entities__every_10m__schedule",
-    "ingestion__frappe__erpnext__customers__every_20m__schedule",
-    "ingestion__frappe__erpnext__contacts__every_20m__schedule",
-    "ingestion__frappe__erpnext__address__every_20m__schedule",
-    "ingestion__frappe__erpnext__transactional_entities__every_20m__schedule",
-    "ingestion__frappe__erpnext__document_entities__every_20m__schedule",
-    "ingestion__frappe__erpnext__activity_entities__hourly__schedule",
-    "ingestion__frappe__erpnext__reference_entities__daily_01utc__schedule",
+    "ingestion_schedules",
+    "schedules_by_name",
+    "transformation_schedules",
 ]

@@ -1,38 +1,27 @@
 from dagster import AssetKey, AssetSelection, define_asset_job
 
-from ..tags import build_dagster_tags
+from ..catalogs.common import ExecutionUnitSpec
 
 
 def build_asset_selection(*asset_paths: tuple[str, ...]) -> AssetSelection:
     return AssetSelection.keys(*[AssetKey(list(asset_path)) for asset_path in asset_paths])
 
 
-def define_tagged_asset_job(
-    *,
-    name: str,
-    selection: AssetSelection,
-    description: str,
-    layer: str,
-    tool: str,
-    system: str,
-    family: str,
-    cadence: str,
-):
-    tags = build_dagster_tags(
-        layer=layer,
-        tool=tool,
-        system=system,
-        family=family,
-        cadence=cadence,
-    )
+def build_job_definition(spec: ExecutionUnitSpec):
+    selection = build_asset_selection(*spec.asset_paths)
+    tags = spec.dagster_tags
 
     return define_asset_job(
-        name=name,
+        name=spec.job_name,
         selection=selection,
-        description=description,
+        description=spec.description,
         tags=tags,
         run_tags=tags,
     )
 
 
-__all__ = ["build_asset_selection", "define_tagged_asset_job"]
+def build_jobs_by_name(specs: tuple[ExecutionUnitSpec, ...]) -> dict[str, object]:
+    return {spec.job_name: build_job_definition(spec) for spec in specs}
+
+
+__all__ = ["build_asset_selection", "build_job_definition", "build_jobs_by_name"]

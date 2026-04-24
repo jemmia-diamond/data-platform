@@ -1,59 +1,11 @@
-from .ingestion_jobs import (
-    ingestion__frappe__erpnext__address__job,
-    ingestion__frappe__erpnext__activity_entities__job,
-    ingestion__frappe__erpnext__contacts__job,
-    ingestion__frappe__erpnext__config_entities__job,
-    ingestion__frappe__erpnext__crm_activity_entities__job,
-    ingestion__frappe__erpnext__crm_pipeline_entities__job,
-    ingestion__frappe__erpnext__customers__job,
-    ingestion__frappe__erpnext__document_entities__job,
-    ingestion__frappe__erpnext__leads__job,
-    ingestion__frappe__erpnext__reference_entities__job,
-    ingestion__frappe__erpnext__sales_orders__job,
-    ingestion__frappe__erpnext__transactional_entities__job,
-    ingestion__haravan__core_entities__job,
-    ingestion__haravan__inventory_locations__job,
-    ingestion__haravan__reference_entities__job,
-)
-from .transformation_jobs import (
-    transformation__marketing__marts__job,
-)
+from ..catalogs import all_execution_units
+from ..catalogs.ingestion import all_execution_units as ingestion_execution_units
+from ..catalogs.transformation import all_execution_units as transformation_execution_units
+from .common import build_jobs_by_name
 
-all_jobs = [
-    transformation__marketing__marts__job,
-    ingestion__haravan__inventory_locations__job,
-    ingestion__haravan__core_entities__job,
-    ingestion__haravan__reference_entities__job,
-    ingestion__frappe__erpnext__leads__job,
-    ingestion__frappe__erpnext__sales_orders__job,
-    ingestion__frappe__erpnext__crm_pipeline_entities__job,
-    ingestion__frappe__erpnext__crm_activity_entities__job,
-    ingestion__frappe__erpnext__customers__job,
-    ingestion__frappe__erpnext__contacts__job,
-    ingestion__frappe__erpnext__address__job,
-    ingestion__frappe__erpnext__transactional_entities__job,
-    ingestion__frappe__erpnext__document_entities__job,
-    ingestion__frappe__erpnext__activity_entities__job,
-    ingestion__frappe__erpnext__reference_entities__job,
-    ingestion__frappe__erpnext__config_entities__job,
-]
+jobs_by_name = build_jobs_by_name(all_execution_units)
+transformation_jobs = tuple(jobs_by_name[spec.job_name] for spec in transformation_execution_units)
+ingestion_jobs = tuple(jobs_by_name[spec.job_name] for spec in ingestion_execution_units)
+all_jobs = transformation_jobs + ingestion_jobs
 
-__all__ = [
-    "all_jobs",
-    "transformation__marketing__marts__job",
-    "ingestion__haravan__inventory_locations__job",
-    "ingestion__haravan__core_entities__job",
-    "ingestion__haravan__reference_entities__job",
-    "ingestion__frappe__erpnext__leads__job",
-    "ingestion__frappe__erpnext__sales_orders__job",
-    "ingestion__frappe__erpnext__crm_pipeline_entities__job",
-    "ingestion__frappe__erpnext__crm_activity_entities__job",
-    "ingestion__frappe__erpnext__customers__job",
-    "ingestion__frappe__erpnext__contacts__job",
-    "ingestion__frappe__erpnext__address__job",
-    "ingestion__frappe__erpnext__transactional_entities__job",
-    "ingestion__frappe__erpnext__document_entities__job",
-    "ingestion__frappe__erpnext__activity_entities__job",
-    "ingestion__frappe__erpnext__reference_entities__job",
-    "ingestion__frappe__erpnext__config_entities__job",
-]
+__all__ = ["all_jobs", "ingestion_jobs", "jobs_by_name", "transformation_jobs"]

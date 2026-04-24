@@ -19,7 +19,6 @@ class FrappeIngestionConfig(Config):
     start_date: str = DEFAULT_START_DATE
     end_date: Optional[str] = None
     full_refresh: bool = False
-    fetch_full_docs: bool = True
     api_auth_scheme: str = "token"
     verify: bool = True
 
@@ -58,7 +57,6 @@ def frappe_assets(
     source = build_frappe_source(
         start_date=config.start_date,
         end_date=config.end_date,
-        fetch_full_docs=config.fetch_full_docs,
         api_auth_scheme=config.api_auth_scheme,
         verify=config.verify,
     )
