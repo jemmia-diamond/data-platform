@@ -18,8 +18,8 @@ MARKETING_TRANSFORMATION_EXECUTION_UNITS = validate_execution_units(
             system="marketing",
             unit="marts",
             asset_paths=_asset_paths(
-                "fct_fb_ads_performance_daily",
-                "fct_marketing_performance_daily",
+                "fct_marketing_facebook_ads_daily",
+                "fct_marketing_omnichannel_daily",
             ),
             description="Refresh selected marketing dbt marts",
             cadence="twice_daily",

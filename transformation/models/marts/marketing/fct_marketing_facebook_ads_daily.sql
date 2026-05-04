@@ -56,7 +56,7 @@ SELECT
     CASE WHEN f.leads > 0 THEN f.spend / f.leads ELSE 0 END AS cost_per_lead,
     CASE WHEN f.messenger_convo_started > 0 THEN f.spend / f.messenger_convo_started ELSE 0 END AS cost_per_messaging
 
-FROM {{ ref('stg_fb_ads_insights') }} f
-LEFT JOIN {{ ref('stg_fb_ads') }} a ON f.ad_id = a.ad_id
-LEFT JOIN {{ ref('stg_fb_adsets') }} s ON f.adset_id = s.adset_id
-LEFT JOIN {{ ref('stg_fb_campaigns') }} c ON f.campaign_id = c.campaign_id
+FROM {{ ref('stg_facebook_ads__ads_insights') }} f
+LEFT JOIN {{ ref('stg_facebook_ads__ads') }} a ON f.ad_id = a.ad_id
+LEFT JOIN {{ ref('stg_facebook_ads__adsets') }} s ON f.adset_id = s.adset_id
+LEFT JOIN {{ ref('stg_facebook_ads__campaigns') }} c ON f.campaign_id = c.campaign_id
