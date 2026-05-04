@@ -19,14 +19,14 @@ date_platform_grid AS (
 ),
 union_metrics AS (
     SELECT report_date, 'Facebook' as platform_name, SUM(spend) as spend, SUM(clicks) as clicks, SUM(impressions) as impressions 
-    FROM {{ ref('stg_fb_ads_custom_campaign_daily') }} GROUP BY 1, 2
+    FROM {{ ref('stg_facebook_ads__custom_campaign_daily') }} GROUP BY 1, 2
     UNION ALL
     SELECT report_date, 'Google', SUM(spend), SUM(clicks), SUM(impressions) 
-    FROM {{ ref('stg_gg_ads_campaign_daily') }} GROUP BY 1, 2
+    FROM {{ ref('stg_google_ads__campaign_daily') }} GROUP BY 1, 2
     UNION ALL
     -- Aggregate directly from TikTok data
     SELECT report_date, 'TikTok', SUM(spend), SUM(clicks), SUM(impressions) 
-    FROM {{ ref('stg_tt_ads_campaign_daily') }} GROUP BY 1, 2
+    FROM {{ ref('stg_tiktok_ads__campaign_daily') }} GROUP BY 1, 2
 )
 SELECT 
     grid.date_actual AS report_date,
