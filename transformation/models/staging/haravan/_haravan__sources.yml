@@ -8,3 +8,8 @@ sources:
         meta:
           dagster:
             asset_key: ["haravan", "orders"]
+            
+      - name: customers
+        meta:
+          dagster:
+            asset_key: ["haravan", "customers"]
