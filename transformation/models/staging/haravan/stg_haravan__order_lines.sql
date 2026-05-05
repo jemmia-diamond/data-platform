@@ -19,12 +19,28 @@ SELECT
     (line_item->>'product_id')::bigint AS product_id,
     (line_item->>'variant_id')::bigint AS variant_id,
     line_item->>'sku' AS sku,
+    line_item->>'barcode' AS barcode,
     line_item->>'name' AS product_name,
+    line_item->>'title' AS product_title,
+    line_item->>'variant_title' AS variant_title,
     line_item->>'type' AS product_type,
     line_item->>'vendor' AS vendor,
     (line_item->>'quantity')::int AS quantity,
+    
+    -- Financials
     (line_item->>'price')::numeric AS price,
     (line_item->>'price_original')::numeric AS original_price,
+    (line_item->>'price_promotion')::numeric AS promotion_price,
     (line_item->>'total_discount')::numeric AS total_discount,
-    line_item->>'fulfillment_status' AS fulfillment_status
+    (line_item->>'ma_cost_amount')::numeric AS ma_cost_amount,
+    
+    -- Status
+    line_item->>'fulfillment_status' AS fulfillment_status,
+    (line_item->>'gift_card')::boolean AS is_gift_card,
+    (line_item->>'taxable')::boolean AS is_taxable,
+    
+    -- Nested properties if needed later
+    line_item->'properties' AS properties_json,
+    line_item->'applied_discounts' AS applied_discounts_json
+
 FROM unnested

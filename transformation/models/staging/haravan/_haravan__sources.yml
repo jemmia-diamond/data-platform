@@ -5,3 +5,6 @@ sources:
     schema: raw_haravan  # Target schema created by dlt
     tables:
       - name: orders
+        meta:
+          dagster:
+            asset_key: ["haravan", "orders"]
