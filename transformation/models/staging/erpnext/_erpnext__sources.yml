@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: erpnext
+    schema: raw_frappe
+    tables:
+      - name: sales_orders
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "sales_orders"]
+            
+      - name: sales_order_items
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "sales_order_items"]
+            
+      - name: deleted_documents
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "deleted_documents"]
