@@ -1,0 +1,26 @@
+[32m2026-05-06 11:59:27 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__address__job - 3fa38e67-75ce-4663-b438-66bca412af37 - 41887 - LOGS_CAPTURED - Started capturing logs in process (pid: 41887).
+[32m2026-05-06 11:59:27 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__address__job - 3fa38e67-75ce-4663-b438-66bca412af37 - 41887 - frappe_dlt_assets - STEP_START - Started execution of step "frappe_dlt_assets".
+[32m2026-05-06 11:59:28 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__address__job - 3fa38e67-75ce-4663-b438-66bca412af37 - frappe_dlt_assets - Running Frappe resource=address with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_address
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 11:59:34,718|[WARNING]|41887|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'address' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+  - address_title
+  - city
+  - county
+  - fax
+  - pincode
+  - state
+  - tax_category
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 11:59:38 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__address__job - 3fa38e67-75ce-4663-b438-66bca412af37 - 41887 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__address" of type "Nothing". (Type check passed).
+[32m2026-05-06 11:59:38 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__address__job - 3fa38e67-75ce-4663-b438-66bca412af37 - 41887 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext address.
+[32m2026-05-06 11:59:38 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__address__job - 3fa38e67-75ce-4663-b438-66bca412af37 - 41887 - frappe_dlt_assets - STEP_SUCCESS - Finished execution of step "frappe_dlt_assets" in 10.85s.

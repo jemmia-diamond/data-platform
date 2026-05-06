@@ -23,3 +23,18 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "customers"]
+            
+      - name: leads
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "leads"]
+            
+      - name: contacts
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "contacts"]
+            
+      - name: address
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "address"]

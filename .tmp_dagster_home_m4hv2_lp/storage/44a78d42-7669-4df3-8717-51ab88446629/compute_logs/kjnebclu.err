@@ -1,0 +1,128 @@
+[32m2026-05-06 14:56:27 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - LOGS_CAPTURED - Started capturing logs in process (pid: 75469).
+[32m2026-05-06 14:56:27 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_START - Started execution of step "frappe_dlt_assets".
+[32m2026-05-06 14:56:27 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=access_logs with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_access_logs
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:29,106|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'access_logs' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _seen
+  - _user_tags
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:31 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__access_logs" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:31 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext access_logs.
+[32m2026-05-06 14:56:31 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=notification_settings with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_notification_settings
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:32,460|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'notification_settings' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:33 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__notification_settings" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:34 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext notification_settings.
+[32m2026-05-06 14:56:34 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=process_subscriptions with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_process_subscriptions
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:34,665|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'process_subscriptions' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+  - amended_from
+  - subscription
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:36 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__process_subscriptions" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:36 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext process_subscriptions.
+[32m2026-05-06 14:56:36 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=sales_persons with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_sales_persons
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:37,447|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'sales_persons' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+  - bizfly_id
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:39 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__sales_persons" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:39 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext sales_persons.
+[32m2026-05-06 14:56:39 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=user_permissions with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_user_permissions
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:39,723|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'user_permissions' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+  - applicable_for
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:41 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__user_permissions" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:41 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext user_permissions.
+[32m2026-05-06 14:56:41 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=users with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_users
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:42,071|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'users' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - banner_image
+  - bio
+  - default_workspace
+  - email_signature
+  - home_settings
+  - interest
+  - location
+  - mobile_no
+  - restrict_ip
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:43 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__users" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:43 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext users.
+[32m2026-05-06 14:56:43 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - frappe_dlt_assets - Running Frappe resource=view_logs with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_view_logs
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:44,499|[WARNING]|75469|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'view_logs' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:46 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__view_logs" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:46 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext view_logs.
+[32m2026-05-06 14:56:46 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__user_ops_batch__job - 44a78d42-7669-4df3-8717-51ab88446629 - 75469 - frappe_dlt_assets - STEP_SUCCESS - Finished execution of step "frappe_dlt_assets" in 19.07s.

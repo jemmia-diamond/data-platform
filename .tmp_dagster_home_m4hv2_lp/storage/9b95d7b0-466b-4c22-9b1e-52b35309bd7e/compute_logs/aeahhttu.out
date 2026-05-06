@@ -1,0 +1,69 @@
+-------------------------------- Extract frappe --------------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 0/1 (0.0%) | Time: 0.51s | Rate: 0.00/s
+customers: 1  | Time: 0.00s | Rate: 174762.67/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 0/1 (0.0%) | Time: 1.60s | Rate: 0.00/s
+customers: 4001  | Time: 1.09s | Rate: 3661.26/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 0/1 (0.0%) | Time: 2.61s | Rate: 0.00/s
+customers: 7001  | Time: 2.10s | Rate: 3330.39/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 1/1 (100.0%) | Time: 3.27s | Rate: 0.31/s
+customers: 9354  | Time: 2.76s | Rate: 3385.12/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+_dlt_pipeline_state: 1  | Time: 0.00s | Rate: 322638.77/s
+
+-------------------------------- Extract frappe --------------------------------
+Resources: 1/1 (100.0%) | Time: 0.02s | Rate: 64.11/s
+_dlt_pipeline_state: 1  | Time: 0.01s | Rate: 71.54/s
+
+--------------------- Normalize frappe in 1778043741.93118 ---------------------
+Files: 0/2 (0.0%) | Time: 0.00s | Rate: 0.00/s
+
+--------------------- Normalize frappe in 1778043741.93118 ---------------------
+Files: 0/2 (0.0%) | Time: 0.01s | Rate: 0.00/s
+_dlt_pipeline_state: 0  | Time: 0.00s | Rate: 0.00/s
+
+--------------------- Normalize frappe in 1778043741.93118 ---------------------
+Files: 1/2 (50.0%) | Time: 0.01s | Rate: 128.80/s
+_dlt_pipeline_state: 1  | Time: 0.00s | Rate: 537.66/s
+customers: 0  | Time: 0.00s | Rate: 0.00/s
+
+--------------------- Normalize frappe in 1778043741.93118 ---------------------
+Files: 1/2 (50.0%) | Time: 1.11s | Rate: 0.90/s
+_dlt_pipeline_state: 1  | Time: 1.11s | Rate: 0.90/s
+customers: 5000  | Time: 1.10s | Rate: 4527.67/s
+
+--------------------- Normalize frappe in 1778043741.93118 ---------------------
+Files: 1/2 (50.0%) | Time: 2.13s | Rate: 0.47/s
+_dlt_pipeline_state: 1  | Time: 2.13s | Rate: 0.47/s
+customers: 9354  | Time: 2.13s | Rate: 4397.69/s
+
+--------------------- Normalize frappe in 1778043741.93118 ---------------------
+Files: 2/2 (100.0%) | Time: 2.19s | Rate: 0.92/s
+_dlt_pipeline_state: 1  | Time: 2.18s | Rate: 0.46/s
+customers: 9354  | Time: 2.18s | Rate: 4295.74/s
+
+----------------------- Load frappe in 1778043741.93118 ------------------------
+Jobs: 0/3 (0.0%) | Time: 0.00s | Rate: 0.00/s
+
+----------------------- Load frappe in 1778043741.93118 ------------------------
+Jobs: 0/3 (0.0%) | Time: 1.74s | Rate: 0.00/s
+
+----------------------- Load frappe in 1778043741.93118 ------------------------
+Jobs: 2/4 (50.0%) | Time: 10.14s | Rate: 0.20/s
+
+----------------------- Load frappe in 1778043741.93118 ------------------------
+Jobs: 4/4 (100.0%) | Time: 10.70s | Rate: 0.37/s
+

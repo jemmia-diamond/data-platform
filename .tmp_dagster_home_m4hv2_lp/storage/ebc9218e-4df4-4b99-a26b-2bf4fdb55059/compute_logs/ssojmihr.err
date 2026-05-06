@@ -1,0 +1,71 @@
+[32m2026-05-06 14:56:05 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - LOGS_CAPTURED - Started capturing logs in process (pid: 75373).
+[32m2026-05-06 14:56:05 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - STEP_START - Started execution of step "frappe_dlt_assets".
+[32m2026-05-06 14:56:05 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - frappe_dlt_assets - Running Frappe resource=bank_transactions with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_bank_transactions
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:09,638|[WARNING]|75373|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'bank_transactions' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _liked_by
+  - _user_tags
+  - amended_from
+  - bank_party_account_number
+  - bank_party_iban
+  - bank_party_name
+  - description
+  - party
+  - sepay_bank_account_id
+  - sepay_sub_account
+  - transaction_id
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:12 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__bank_transactions" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:12 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext bank_transactions.
+[32m2026-05-06 14:56:12 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - frappe_dlt_assets - Running Frappe resource=buyback_exchanges with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_buyback_exchanges
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:14,009|[WARNING]|75373|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'buyback_exchanges' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _comments
+  - _liked_by
+  - _user_tags
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:16 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__buyback_exchanges" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:16 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext buyback_exchanges.
+[32m2026-05-06 14:56:16 +0700[0m - dagster - [34mINFO[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - frappe_dlt_assets - Running Frappe resource=payment_entries with start_date=2024-04-20 end_date=None full_refresh=True pipeline_name=frappe_erpnext_payment_entries
+/Users/nam/Data/Jemmia/data-platform/.venv/lib/python3.10/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+2026-05-06 14:56:18,857|[WARNING]|75373|8107187264|dlt|validate.py|verify_normalized_table:113|In schema `frappe`: The following columns in table 'payment_entries' did not receive any data during this load and therefore could not have their types inferred:
+  - _assign
+  - _user_tags
+  - amended_from
+  - auto_repeat
+  - clearance_date
+  - cost_center
+  - party_bank_account
+  - payment_order
+  - print_heading
+  - project
+  - purchase_taxes_and_charges_template
+  - reference_date
+  - reference_no
+  - sales_taxes_and_charges_template
+  - tax_withholding_category
+  - tax_withholding_group
+
+Unless type hints are provided, these columns will not be materialized in the destination.
+One way to provide type hints is to use the 'columns' argument in the '@dlt.resource' decorator.  For example:
+
+@dlt.resource(columns={'_assign': {'data_type': 'text'}})
+
+[32m2026-05-06 14:56:21 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - STEP_OUTPUT - Yielded output "ingestion__frappe__erpnext__payment_entries" of type "Nothing". (Type check passed).
+[32m2026-05-06 14:56:21 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - ASSET_MATERIALIZATION - Materialized value ingestion frappe erpnext payment_entries.
+[32m2026-05-06 14:56:21 +0700[0m - dagster - [34mDEBUG[0m - ingestion__frappe__erpnext__payments_banking_buybacks_batch__job - ebc9218e-4df4-4b99-a26b-2bf4fdb55059 - 75373 - frappe_dlt_assets - STEP_SUCCESS - Finished execution of step "frappe_dlt_assets" in 16.05s.
