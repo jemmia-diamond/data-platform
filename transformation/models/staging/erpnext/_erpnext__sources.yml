@@ -18,3 +18,8 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "deleted_documents"]
+            
+      - name: customers
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "customers"]
