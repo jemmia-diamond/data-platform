@@ -7,7 +7,8 @@ WITH unnested AS (
     SELECT
         id::bigint AS order_id,
         created_at::timestamp AS order_created_at,
-        jsonb_array_elements(line_items) AS line_item
+        jsonb_array_elements(line_items) AS line_item,
+        _db_updated_at
     FROM {{ source('haravan', 'orders') }}
     WHERE line_items IS NOT NULL AND jsonb_typeof(line_items) = 'array'
 )
@@ -39,8 +40,10 @@ SELECT
     (line_item->>'gift_card')::boolean AS is_gift_card,
     (line_item->>'taxable')::boolean AS is_taxable,
     
-    -- Nested properties if needed later
+    -- Metadata & Row Indexing
+    ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY (line_item->>'id')::bigint) AS line_item_pos,
     line_item->'properties' AS properties_json,
-    line_item->'applied_discounts' AS applied_discounts_json
+    line_item->'applied_discounts' AS applied_discounts_json,
+    _db_updated_at::timestamp AS _db_updated_at
 
 FROM unnested
