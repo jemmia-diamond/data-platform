@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: int_sales__orders
+    description: "Bảng thực thể Đơn hàng (Orders) duy nhất của doanh nghiệp, hợp nhất từ Haravan và ERPNext."
+    columns:
+      - name: erp_sales_order_id
+        description: "Primary key từ ERPNext Sales Order."
+        tests:
+          - unique
+          - not_null
+      - name: haravan_order_id
+        description: "ID từ Haravan, dùng để join với Marketing data."
+
+  - name: int_sales__order_items
+    description: "Chi tiết từng món hàng (Line Items) của đơn hàng, đã được ánh xạ giữa 2 hệ thống."
+    columns:
+      - name: sales_order_item_id
+        description: "Primary key từ ERPNext Sales Order Item."
+        tests:
+          - unique
+          - not_null
