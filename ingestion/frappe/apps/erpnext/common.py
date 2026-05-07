@@ -100,8 +100,47 @@ def _quote_literal(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+# Custom SQL overrides for specific resources that need child table data embedded as JSON.
+# Key: resource_name, Value: list of (child_table, json_column_name)
+# This avoids creating separate child tables and handles hard-delete of MultiSelect values.
+CHILD_JSON_EMBEDS: dict[str, list[tuple[str, str]]] = {
+    "leads": [
+        # (child_doctype_table, output_column_name)
+        ("tabLead Product Item", "preferred_product_types"),
+    ],
+    "sales_orders": [
+        ("tabSales Order Item", "sales_order_items"),
+        ("tabSales Team", "sales_teams"),
+        ("tabSales Order Policy", "sales_order_policies"),
+        ("tabSales Order Promotion", "sales_order_promotions"),
+        ("tabSales Order Purpose", "sales_order_purposes"),
+        ("tabSales Order Product Category", "product_categories"),
+        ("tabOrder and Debt Tracking", "order_and_debt_tracking"),
+        ("tabPayment Entry Reference", "payment_entry_references"),
+    ],
+    "sales_persons": [
+        ("tabTarget Detail", "targets"),
+    ],
+    "customers": [
+        ("tabCoupon", "coupons"),
+    ],
+    "buyback_exchanges": [
+        ("tabBuyback Exchange Item", "buyback_exchange_items"),
+    ],
+    "address": [
+        ("tabDynamic Link", "dynamic_links"),
+    ],
+    "contacts": [
+        ("tabContact Phone", "phones"),
+        ("tabContact Email", "emails"),
+        ("tabDynamic Link", "dynamic_links")
+    ]
+}
+
+
 def _build_incremental_query(
     *,
+    client: FrappeClient,
     spec: ResourceSpec,
     start_value: Optional[str],
     end_value: Optional[str],
@@ -125,6 +164,36 @@ def _build_incremental_query(
         )
 
     where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+
+    # Build JSON subquery columns for child tables (Table MultiSelect fields)
+    child_embeds = CHILD_JSON_EMBEDS.get(spec.resource_name, [])
+    json_columns = ""
+    for child_table, output_col in child_embeds:
+        child_table_quoted = _quote_identifier(child_table)
+        # Automatically get all columns for the child table as a JSON object
+        select_expr = client.get_json_object_expression(child_table)
+        json_columns += (
+            f",\n    (SELECT JSON_ARRAYAGG({select_expr}) "
+            f"FROM {child_table_quoted} "
+            f"WHERE `parent` = t.`name`) AS `{output_col}`"
+        )
+
+    # Use alias `t` when we have child embeds to allow subquery reference.
+    # WHERE clause columns must be prefixed with `t.` to avoid ambiguity with subqueries.
+    if json_columns:
+        where_sql_aliased = (
+            where_sql
+            .replace("`modified`", "t.`modified`")
+            .replace("`name`", "t.`name`")
+        )
+        return (
+            f"SELECT t.*{json_columns} "
+            f"FROM {table_name} t "
+            f"{where_sql_aliased} "
+            "ORDER BY t.`modified` ASC, t.`name` ASC "
+            f"LIMIT {DEFAULT_PAGE_SIZE}"
+        )
+
     return (
         f"SELECT * FROM {table_name} "
         f"{where_sql} "
@@ -164,6 +233,7 @@ def _build_resource(
 
         while True:
             sql = _build_incremental_query(
+                client=client,
                 spec=spec,
                 start_value=start_value,
                 end_value=end_value,

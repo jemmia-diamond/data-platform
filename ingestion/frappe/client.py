@@ -113,12 +113,41 @@ class FrappeClient:
         if isinstance(output, list):
             return [row for row in output if isinstance(row, dict)]
         if isinstance(output, str):
-            parsed = json.loads(output)
+            try:
+                parsed = json.loads(output)
+            except json.JSONDecodeError:
+                # Return raw string if not JSON (e.g. error message)
+                return []
             if isinstance(parsed, list):
                 return [row for row in parsed if isinstance(row, dict)]
             raise RuntimeError("Unexpected SQL output shape from Frappe System Console")
 
         raise RuntimeError("Unexpected SQL output type from Frappe System Console")
+
+    def get_json_object_expression(self, table_name: str) -> str:
+        """Fetch columns for a table and build a JSON_OBJECT(...) expression."""
+        if not hasattr(self, "_column_cache"):
+            self._column_cache: dict[str, str] = {}
+
+        if table_name in self._column_cache:
+            return self._column_cache[table_name]
+
+        # Query information_schema to get all columns of the child table
+        # We use a raw execute_sql call here
+        cols_raw = self.execute_sql(
+            f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+            f"WHERE TABLE_NAME = '{table_name.replace('`', '')}' "
+            f"AND TABLE_SCHEMA = DATABASE()"
+        )
+        if not cols_raw:
+            # Fallback if we can't get columns
+            return "`name`"
+
+        # Build JSON_OBJECT('col1', `col1`, 'col2', `col2`, ...)
+        pairs = [f"'{c['COLUMN_NAME']}', `{c['COLUMN_NAME']}`" for c in cols_raw]
+        expr = f"JSON_OBJECT({', '.join(pairs)})"
+        self._column_cache[table_name] = expr
+        return expr
 
 
 __all__ = ["DEFAULT_TIMEOUT_SECONDS", "FrappeClient", "normalize_frappe_datetime"]
