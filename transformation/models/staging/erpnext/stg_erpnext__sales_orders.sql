@@ -4,10 +4,10 @@
 ) }}
 
 SELECT
-    -- Primary Key: In ERPNext, the "name" field is the unique ID of the record
+    -- Primary Key
     name AS sales_order_id,
     
-    -- Order Info
+    -- Identity & Profile
     title AS order_title,
     order_number,
     order_type,
@@ -15,28 +15,30 @@ SELECT
     company,
     naming_series,
     order_policies,
-    
-    -- Customer Info
     customer AS customer_id,
     customer_name,
     customer_type,
     gender,
     birth_date::date AS birth_date,
+    
+    -- Contact Information
     contact_person,
     contact_display,
     COALESCE(contact_phone, contact_mobile) AS phone,
     contact_email,
+    
+    -- Customer Identity Documents
     customer_personal_id,
     customer_passport_id,
     custom_passport_id,
     
-    -- Address Info
+    -- Locations & Addresses
     customer_address,
     billing_address,
     delivery_location,
     deposit_location,
     
-    -- Statuses & Workflow
+    -- Statuses
     status,
     delivery_status,
     billing_status,
@@ -46,9 +48,9 @@ SELECT
     advance_payment_status,
     cancelled_status,
     return_type,
-    docstatus::int AS docstatus,
     
-    -- Currencies & Exchange Rates
+    -- Currency & Conversion
+    docstatus::int AS docstatus,
     currency,
     order_currency,
     price_list_currency,
@@ -56,7 +58,7 @@ SELECT
     conversion_rate::numeric AS conversion_rate,
     plc_conversion_rate::numeric AS plc_conversion_rate,
     
-    -- Base Financials (Converted to company base currency)
+    -- Financial Metrics (Local Currency)
     base_total::numeric AS base_total,
     base_net_total::numeric AS base_net_total,
     base_grand_total::numeric AS base_grand_total,
@@ -66,7 +68,7 @@ SELECT
     base_rounding_adjustment::numeric AS base_rounding_adjustment,
     base_in_words,
     
-    -- Transaction Financials (Transaction currency)
+    -- Financial Metrics (Transaction Currency)
     total::numeric AS total,
     net_total::numeric AS net_total,
     grand_total::numeric AS grand_total,
@@ -83,7 +85,7 @@ SELECT
     total_qty::numeric AS total_qty,
     total_net_weight::numeric AS total_net_weight,
     
-    -- Payments & Balances
+    -- Payment & Balance Info
     paid_amount::numeric AS paid_amount,
     advance_paid::numeric AS advance_paid,
     balance::numeric AS balance,
@@ -95,23 +97,21 @@ SELECT
     total_allocated_group_payment::numeric AS total_allocated_group_payment,
     return_amount::numeric AS return_amount,
     
-    -- Commissions
+    -- Commissions & Loyalty
     amount_eligible_for_commission::numeric AS amount_eligible_for_commission,
     commission_base_amount::numeric AS commission_base_amount,
     commission_rate::numeric AS commission_rate,
     total_commission::numeric AS total_commission,
-    
-    -- Loyalty Program
     loyalty_amount::numeric AS loyalty_amount,
     loyalty_points::int AS loyalty_points,
     
-    -- Progress & Fulfillment Tracking
+    -- Picking & Delivery Progress
     per_billed::numeric AS per_billed,
     per_delivered::numeric AS per_delivered,
     per_picked::numeric AS per_picked,
     tracking_number,
     
-    -- Flags & Options
+    -- Flags
     is_internal_customer::int::boolean AS is_internal_customer,
     is_split_order::int::boolean AS is_split_order,
     is_subcontracted::int::boolean AS is_subcontracted,
@@ -123,12 +123,10 @@ SELECT
     reserve_stock::int::boolean AS reserve_stock,
     skip_delivery_note::int::boolean AS skip_delivery_note,
     
-    -- Split Orders details
+    -- Grouping & Logic
     split_order_group,
     split_order_group_name,
     split_reason,
-    
-    -- Sales & Metadata
     primary_sales_person,
     selling_price_list,
     tax_category,
@@ -136,7 +134,6 @@ SELECT
     letter_head,
     owner,
     modified_by,
-    idx::int AS idx,
     
     -- Haravan Integration (Omnichannel)
     haravan_order_id,
