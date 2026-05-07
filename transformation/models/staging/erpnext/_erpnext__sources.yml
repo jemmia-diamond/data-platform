@@ -38,3 +38,8 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "address"]
+            
+      - name: lead_sources
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "lead_sources"]
