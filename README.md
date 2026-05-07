@@ -89,6 +89,15 @@ docker-compose up --build -d
 - **Database**: Host: `localhost`, Port: `5432`.
 - **Auth bootstrap**: On startup, `dagster_webserver` initializes AuthKit tables, creates the admin user if missing, and syncs the admin password from `.env`.
 
+**Using Podman instead of Docker:**
+
+Podman uses a different socket architecture than Docker. Remove any `- /var/run/docker.sock:/var/run/docker.sock` volume mounts from `docker-compose.yml`, then run:
+
+```bash
+podman-compose up --build --no-cache -d
+# UI: http://localhost:3080
+```
+
 ### First Login
 
 After `docker-compose up --build -d` completes, sign in with:
@@ -130,6 +139,12 @@ Then log in at [http://localhost:3080](http://localhost:3080) with:
    export $(cat ../.env | xargs)
    dbt build --profiles-dir .
    ```
+4. For **zsh** please use:
+   ```zsh
+   export $(grep -v '^#' ../.env | xargs)
+   ```
+
+
 
 ### 🔐 AuthKit Bootstrap Flow
 The Docker Compose webserver runs this flow automatically on startup:
