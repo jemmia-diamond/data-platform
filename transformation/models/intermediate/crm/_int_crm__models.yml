@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_crm__customers
+    description: "Unified customer profile merging ERPNext and Haravan data with aggregated order metrics."
+    columns:
+      - name: unified_customer_id
+        description: "Primary unique identifier for the customer across all systems."
+        tests:
+          - unique
+          - not_null
+      - name: full_name
+        description: "Customer's full name, prioritized from Haravan."
+      - name: email
+        description: "Customer's primary email address."
