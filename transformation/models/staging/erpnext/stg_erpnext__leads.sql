@@ -39,6 +39,7 @@ SELECT
     lead_source_platform,
     request_type,
     pancake_data,
+    preferred_product_types,
     
     -- Marketing/Subscription Flags
     blog_subscriber::int::boolean AS is_blog_subscriber,
