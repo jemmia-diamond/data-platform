@@ -11,8 +11,8 @@ from dlt.extract.resource import DltResource
 
 DEFAULT_REQUEST_TIMEOUT = 30
 DEFAULT_LIMIT = 250
-MAX_LOCATION_IDS = 50
-MAX_VARIANT_IDS = 50
+MAX_LOCATION_IDS = 5
+MAX_VARIANT_IDS = 20
 MAX_COMBINATION = 200
 MAX_429_RETRIES = 8
 BACKOFF_BASE_SECONDS = 1.0
@@ -86,8 +86,7 @@ def _chunked(items: list[str], chunk_size: int) -> Iterable[list[str]]:
         yield items[index : index + chunk_size]
 
 
-def _fetch_location_ids(*, base_url: str, headers: dict[str, str]) -> list[str]:
-    location_ids: list[str] = []
+def _fetch_location_ids(*, base_url: str, headers: dict[str, str]) -> Iterable[str]:
     page = 1
 
     while True:
@@ -103,24 +102,21 @@ def _fetch_location_ids(*, base_url: str, headers: dict[str, str]) -> list[str]:
         for location in locations:
             location_id = location.get("id")
             if location_id is not None:
-                location_ids.append(str(location_id))
+                yield str(location_id)
 
         if len(locations) < 50:
             break
 
         page += 1
 
-    return location_ids
 
-
-def _fetch_changed_variant_ids(
+def _fetch_changed_variant_ids_generator(
     *,
     base_url: str,
     headers: dict[str, str],
     updated_at_min: str,
     end_date: Optional[str],
-) -> tuple[list[str], str]:
-    changed_variant_ids: list[str] = []
+) -> Iterable[tuple[list[str], str]]:
     seen_variant_ids: set[str] = set()
     page = 1
     max_seen_updated_at = updated_at_min
@@ -145,13 +141,15 @@ def _fetch_changed_variant_ids(
         if not products:
             break
 
+        batch_variant_ids = []
         for product in products:
             product_updated_at = product.get("updated_at")
             if isinstance(product_updated_at, str):
                 product_dt = _parse_haravan_datetime(product_updated_at)
-                if product_dt and (max_seen_dt is None or product_dt > max_seen_dt):
-                    max_seen_dt = product_dt
-                    max_seen_updated_at = product_updated_at
+                if product_dt is not None:
+                    if max_seen_dt is None or product_dt > max_seen_dt:
+                        max_seen_dt = product_dt
+                        max_seen_updated_at = product_updated_at
 
             for variant in product.get("variants", []):
                 variant_id = variant.get("id")
@@ -161,13 +159,14 @@ def _fetch_changed_variant_ids(
                 if variant_id_str in seen_variant_ids:
                     continue
                 seen_variant_ids.add(variant_id_str)
-                changed_variant_ids.append(variant_id_str)
+                batch_variant_ids.append(variant_id_str)
+
+        if batch_variant_ids:
+            yield batch_variant_ids, max_seen_updated_at
 
         if len(products) < 50:
             break
         page += 1
-
-    return changed_variant_ids, max_seen_updated_at
 
 
 def _iter_inventory_locations(
@@ -199,7 +198,16 @@ def _iter_inventory_locations(
         )
         return response_json.get("inventory_locations", [])
 
-    def _iter_with_split(location_batch: list[str], variant_batch: list[str]) -> Iterable[dict]:
+    def _iter_with_split(location_batch: list[str], variant_batch: list[str], depth: int = 0) -> Iterable[dict]:
+        # Add depth to prevent infinite recursion
+        if depth >= 5:
+            logger.error(
+                "Recursion depth exceeded (>=5) for loc_id=%s variant_id=%s. Aborting this split batch to prevent infinite loop.",
+                location_batch,
+                variant_batch,
+            )
+            return
+
         since_id: str | None = None
         while True:
             try:
@@ -211,13 +219,13 @@ def _iter_inventory_locations(
             except InventoryBatchValidationError as error:
                 if len(variant_batch) > 1:
                     midpoint = len(variant_batch) // 2
-                    yield from _iter_with_split(location_batch, variant_batch[:midpoint])
-                    yield from _iter_with_split(location_batch, variant_batch[midpoint:])
+                    yield from _iter_with_split(location_batch, variant_batch[:midpoint], depth + 1)
+                    yield from _iter_with_split(location_batch, variant_batch[midpoint:], depth + 1)
                     return
                 if len(location_batch) > 1:
                     midpoint = len(location_batch) // 2
-                    yield from _iter_with_split(location_batch[:midpoint], variant_batch)
-                    yield from _iter_with_split(location_batch[midpoint:], variant_batch)
+                    yield from _iter_with_split(location_batch[:midpoint], variant_batch, depth + 1)
+                    yield from _iter_with_split(location_batch[midpoint:], variant_batch, depth + 1)
                     return
                 logger.warning(
                     "Skip invalid inventory query for loc_id=%s variant_id=%s: %s",
@@ -248,7 +256,7 @@ def _iter_inventory_locations(
     for location_batch in _chunked(location_ids, MAX_LOCATION_IDS):
         max_variant_batch = max(1, min(MAX_VARIANT_IDS, MAX_COMBINATION // len(location_batch)))
         for variant_batch in _chunked(variant_ids, max_variant_batch):
-            yield from _iter_with_split(location_batch, variant_batch)
+            yield from _iter_with_split(location_batch, variant_batch, 0)
 
 
 def _apply_inventory_hints(resource: DltResource) -> DltResource:
@@ -285,7 +293,6 @@ def build_inventory_locations_resource(
         "Content-Type": "application/json",
     }
     location_ids_cache: list[str] = []
-    variant_ids_cache: list[str] = []
 
     @dlt.resource(
         name="inventory_locations",
@@ -293,34 +300,36 @@ def build_inventory_locations_resource(
         write_disposition="merge",
     )
     def inventory_locations():
-        nonlocal location_ids_cache, variant_ids_cache
+        nonlocal location_ids_cache
         if not location_ids_cache:
-            location_ids_cache = _fetch_location_ids(base_url=base_url, headers=headers)
+            # Materialize to list because we need to iterate over locations repeatedly
+            location_ids_cache = list(_fetch_location_ids(base_url=base_url, headers=headers))
         if not location_ids_cache:
             return
 
         state = dlt.current.resource_state()
         products_updated_at_min = state.get("products_updated_at_min", start_date)
-        variant_ids_cache, max_seen_products_updated_at = _fetch_changed_variant_ids(
+
+        # Run stream generator in batches instead of loading the entire large list into memory
+        for variant_batch, max_seen_updated_at in _fetch_changed_variant_ids_generator(
             base_url=base_url,
             headers=headers,
             updated_at_min=products_updated_at_min,
             end_date=end_date,
-        )
-        if not variant_ids_cache:
-            return
-
-        for inventory_location in _iter_inventory_locations(
-            base_url=base_url,
-            headers=headers,
-            location_ids=location_ids_cache,
-            variant_ids=variant_ids_cache,
         ):
-            inventory_location["_db_updated_at"] = sync_timestamp
-            yield inventory_location
+            for inventory_location in _iter_inventory_locations(
+                base_url=base_url,
+                headers=headers,
+                location_ids=location_ids_cache,
+                variant_ids=variant_batch,
+            ):
+                inventory_location["_db_updated_at"] = sync_timestamp
+                yield inventory_location
 
-        if end_date is None:
-            state["products_updated_at_min"] = max_seen_products_updated_at
+            # Save state after each batch instead of at the end of the function.
+            # DLT will record this state along with the data pushed to the pipeline.
+            if end_date is None:
+                state["products_updated_at_min"] = max_seen_updated_at
 
     return _apply_inventory_hints(inventory_locations)
 
