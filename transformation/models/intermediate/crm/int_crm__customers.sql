@@ -9,14 +9,13 @@ WITH erpnext_customers AS (
 
 haravan_customers AS (
     SELECT * FROM {{ ref('stg_haravan__customers') }}
-),
-
-lead_sources AS (
-    SELECT * FROM {{ ref('stg_erpnext__lead_sources') }}
 )
 
 SELECT
-    -- Identity Keys
+    -- Unified Customer ID (ERPNext preferred, fallback to Haravan)
+    COALESCE(e.customer_id, h.customer_id::text) AS unified_customer_id,
+    
+    -- Identity Keys (for traceability)
     e.customer_id AS erp_customer_id,
     h.customer_id AS haravan_customer_id,
 
@@ -81,8 +80,7 @@ SELECT
     e.updated_at AS erp_updated_at,
     h.updated_at AS haravan_updated_at
 
-
 FROM erpnext_customers e
 FULL OUTER JOIN haravan_customers h 
     ON e.haravan_id = h.customer_id::text
-LEFT JOIN lead_sources ls ON e.first_source = ls.lead_source_id
+LEFT JOIN {{ ref('stg_erpnext__lead_sources') }} ls ON e.first_source = ls.lead_source_id

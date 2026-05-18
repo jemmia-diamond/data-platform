@@ -9,7 +9,16 @@ models:
         tests:
           - unique
           - not_null
-      - name: full_name
-        description: "Customer's full name, prioritized from Haravan."
-      - name: email
-        description: "Customer's primary email address."
+  
+  - name: int_crm__leads
+    description: "Cleaned and enriched Lead data from ERPNext with parsed Pancake metadata."
+    columns:
+      - name: lead_id
+        description: "Primary key for the lead from ERPNext source."
+        tests:
+          - unique
+          - not_null
+      - name: is_converted
+        description: "Boolean flag indicating if the lead was qualified/converted."
+        tests:
+          - not_null

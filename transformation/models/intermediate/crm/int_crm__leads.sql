@@ -28,15 +28,12 @@ SELECT
     lead_source_name,
     lead_source_platform,
     
-    -- Pancake Data Extraction
-    pancake_data ->> 'platform' AS pancake_platform,
-    pancake_data ->> 'page_name' AS pancake_page_name,
-    pancake_data ->> 'page_id' AS pancake_page_id,
-    pancake_data ->> 'customer_id' AS pancake_customer_id,
-    pancake_data ->> 'conversation_id' AS pancake_conversation_id,
-    
-    -- Preferred Products Summary (Optional: for quick view)
-    preferred_product_types,
+    -- Pancake Data Extraction (no need to cast to jsonb again - already JSONB in staging)
+    pancake_data::jsonb ->> 'platform' AS pancake_platform,
+    pancake_data::jsonb ->> 'page_name' AS pancake_page_name,
+    pancake_data::jsonb ->> 'page_id' AS pancake_page_id,
+    pancake_data::jsonb ->> 'customer_id' AS pancake_customer_id,
+    pancake_data::jsonb ->> 'conversation_id' AS pancake_conversation_id,
     
     -- Qualification & Status
     status,
@@ -51,7 +48,7 @@ SELECT
     preferred_product_types,
     
     -- Business Metrics (Calculated)
-    CASE WHEN qualification_status = 'Qualified' THEN 1 ELSE 0 END AS is_converted,
+    (qualification_status = 'Qualified') AS is_converted,
     
     CASE 
         WHEN qualification_status = 'Qualified' AND qualified_on IS NOT NULL AND first_reach_at IS NOT NULL 
