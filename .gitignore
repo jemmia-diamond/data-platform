@@ -3,6 +3,7 @@ AGENTS.md
 .env
 .envrc
 .venv
+.kiro
 env/
 venv/
 ENV/
