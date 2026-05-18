@@ -2,21 +2,28 @@ version: 2
 
 models:
   - name: int_sales__orders
-    description: "Bảng thực thể Đơn hàng (Orders) duy nhất của doanh nghiệp, hợp nhất từ Haravan và ERPNext."
+    description: "The single unified sales orders table for the enterprise, merging Haravan and ERPNext data."
+    depends_on:
+      - model: int_haravan__order_ancestry
+      - model: int_erpnext__order_groups
     columns:
-      - name: erp_sales_order_id
-        description: "Primary key từ ERPNext Sales Order."
+      - name: unified_sales_order_id
+        description: "Primary key of the unified sales orders table (ERPNext Sales Order ID if matched, fallback to Haravan Order ID)."
         tests:
           - unique
           - not_null
+      - name: unified_customer_id
+        description: "Foreign key linking directly to int_crm__customers under the CRM topic."
+      - name: erp_sales_order_id
+        description: "Raw source sales order ID from ERPNext."
       - name: haravan_order_id
-        description: "ID từ Haravan, dùng để join với Marketing data."
+        description: "Raw source order ID from Haravan, used for marketing data joins."
 
   - name: int_sales__order_items
-    description: "Chi tiết từng món hàng (Line Items) của đơn hàng, đã được ánh xạ giữa 2 hệ thống."
+    description: "Sales order line items mapped across both systems."
     columns:
-      - name: sales_order_item_id
-        description: "Primary key từ ERPNext Sales Order Item."
+      - name: unified_sales_order_item_id
+        description: "Primary key from ERPNext Sales Order Item."
         tests:
           - unique
           - not_null

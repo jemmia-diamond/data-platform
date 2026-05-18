@@ -1,6 +1,7 @@
 {{ config(
     materialized='view',
-    schema='intermediate'
+    schema='intermediate',
+    meta={'depends_on': ['int_haravan__order_ancestry']}
 ) }}
 
 -- For each ERPNext sales order, compute the earliest "real" order date

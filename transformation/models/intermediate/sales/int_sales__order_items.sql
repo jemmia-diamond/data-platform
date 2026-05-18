@@ -13,8 +13,12 @@ erpnext AS (
 
 SELECT
     -- Keys & Identity
-    COALESCE(h.order_id, e.haravan_order_id::bigint) AS order_id,
+
+    COALESCE(e.sales_order_id::text, h.order_id::text) AS unified_sales_order_id,
+    COALESCE(e.sales_order_item_id::text,h.line_item_id::text) AS unified_sales_order_item_id,
+
     e.sales_order_id AS erp_sales_order_id,
+    h.order_id as haravan_order_id,
     h.line_item_id AS haravan_line_item_id,
     e.sales_order_item_id AS erp_sales_order_item_id,
     

@@ -1,6 +1,9 @@
 {{ config(
     materialized='view',
-    schema='intermediate'
+    schema='intermediate',
+    meta={
+        'depends_on': ['int_haravan__order_ancestry', 'int_erpnext__order_groups']
+    }
 ) }}
 
 -- Unified sales orders: FULL OUTER JOIN Haravan ↔ ERPNext
@@ -25,6 +28,7 @@ eg AS (
 
 SELECT
     -- Keys
+    COALESCE(e.sales_order_id::text,h.order_id::text) AS unified_sales_order_id,
     COALESCE(h.order_number, e.order_number) AS order_number,
     COALESCE(eg.first_order_at, ha.first_order_at, e.real_order_date::timestamp, h.created_at) AS first_order_at,
     e.sales_order_id AS erp_sales_order_id,
@@ -33,6 +37,7 @@ SELECT
     COALESCE(e.split_order_group_name, h.order_number) AS split_order_group_name,
 
     -- Customer
+    COALESCE(h.customer_id::text, e.customer_id::text) AS unified_customer_id,
     e.customer_id AS erp_customer_id,
     h.customer_id::text AS haravan_customer_id,
     COALESCE(h.billing_name, e.customer_name) AS customer_name,
