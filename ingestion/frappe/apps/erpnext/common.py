@@ -53,7 +53,7 @@ RESOURCE_SPECS = (
 
     # === Contact ===
     ResourceSpec("contacts", "Contact"),
-    ResourceSpec("address", "Address"),
+    ResourceSpec("addresses", "Address"),
 
     # ==== Account ===
     ResourceSpec("payment_entries", "Payment Entry"),
@@ -127,7 +127,7 @@ CHILD_JSON_EMBEDS: dict[str, list[tuple[str, str]]] = {
     "buyback_exchanges": [
         ("tabBuyback Exchange Item", "buyback_exchange_items"),
     ],
-    "address": [
+    "addresses": [
         ("tabDynamic Link", "dynamic_links"),
     ],
     "contacts": [
