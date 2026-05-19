@@ -110,7 +110,15 @@ SELECT
     per_delivered::numeric AS per_delivered,
     per_picked::numeric AS per_picked,
     tracking_number,
-    
+
+    -- Child Tables
+    {{ safe_cast_jsonb('payment_entry_references') }} as payment_entry_references,
+    {{ safe_cast_jsonb('product_categories') }} as product_categories,
+    {{ safe_cast_jsonb('sales_order_policies') }} as sales_order_policies,
+    {{ safe_cast_jsonb('sales_order_purposes') }} as sales_order_purposes,
+    {{ safe_cast_jsonb('sales_teams') }} as sales_teams,
+    {{ safe_cast_jsonb('order_and_debt_tracking') }} as order_and_debt_tracking,
+
     -- Flags
     is_internal_customer::int::boolean AS is_internal_customer,
     is_split_order::int::boolean AS is_split_order,
@@ -155,9 +163,9 @@ SELECT
     modified::timestamp AS updated_at,
     
     -- Frappe Internal & DLT Metadata
-    _seen,
-    _comments,
-    _assign,
+    {{ safe_cast_jsonb('_seen') }} as _seen,
+    {{ safe_cast_jsonb('_comments') }} as _comments,
+    {{ safe_cast_jsonb('_assign') }} as _assign,
     _liked_by,
     _db_updated_at::timestamp AS _db_updated_at,
     _dlt_load_id,
