@@ -83,10 +83,10 @@ SELECT
     modified_by,
     
     -- Frappe Internal & Metadata
-    _user_tags,
-    _assign,
-    _comments,
-    _liked_by,
+    {{ safe_cast_jsonb('_user_tags') }} as _user_tags,
+    {{ safe_cast_jsonb('_assign') }} as _assign,
+    {{ safe_cast_jsonb('_comments') }} as _comments,
+    {{ safe_cast_jsonb('_liked_by') }} as _liked_by,
     
     -- DLT Metadata
     _db_updated_at::timestamp AS _db_updated_at,
