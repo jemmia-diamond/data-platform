@@ -22,3 +22,13 @@ models:
         description: "Boolean flag indicating if the lead was qualified/converted."
         tests:
           - not_null
+
+  - name: int_crm__contacts
+    columns:
+      - name: contact_id
+        description: "Primary key for the contact from ERPNext source."
+        tests:
+          - unique
+          - not_null
+
+
