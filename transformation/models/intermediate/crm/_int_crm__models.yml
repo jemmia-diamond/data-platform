@@ -31,4 +31,19 @@ models:
           - unique
           - not_null
 
+  - name: int_crm__addressses
+    columns:
+      - name: address_id
+        description: "Primary key for the address from ERPNext source."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_crm__address_links
+    columns:
+      - name: address_link_id
+        description: "Primary key for the address links from ERPNext source."
+        tests:
+          - unique
+          - not_null
 

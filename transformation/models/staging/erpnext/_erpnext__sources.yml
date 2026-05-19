@@ -34,10 +34,10 @@ sources:
           dagster:
             asset_key: ["frappe_erpnext", "contacts"]
             
-      - name: address
+      - name: addresses
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "address"]
+            asset_key: ["frappe_erpnext", "addresses"]
             
       - name: lead_sources
         meta:

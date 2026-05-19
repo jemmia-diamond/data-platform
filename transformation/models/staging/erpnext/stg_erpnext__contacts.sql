@@ -125,7 +125,7 @@ SELECT
     
     -- Frappe Internal & Metadata
     _assign,
-    CASE 
+    CASE
         WHEN dynamic_links IS NOT NULL AND dynamic_links::text IS JSON THEN dynamic_links::jsonb
         ELSE NULL
     END AS dynamic_links,

@@ -16,6 +16,10 @@ SELECT
     district,
     province,
     country,
+    CASE  
+        WHEN dynamic_links IS NOT NULL AND dynamic_links::text IS JSON THEN dynamic_links::jsonb
+        ELSE NULL
+    END AS dynamic_links,
     
     -- Contact Details
     email_id AS email,
@@ -45,7 +49,7 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('erpnext', 'address') }}
+FROM {{ source('erpnext', 'addresses') }}
 WHERE name NOT IN (
     SELECT deleted_name
     FROM {{ source('erpnext', 'deleted_documents') }}
