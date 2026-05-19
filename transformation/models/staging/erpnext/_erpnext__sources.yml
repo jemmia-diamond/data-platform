@@ -43,3 +43,23 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "lead_sources"]
+
+      - name: regions
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "regions"]
+
+      - name: lead_budgets
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "lead_budgets"]
+      
+      - name: lead_demands
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "lead_demands"]
+
+      - name: lead_products
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "lead_producs"]

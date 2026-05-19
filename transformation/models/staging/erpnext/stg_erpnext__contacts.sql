@@ -74,7 +74,10 @@ SELECT
     utm_campaign,
     utm_term,
     utm_content,
-    ad_ids,
+    CASE 
+        WHEN ad_ids IS NOT NULL AND ad_ids::text IS JSON THEN ad_ids::jsonb
+        ELSE NULL
+    END AS ad_ids,
     gclid,
     gad_source,
     gad_campaignid,
@@ -122,6 +125,13 @@ SELECT
     
     -- Frappe Internal & Metadata
     _assign,
+    CASE 
+        WHEN dynamic_links IS NOT NULL AND dynamic_links::text IS JSON THEN dynamic_links::jsonb
+        ELSE NULL
+    END AS dynamic_links,
+    emails::jsonb,
+    phones::jsonb,
+
     
     -- DLT Metadata
     _db_updated_at::timestamp AS _db_updated_at,
