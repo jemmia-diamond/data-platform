@@ -45,6 +45,7 @@ htmlcov/
 .DS_Store
 .tmp_dagster_home_*/
 .kilo/
+kilo.json
 .continue/
 .roocode/
 
