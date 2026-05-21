@@ -57,6 +57,7 @@ def nocodb_assets(
             dlt_source=build_nocodb_source(
                 start_date=config.start_date,
                 end_date=config.end_date,
+                full_refresh=config.full_refresh,
             ),
             dlt_pipeline=build_nocodb_pipeline(),
             refresh=refresh,
@@ -75,6 +76,7 @@ def nocodb_assets(
             dlt_source=build_nocodb_source(
                 start_date=config.start_date,
                 end_date=config.end_date,
+                full_refresh=config.full_refresh,
             ).with_resources(resource_name),
             dlt_pipeline=build_nocodb_pipeline(pipeline_name=pipeline_name),
             refresh=refresh,

@@ -17,6 +17,7 @@ def nocodb_source(
     end_date: Optional[str] = None,
     base_url: str = dlt.config.value,
     api_token: str = dlt.secrets.value,
+    full_refresh: bool = False,
 ) -> tuple[DltResource, ...]:
     return tuple(
         build_table_resource(
@@ -25,6 +26,7 @@ def nocodb_source(
             api_token=api_token,
             start_date=start_date,
             end_date=end_date,
+            full_refresh=full_refresh,
         )
         for spec in TABLE_SPECS
     )
@@ -32,6 +34,7 @@ def nocodb_source(
 def build_nocodb_source(
     start_date: str = DEFAULT_START_DATE,
     end_date: Optional[str] = None,
+    full_refresh: bool = False,
     *,
     base_url: Optional[str] = None,
     api_token: Optional[str] = None,
@@ -40,6 +43,7 @@ def build_nocodb_source(
     source_kwargs = {
         "start_date": start_date,
         "end_date": end_date,
+        "full_refresh": full_refresh,
     }
     if base_url is not None:
         source_kwargs["base_url"] = base_url
