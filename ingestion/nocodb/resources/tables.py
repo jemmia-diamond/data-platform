@@ -64,10 +64,13 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
     ),
     TableSpec(
         resource_name="moissanite",
-        table_id="mclycd3c777xn04",
+        table_id="mohak48lzcj6de0",
         primary_key="id",
         incremental_field="database_updated_at",
-        fields="id,final_encoded_rfid,moissanite_id,title,barcode,database_created_at,database_updated_at",
+        fields="id,product_group,shape,length,width,color,clarity,fluorescence,cut,polish,symmetry,product_group_norm,shape_norm,length_norm,width_norm,color_norm,clarity_norm,fluorescence_norm,cut_norm,polish_norm,symmetry_norm,haravan_product_id,haravan_variant_id,auto_create,title,price,barcode,moissanite_serials,database_updated_at",
+        column_hints={
+            "database_updated_at": {"data_type": "timestamp"},
+        },
     ),
     TableSpec(
         resource_name="diamond_price_list",
