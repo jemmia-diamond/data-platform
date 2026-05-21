@@ -9,7 +9,11 @@ services:
     ports:
       - "5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DAGSTER_POSTGRES_USER} -d ${DAGSTER_POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DAGSTER_POSTGRES_USER} -d ${DAGSTER_POSTGRES_DB}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -44,6 +48,8 @@ services:
       SOURCES__FRAPPE__BASE_URL: ${SOURCES__FRAPPE__BASE_URL}
       SOURCES__FRAPPE__API_KEY: ${SOURCES__FRAPPE__API_KEY}
       SOURCES__FRAPPE__API_SECRET: ${SOURCES__FRAPPE__API_SECRET}
+      SOURCES__NOCODB__BASE_URL: ${SOURCES__NOCODB__BASE_URL}
+      SOURCES__NOCODB__API_TOKEN: ${SOURCES__NOCODB__API_TOKEN}
     ports:
       - "4000:4000"
     networks:
