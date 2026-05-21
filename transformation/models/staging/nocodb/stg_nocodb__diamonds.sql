@@ -22,6 +22,8 @@ SELECT
     original_code,
     sku,
     product_name,
+    product_id as haravan_product_id,
+    variant_id as haravan_variant_id,
     qty_onhand::int,
     qty_available::int,
     qty_commited::int,

@@ -60,7 +60,7 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="m4qggn3vyz5qyqi",
         primary_key="id",
         incremental_field="database_updated_at",
-        fields="id,barcode,report_lab,report_no,price,cogs,product_group,shape,cut,color,clarity,fluorescence,edge_size_1,edge_size_2,carat,original_code,SKU,product_name,qty_onhand,qty_available,qty_commited,qty_incoming,vendor,published_scope,is_incoming,is_have_invoice,country_of_origin,database_created_at,database_updated_at",
+        fields="id,barcode,report_lab,report_no,price,cogs,product_group,shape,cut,color,clarity,fluorescence,edge_size_1,edge_size_2,carat,original_code,SKU,product_id,variant_id,product_name,qty_onhand,qty_available,qty_commited,qty_incoming,vendor,published_scope,is_incoming,is_have_invoice,country_of_origin,database_created_at,database_updated_at",
     ),
     TableSpec(
         resource_name="moissanite",
