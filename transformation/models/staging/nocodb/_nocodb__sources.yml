@@ -1,0 +1,85 @@
+version: 2
+
+sources:
+  - name: nocodb
+    schema: raw_nocodb
+    tables:
+      - name: designs
+        meta:
+          dagster:
+            asset_key: ["nocodb", "designs"]
+
+      - name: design_details
+        meta:
+          dagster:
+            asset_key: ["nocodb", "design_details"]
+
+      - name: design_design_images
+        meta:
+          dagster:
+            asset_key: ["nocodb", "design_design_images"]
+
+      - name: diamonds
+        meta:
+          dagster:
+            asset_key: ["nocodb", "diamonds"]
+
+      - name: moissanite
+        meta:
+          dagster:
+            asset_key: ["nocodb", "moissanite"]
+
+      - name: diamond_price_list
+        meta:
+          dagster:
+            asset_key: ["nocodb", "diamond_price_list"]
+
+      - name: products
+        meta:
+          dagster:
+            asset_key: ["nocodb", "products"]
+
+      - name: variants
+        meta:
+          dagster:
+            asset_key: ["nocodb", "variants"]
+
+      - name: variant_serials
+        meta:
+          dagster:
+            asset_key: ["nocodb", "variant_serials"]
+
+      - name: temporary_products
+        meta:
+          dagster:
+            asset_key: ["nocodb", "temporary_products"]
+
+      - name: jewelries
+        meta:
+          dagster:
+            asset_key: ["nocodb", "jewelries"]
+
+      - name: variants_haravan_collection
+        meta:
+          dagster:
+            asset_key: ["nocodb", "variants_haravan_collection"]
+
+      - name: products_haravan_collection
+        meta:
+          dagster:
+            asset_key: ["nocodb", "products_haravan_collection"]
+
+      - name: diamonds_haravan_collection
+        meta:
+          dagster:
+            asset_key: ["nocodb", "diamonds_haravan_collection"]
+
+      - name: collections
+        meta:
+          dagster:
+            asset_key: ["nocodb", "collections"]
+
+      - name: haravan_collections
+        meta:
+          dagster:
+            asset_key: ["nocodb", "haravan_collections"]
