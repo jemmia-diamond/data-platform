@@ -29,7 +29,7 @@ class TransformationDagsterDbtTranslator(DagsterDbtTranslator):
                 ]
             )
 
-        layer = dbt_resource_props.get("schema") or (folder_parts[0] if folder_parts else None)
+        layer = folder_parts[0] if folder_parts else dbt_resource_props.get("schema")
         remaining_parts = folder_parts[1:] if folder_parts else []
 
         asset_path = ["transformation"]
