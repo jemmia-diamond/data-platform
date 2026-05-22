@@ -62,7 +62,7 @@ sources:
       - name: lead_products
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "lead_producs"]
+            asset_key: ["frappe_erpnext", "lead_products"]
 
       - name: sales_persons
         meta:

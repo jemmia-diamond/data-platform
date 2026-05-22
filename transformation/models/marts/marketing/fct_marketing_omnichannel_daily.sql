@@ -1,6 +1,6 @@
 {{ config(
     materialized='materialized_view',
-    schema='analytics'
+    schema='marts_marketing'
 ) }}
 
 WITH platform_list AS (

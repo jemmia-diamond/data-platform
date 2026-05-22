@@ -11,6 +11,12 @@ WITH unnested_products AS (
     FROM {{ source('erpnext', 'leads') }}
     WHERE preferred_product_types IS NOT NULL 
       AND preferred_product_types::text <> '[]'
+      AND name NOT IN (
+          SELECT deleted_name
+          FROM {{ source('erpnext', 'deleted_documents') }}
+          WHERE deleted_doctype = 'Lead'
+            AND (restored IS NULL OR restored = 0)
+      )
 )
 
 SELECT 
