@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: int_inventory__serials
+    description: "Physical stock — serial-tracked finished products from NocoDB variant_serials."
+    columns:
+      - name: item_id
+        description: "Primary key (serial_id)."
+        tests:
+          - unique
+          - not_null
+      - name: serial_number
+        description: "Serial number of the physical item."
+      - name: variant_id
+        description: "Parent variant ID."
+      - name: item_name
+        description: "Display name of the physical item."
+      - name: category
+        description: "Product category (haravan_product_type)."
+      - name: stock_location
+        description: "Current stock location."
+      - name: fulfillment_status_value
+        description: "Fulfillment status."
+      - name: barcode
+        description: "Barcode of the physical item."
+      - name: price
+        description: "Selling price."
+      - name: cogs
+        description: "Cost of goods sold."
+      - name: quantity
+        description: "Stock quantity."
+
+  - name: int_inventory__stock_by_location
+    description: "Haravan variant stock enriched with warehouse name and product info — grain is (location_id, variant_id)."
+    columns:
+      - name: location_id
+        description: "Haravan location/warehouse ID."
+        tests:
+          - not_null
+      - name: location_name
+        description: "Warehouse display name."
+      - name: variant_id
+        description: "Haravan variant ID."
+        tests:
+          - not_null
+      - name: product_id
+        description: "Parent Haravan product ID."
+      - name: product_title
+        description: "Product display name."
+      - name: product_type
+        description: "Product category or type."
+      - name: sku
+        description: "Variant SKU."
+      - name: barcode
+        description: "Variant barcode."
+      - name: variant_title
+        description: "Variant display name."
+      - name: variant_price
+        description: "Variant selling price."
+      - name: qty_onhand
+        description: "Physical stock on hand at this location."
+      - name: qty_commited
+        description: "Stock committed to open orders at this location."
+      - name: qty_incoming
+        description: "Stock incoming (in-transit) to this location."
+      - name: qty_available
+        description: "Net available stock at this location."
