@@ -1,0 +1,339 @@
+version: 2
+
+models:
+  - name: stg_haravan__products
+    description: "Product catalog — one row per Haravan product with aggregated variant and image metadata."
+    columns:
+      - name: product_id
+        description: "Haravan product primary key."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Product display name."
+      - name: handle
+        description: "URL-friendly product handle (slug)."
+      - name: body_html
+        description: "Product description in HTML."
+      - name: template_suffix
+        description: "Liquid template suffix."
+      - name: product_type
+        description: "Product category or type."
+      - name: vendor
+        description: "Product vendor / brand."
+      - name: published_scope
+        description: "Scope where the product is published (web, global, or app)."
+      - name: published_at
+        description: "Timestamp when the product was published."
+      - name: tags
+        description: "Comma-separated product tags."
+      - name: variant_count
+        description: "Number of variants associated with this product."
+      - name: image_count
+        description: "Number of images associated with this product."
+      - name: only_hide_from_list
+        description: "Whether the product is hidden from listing pages."
+      - name: not_allow_promotion
+        description: "Whether the product is excluded from promotions."
+      - name: created_at
+        description: "Timestamp when the product was created in Haravan."
+      - name: updated_at
+        description: "Timestamp when the product was last updated in Haravan."
+
+  - name: stg_haravan__product_variants
+    description: "Variant-level detail — one row per Haravan product variant, unnested from the products JSON array."
+    columns:
+      - name: variant_id
+        description: "Haravan variant primary key."
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Parent Haravan product ID."
+        tests:
+          - not_null
+      - name: variant_title
+        description: "Variant display name."
+      - name: sku
+        description: "Stock keeping unit."
+      - name: barcode
+        description: "Product barcode."
+      - name: price
+        description: "Variant selling price."
+      - name: compare_at_price
+        description: "Original price before discount."
+      - name: position
+        description: "Variant position within the product variant list."
+      - name: option1
+        description: "First variant option (e.g. Size)."
+      - name: option2
+        description: "Second variant option (e.g. Color)."
+      - name: option3
+        description: "Third variant option (e.g. Material)."
+      - name: taxable
+        description: "Whether the variant is taxable."
+      - name: image_id
+        description: "Haravan asset ID for the variant's primary image."
+      - name: inventory_quantity
+        description: "Current inventory quantity."
+      - name: old_inventory_quantity
+        description: "Inventory quantity before the last update."
+      - name: inventory_policy
+        description: "Inventory policy (e.g. continue, deny)."
+      - name: fulfillment_service
+        description: "Fulfillment service provider."
+      - name: requires_shipping
+        description: "Whether this variant requires physical shipping."
+      - name: inventory_management
+        description: "Inventory management service (null = manual)."
+      - name: grams
+        description: "Variant weight in grams."
+      - name: weight
+        description: "Variant weight value."
+      - name: weight_unit
+        description: "Weight unit (g, kg, lb, oz)."
+      - name: qty_onhand
+        description: "On-hand quantity from inventory advance."
+      - name: qty_commited
+        description: "Committed quantity from inventory advance."
+      - name: qty_incoming
+        description: "Incoming quantity from inventory advance."
+      - name: qty_available
+        description: "Net available quantity from inventory advance."
+      - name: created_at
+        description: "Timestamp when the variant was created."
+      - name: updated_at
+        description: "Timestamp when the variant was last updated."
+
+  - name: stg_haravan__product_images
+    description: "Product images — one row per image, unnested from the products JSON array."
+    columns:
+      - name: image_id
+        description: "Image primary key."
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Parent Haravan product ID."
+        tests:
+          - not_null
+      - name: src
+        description: "Image URL."
+      - name: filename
+        description: "Image filename."
+      - name: position
+        description: "Image position within the product gallery."
+      - name: variant_ids
+        description: "JSON array of variant IDs this image is associated with."
+      - name: created_at
+        description: "Timestamp when the image was created."
+      - name: updated_at
+        description: "Timestamp when the image was last updated."
+
+  - name: stg_haravan__product_options
+    description: "Product options (e.g. Size, Color) — one row per option, unnested from the products JSON array."
+    columns:
+      - name: option_id
+        description: "Option ID (may be 0 for auto-generated)."
+      - name: product_id
+        description: "Parent Haravan product ID."
+        tests:
+          - not_null
+      - name: name
+        description: "Option display name (e.g. 'Size', 'Color')."
+      - name: position
+        description: "Option position within the product option list."
+
+  - name: stg_haravan__custom_collections
+    description: "Haravan custom collections — manually curated product groupings."
+    columns:
+      - name: collection_id
+        description: "Haravan custom collection primary key."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Collection display name."
+      - name: handle
+        description: "URL-friendly collection handle (slug)."
+      - name: published
+        description: "Whether the collection is publicly published."
+        tests:
+          - not_null
+      - name: published_scope
+        description: "Scope where the collection is published."
+      - name: published_at
+        description: "Timestamp when the collection was published."
+      - name: sort_order
+        description: "Manual sort order within collection listings."
+      - name: template_suffix
+        description: "Liquid template suffix applied to the collection page."
+      - name: body_html
+        description: "Rich-text collection description in HTML."
+      - name: image
+        description: "Collection image (JSON object with src, alt, etc.)."
+      - name: updated_at
+        description: "Timestamp when the collection was last updated."
+
+  - name: stg_haravan__locations
+    description: "Haravan warehouse/fulfillment locations."
+    columns:
+      - name: location_id
+        description: "Haravan location primary key."
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: "Warehouse display name."
+      - name: location_type
+        description: "Location type (e.g. warehouse, store)."
+      - name: email
+        description: "Contact email for this location."
+      - name: address1
+        description: "Street address."
+      - name: city
+        description: "City."
+      - name: zip
+        description: "Postal/zip code."
+      - name: province
+        description: "Province/state."
+      - name: province_code
+        description: "Province/state code."
+      - name: district
+        description: "District."
+      - name: district_code
+        description: "District code."
+      - name: ward
+        description: "Ward."
+      - name: ward_code
+        description: "Ward code."
+      - name: country
+        description: "Country."
+      - name: phone
+        description: "Contact phone."
+      - name: is_primary
+        description: "Whether this is the primary location."
+      - name: is_unavailable_quantity
+        description: "Whether stock at this location is unavailable for sale."
+      - name: type
+        description: "Location type classification."
+      - name: status
+        description: "Location status."
+      - name: created_at
+        description: "Timestamp when the location was created."
+      - name: updated_at
+        description: "Timestamp when the location was last updated."
+
+  - name: stg_haravan__inventory_locations
+    description: "Per-location variant stock levels — one row per (location, variant) pair."
+    columns:
+      - name: inventory_id
+        description: "Haravan inventory record ID."
+        tests:
+          - unique
+          - not_null
+      - name: location_id
+        description: "Haravan location ID."
+        tests:
+          - not_null
+      - name: variant_id
+        description: "Haravan variant ID."
+        tests:
+          - not_null
+      - name: product_id
+        description: "Haravan product ID."
+        tests:
+          - not_null
+      - name: qty_onhand
+        description: "Physical stock on hand at this location."
+      - name: qty_commited
+        description: "Stock committed to open orders."
+      - name: qty_incoming
+        description: "Stock incoming (in-transit) to this location."
+      - name: qty_available
+        description: "Net available stock at this location."
+      - name: updated_at
+        description: "Timestamp when inventory was last updated."
+
+  - name: stg_haravan__events
+    description: "Haravan event log — tracks actions on orders, products, and other resources."
+    columns:
+      - name: event_id
+        description: "Event primary key."
+        tests:
+          - unique
+          - not_null
+      - name: verb
+        description: "Action verb (e.g. created, updated, cancelled)."
+      - name: author
+        description: "User who performed the action."
+      - name: subject_id
+        description: "ID of the resource this event relates to."
+      - name: subject_type
+        description: "Type of the resource (e.g. Order, Product)."
+      - name: message
+        description: "Human-readable event description."
+      - name: arguments
+        description: "Event arguments as JSON."
+      - name: path
+        description: "Admin path to the resource."
+      - name: created_at
+        description: "Timestamp when the event occurred."
+
+  - name: stg_haravan__users
+    description: "Haravan staff user accounts."
+    columns:
+      - name: user_id
+        description: "User primary key."
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "User first name."
+      - name: last_name
+        description: "User last name."
+      - name: email
+        description: "User email address."
+      - name: phone
+        description: "User phone number."
+      - name: account_owner
+        description: "Whether this user is the account owner."
+      - name: receive_announcements
+        description: "Email announcement preference."
+      - name: user_type
+        description: "User role type (e.g. regular, restricted)."
+      - name: permissions
+        description: "User permissions as JSON."
+
+  - name: stg_haravan__smart_collections
+    description: "Haravan smart collections — auto-generated product groupings based on rules."
+    columns:
+      - name: collection_id
+        description: "Smart collection primary key."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Collection display name."
+      - name: handle
+        description: "URL-friendly collection handle (slug)."
+      - name: published
+        description: "Whether the collection is publicly published."
+      - name: published_scope
+        description: "Scope where the collection is published."
+      - name: published_at
+        description: "Timestamp when the collection was published."
+      - name: sort_order
+        description: "Sort order for products in this collection."
+      - name: template_suffix
+        description: "Liquid template suffix."
+      - name: body_html
+        description: "Collection description in HTML."
+      - name: image
+        description: "Collection image (JSON)."
+      - name: rules
+        description: "Auto-collection rules (JSON array of conditions)."
+      - name: disjunctive
+        description: "True = match ANY rule (OR), False = match ALL rules (AND)."
+      - name: updated_at
+        description: "Timestamp when the collection was last updated."

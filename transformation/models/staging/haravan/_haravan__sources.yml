@@ -2,14 +2,54 @@ version: 2
 
 sources:
   - name: haravan
-    schema: raw_haravan  # Target schema created by dlt
+    schema: raw_haravan
     tables:
       - name: orders
         meta:
           dagster:
             asset_key: ["haravan", "orders"]
-            
+
       - name: customers
         meta:
           dagster:
             asset_key: ["haravan", "customers"]
+
+      - name: products
+        meta:
+          dagster:
+            asset_key: ["haravan", "products"]
+
+      - name: product_variants
+        meta:
+          dagster:
+            asset_key: ["haravan", "product_variants"]
+
+      - name: custom_collections
+        meta:
+          dagster:
+            asset_key: ["haravan", "custom_collections"]
+
+      - name: smart_collections
+        meta:
+          dagster:
+            asset_key: ["haravan", "smart_collections"]
+
+      - name: locations
+        meta:
+          dagster:
+            asset_key: ["haravan", "locations"]
+
+      - name: inventory_locations
+        meta:
+          dagster:
+            asset_key: ["haravan", "inventory_locations"]
+
+      - name: events
+        meta:
+          dagster:
+            asset_key: ["haravan", "events"]
+
+      - name: users
+        meta:
+          dagster:
+            asset_key: ["haravan", "users"]
