@@ -3,6 +3,7 @@
 .envrc
 .venv
 .kiro
+CONTEXT.md
 env/
 venv/
 ENV/
