@@ -5,12 +5,12 @@ from ..common import ExecutionUnitSpec, validate_execution_units
 
 def _asset_paths(*model_names: str) -> tuple[tuple[str, ...], ...]:
     return tuple(
-        ("transformation", "analytics", "marketing", model_name)
+        ("transformation", "marts", "marketing", model_name)
         for model_name in model_names
     )
 
 
-MARKETING_TRANSFORMATION_EXECUTION_UNITS = validate_execution_units(
+MARKETING_MARTS_EXECUTION_UNITS = validate_execution_units(
     (
         ExecutionUnitSpec(
             layer="transformation",
@@ -31,4 +31,4 @@ MARKETING_TRANSFORMATION_EXECUTION_UNITS = validate_execution_units(
 )
 
 
-__all__ = ["MARKETING_TRANSFORMATION_EXECUTION_UNITS"]
+__all__ = ["MARKETING_MARTS_EXECUTION_UNITS"]

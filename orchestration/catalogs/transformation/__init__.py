@@ -1,5 +1,16 @@
-from .marketing import MARKETING_TRANSFORMATION_EXECUTION_UNITS
+from .marts_core import CORE_MARTS_EXECUTION_UNITS
+from .marts_marketing import MARKETING_MARTS_EXECUTION_UNITS
+from .marts_sales import SALES_MARTS_EXECUTION_UNITS
 
-all_execution_units = MARKETING_TRANSFORMATION_EXECUTION_UNITS
+all_execution_units = (
+    MARKETING_MARTS_EXECUTION_UNITS
+    + SALES_MARTS_EXECUTION_UNITS
+    + CORE_MARTS_EXECUTION_UNITS
+)
 
-__all__ = ["MARKETING_TRANSFORMATION_EXECUTION_UNITS", "all_execution_units"]
+__all__ = [
+    "CORE_MARTS_EXECUTION_UNITS",
+    "MARKETING_MARTS_EXECUTION_UNITS",
+    "SALES_MARTS_EXECUTION_UNITS",
+    "all_execution_units",
+]
