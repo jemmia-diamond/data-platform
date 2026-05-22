@@ -62,6 +62,7 @@ SELECT
     -- Ownership
     lead_owner,
     is_assigned,
+    _assign ->> 0 AS assigned_to,
     
     -- Metadata
     _db_updated_at
