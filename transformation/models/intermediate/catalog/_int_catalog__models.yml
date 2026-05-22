@@ -1,0 +1,265 @@
+version: 2
+
+models:
+  - name: int_catalog__designs
+    description: "Enriched design library with aggregated image metadata from NocoDB."
+    columns:
+      - name: design_id
+        description: "Primary key for the design."
+        tests:
+          - unique
+          - not_null
+      - name: design_code
+        description: "Current design code used in production."
+      - name: design_status
+        description: "Active or archived status."
+      - name: design_type
+        description: "Type of jewelry design (e.g., ring, earring, pendant)."
+      - name: published_scope
+        description: "JSON array of sales channels where this design is published."
+      - name: image_count
+        description: "Total number of design images."
+      - name: has_synced_image
+        description: "True if at least one image has been synced to Haravan."
+
+  - name: int_catalog__products
+    description: "Product catalog at listing level — Haravan products enriched with NocoDB design info."
+    columns:
+      - name: product_id
+        description: "Haravan product primary key."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Product display name on Haravan."
+      - name: handle
+        description: "URL-friendly product handle (slug)."
+      - name: body_html
+        description: "Product description in HTML."
+      - name: product_type
+        description: "Product category on Haravan (e.g. Nhẫn Nữ, Bông Tai)."
+      - name: vendor
+        description: "Product vendor / brand."
+      - name: published_scope
+        description: "Scope where the product is published."
+      - name: published_at
+        description: "Timestamp when the product was published on Haravan."
+      - name: tags
+        description: "Comma-separated product tags."
+      - name: variant_count
+        description: "Number of variants on Haravan."
+        tests:
+          - not_null
+      - name: image_count
+        description: "Number of images on Haravan."
+      - name: only_hide_from_list
+        description: "Whether the product is hidden from listing pages."
+      - name: not_allow_promotion
+        description: "Whether the product is excluded from promotions."
+      - name: template_suffix
+        description: "Liquid template suffix."
+      - name: created_at
+        description: "Timestamp when the product was created on Haravan."
+      - name: updated_at
+        description: "Timestamp when the product was last updated on Haravan."
+      - name: nocodb_product_id
+        description: "NocoDB product ID if matched, null for Haravan-only products."
+      - name: design_id
+        description: "NocoDB design ID (from NocoDB enrichment)."
+      - name: design_code
+        description: "Design code (from NocoDB enrichment)."
+      - name: nocodb_price_min
+        description: "Minimum price from NocoDB."
+      - name: nocodb_price_max
+        description: "Maximum price from NocoDB."
+      - name: estimated_gold_weight
+        description: "Estimated gold weight from NocoDB."
+      - name: has_360
+        description: "Whether the product has 360-degree images (from NocoDB)."
+
+  - name: int_catalog__variants
+    description: "Variant-level sellable items — Haravan variants enriched with NocoDB jewelry/diamond/moissanite details."
+    columns:
+      - name: variant_id
+        description: "Haravan variant primary key."
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Parent Haravan product ID."
+        tests:
+          - not_null
+      - name: product_title
+        description: "Parent product display name on Haravan."
+      - name: product_type
+        description: "Product category on Haravan."
+      - name: product_handle
+        description: "Parent product URL handle."
+      - name: vendor
+        description: "Product vendor."
+      - name: published_scope
+        description: "Scope where the product is published."
+      - name: published_at
+        description: "Timestamp when the product was published."
+      - name: variant_title
+        description: "Variant display name on Haravan."
+      - name: sku
+        description: "Variant SKU."
+      - name: barcode
+        description: "Variant barcode."
+      - name: price
+        description: "Variant selling price on Haravan."
+      - name: compare_at_price
+        description: "Original price before discount."
+      - name: position
+        description: "Variant position within the product."
+      - name: option1
+        description: "First variant option."
+      - name: option2
+        description: "Second variant option."
+      - name: option3
+        description: "Third variant option."
+      - name: taxable
+        description: "Whether the variant is taxable."
+      - name: requires_shipping
+        description: "Whether this variant requires shipping."
+      - name: grams
+        description: "Variant weight in grams."
+      - name: weight
+        description: "Variant weight value."
+      - name: weight_unit
+        description: "Weight unit."
+      - name: inventory_quantity
+        description: "Total inventory quantity."
+      - name: inventory_policy
+        description: "Inventory policy."
+      - name: fulfillment_service
+        description: "Fulfillment service provider."
+      - name: inventory_management
+        description: "Inventory management service."
+      - name: qty_onhand
+        description: "On-hand quantity from Haravan inventory advance."
+      - name: qty_commited
+        description: "Committed quantity from Haravan inventory advance."
+      - name: qty_incoming
+        description: "Incoming quantity from Haravan inventory advance."
+      - name: qty_available
+        description: "Available quantity from Haravan inventory advance."
+      - name: image_id
+        description: "Haravan image ID for this variant."
+      - name: created_at
+        description: "Timestamp when the variant was created."
+      - name: updated_at
+        description: "Timestamp when the variant was last updated."
+      - name: nocodb_variant_id
+        description: "NocoDB variant ID if jewelry, null otherwise."
+      - name: design_code
+        description: "Design code (from NocoDB jewelry variant)."
+      - name: design_type
+        description: "Design type (from NocoDB jewelry variant)."
+      - name: fineness
+        description: "Gold fineness (from NocoDB jewelry variant)."
+      - name: material_color
+        description: "Material color (from NocoDB jewelry variant)."
+      - name: size_type
+        description: "Size type (from NocoDB jewelry variant)."
+      - name: ring_size
+        description: "Ring size (from NocoDB jewelry variant)."
+      - name: estimated_gold_weight
+        description: "Estimated gold weight (from NocoDB jewelry variant)."
+      - name: final_discount_price
+        description: "Final discount price (from NocoDB jewelry variant)."
+      - name: diamond_id
+        description: "NocoDB diamond ID if matched, null otherwise."
+      - name: diamond_carat
+        description: "Diamond carat weight (from NocoDB diamond)."
+      - name: diamond_shape
+        description: "Diamond shape (from NocoDB diamond)."
+      - name: diamond_color
+        description: "Diamond color grade (from NocoDB diamond)."
+      - name: diamond_clarity
+        description: "Diamond clarity grade (from NocoDB diamond)."
+      - name: diamond_cut
+        description: "Diamond cut grade (from NocoDB diamond)."
+      - name: diamond_cogs
+        description: "Cost of goods sold (from NocoDB diamond)."
+      - name: diamond_vendor
+        description: "Diamond vendor (from NocoDB diamond)."
+      - name: report_lab
+        description: "Diamond certificate lab (from NocoDB diamond)."
+      - name: report_no
+        description: "Diamond certificate number (from NocoDB diamond)."
+      - name: diamond_edge_size_1
+        description: "Diamond edge size 1 (from NocoDB diamond)."
+      - name: diamond_edge_size_2
+        description: "Diamond edge size 2 (from NocoDB diamond)."
+      - name: diamond_qty_onhand
+        description: "Diamond on-hand quantity from NocoDB."
+      - name: diamond_qty_available
+        description: "Diamond available quantity from NocoDB."
+      - name: diamond_qty_commited
+        description: "Diamond committed quantity from NocoDB."
+      - name: diamond_qty_incoming
+        description: "Diamond incoming quantity from NocoDB."
+      - name: diamond_is_incoming
+        description: "Diamond incoming flag from NocoDB."
+      - name: diamond_is_have_invoice
+        description: "Diamond has invoice flag from NocoDB."
+      - name: diamond_country_of_origin
+        description: "Diamond country of origin (from NocoDB)."
+      - name: diamond_original_code
+        description: "Diamond original code (from NocoDB)."
+      - name: diamond_product_name
+        description: "Diamond product name (from NocoDB)."
+      - name: moissanite_id
+        description: "NocoDB moissanite ID if matched, null otherwise."
+      - name: moissanite_product_group
+        description: "Moissanite product group (e.g. Kim cương CVD, Moissanite màu)."
+      - name: moissanite_shape
+        description: "Moissanite shape (e.g. Round, Oval, Cushion, Marquise, etc.)."
+      - name: length
+        description: "Moissanite length (numeric)."
+      - name: width
+        description: "Moissanite width (numeric)."
+      - name: moissanite_color
+        description: "Moissanite color grade."
+      - name: moissanite_clarity
+        description: "Moissanite clarity grade."
+      - name: moissanite_fluorescence
+        description: "Moissanite fluorescence intensity."
+      - name: moissanite_cut
+        description: "Moissanite cut grade."
+      - name: moissanite_polish
+        description: "Moissanite polish grade."
+      - name: moissanite_symmetry
+        description: "Moissanite symmetry grade."
+      - name: moissanite_price
+        description: "Moissanite selling price from NocoDB."
+      - name: moissanite_haravan_product_id
+        description: "Haravan product ID (from NocoDB moissanite)."
+      - name: moissanite_haravan_variant_id
+        description: "Haravan variant ID (from NocoDB moissanite)."
+      - name: auto_create
+        description: "Auto-create product flag (from NocoDB moissanite)."
+      - name: moissanite_serials
+        description: "Total moissanite serial count (from NocoDB moissanite)."
+      - name: moissanite_product_group_norm
+        description: "Normalized moissanite product group."
+      - name: moissanite_shape_norm
+        description: "Normalized moissanite shape."
+      - name: length_norm
+        description: "Normalized moissanite length."
+      - name: width_norm
+        description: "Normalized moissanite width."
+      - name: moissanite_color_norm
+        description: "Normalized moissanite color grade."
+      - name: moissanite_clarity_norm
+        description: "Normalized moissanite clarity grade."
+      - name: moissanite_fluorescence_norm
+        description: "Normalized moissanite fluorescence intensity."
+      - name: moissanite_cut_norm
+        description: "Normalized moissanite cut grade."
+      - name: moissanite_polish_norm
+        description: "Normalized moissanite polish grade."
+      - name: moissanite_symmetry_norm
+        description: "Normalized moissanite symmetry grade."
