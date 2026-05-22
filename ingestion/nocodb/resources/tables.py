@@ -19,7 +19,6 @@ class TableSpec:
     view_id: Optional[str] = None
     fields: Optional[str] = None
     column_hints: dict[str, dict[str, str]] = field(default_factory=dict)
-    nullable_defaults: dict[str, Any] = field(default_factory=dict)
 
 
 # --- R&D ------------------------------------------------------------------
@@ -136,7 +135,6 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         primary_key=["diamond_id", "haravan_collection_id", "position"],
         incremental_field="database_updated_at",
         fields="diamond_id,haravan_collection_id,position,is_primary,synced_at,created_at,database_updated_at",
-        nullable_defaults={"position": 0},
     ),
     TableSpec(
         resource_name="collections",
@@ -231,9 +229,6 @@ def build_table_resource(
         }
     )
     resource.max_table_nesting = 0
-    if spec.nullable_defaults:
-        defaults = spec.nullable_defaults
-        resource.add_map(lambda item, d=defaults: {**item, **{k: d[k] for k in d if item.get(k) is None}})
     return resource
 
 
