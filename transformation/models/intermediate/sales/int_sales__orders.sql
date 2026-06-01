@@ -52,6 +52,7 @@ SELECT
     e.conversion_rate,
     e.selling_price_list,
     e.tax_category,
+    e.customer_type as order_customer_type,
 
     -- Dates
     
