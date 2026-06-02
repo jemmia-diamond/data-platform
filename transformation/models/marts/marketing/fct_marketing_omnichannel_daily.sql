@@ -12,7 +12,7 @@ date_platform_grid AS (
     SELECT 
         d.date_actual,
         p.platform_name
-    FROM {{ ref('dim_dates') }} d
+    FROM {{ ref('dim_marketing_dates') }} d
     CROSS JOIN platform_list p
     WHERE d.date_actual <= CURRENT_DATE 
       AND d.date_actual >= '2020-01-01'

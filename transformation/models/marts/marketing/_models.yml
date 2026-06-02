@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: fct_marketing_omnichannel_daily
+    description: "Daily marketing spend aggregate across Facebook, Google, and TikTok on a date x platform grid."
+    columns:
+      - name: marketing_perf_key
+        description: "Primary key — MD5 hash of report_date + platform_name."
+        tests:
+          - unique
+          - not_null
+      - name: report_date
+        description: "Foreign key to dim_dates."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_actual
+      - name: platform_name
+        description: "Advertising platform name."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Facebook', 'Google', 'TikTok']
+
+  - name: fct_marketing_facebook_ads_daily
+    description: "Daily Facebook ads fact at ad granularity with campaign, adset, and ad enrichment."
+    columns:
+      - name: fact_fb_ads_key
+        description: "Primary key from staging."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_marketing_dates
+    description: "View alias of dim_dates for self-contained Metabase schema access."
+    columns:
+      - name: date_actual
+        description: "Primary key — actual calendar date."
+        tests:
+          - unique
+          - not_null

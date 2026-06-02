@@ -1,0 +1,157 @@
+version: 2
+
+models:
+  - name: fct_sales_orders
+    description: "Retail sales order fact table. Grain: 1 row = 1 valid confirmed order. Excludes draft, test, cancelled, and compensation orders."
+    columns:
+      - name: order_id
+        description: "Primary key — unified sales order ID."
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key to dim_sales_customers. Known gap: 96 Haravan-only customers not yet in dim."
+      - name: sales_channel
+        description: "Sales channel translated to Vietnamese."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'POS - Hà Nội'
+                  - 'POS - Hồ Chí Minh'
+                  - 'POS - Cần Thơ'
+                  - 'POS - Chưa xác định'
+                  - 'Nhân viên'
+                  - 'Kênh online'
+      - name: payment_status
+        description: "Payment status translated to Vietnamese."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Đã thanh toán'
+                  - 'Chờ thanh toán'
+                  - 'Thanh toán một phần'
+                  - 'Đã hoàn tiền'
+                  - 'Hoàn tiền một phần'
+      - name: fulfillment_status
+        description: "Fulfillment status translated to Vietnamese."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Đã giao hàng'
+                  - 'Chưa giao hàng'
+                  - 'Chưa xác định'
+      - name: processing_status
+        description: "Processing status translated to Vietnamese."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Hoàn tất'
+                  - 'Đã hủy'
+                  - 'Tự giao hàng'
+                  - 'Đã xác nhận'
+                  - 'Chờ xử lý'
+                  - 'Chưa xác định'
+      - name: order_customer_type
+        description: "Customer type — Khách mới or Khách cũ."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Khách mới'
+                  - 'Khách cũ'
+
+  - name: fct_sales_order_items
+    description: "Order-item-level sales fact. INNER JOINs fct_sales_orders to inherit valid-order filters."
+    columns:
+      - name: order_item_key
+        description: "Primary key for the sales order item."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "Foreign key to fct_sales_orders."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sales_orders')
+                field: order_id
+      - name: customer_id
+        description: "Foreign key to dim_sales_customers inherited from the order. Known gap: 260 items reference customers not yet in dim."
+        tests:
+          - not_null
+      - name: product_key
+        description: "Foreign key to dim_sales_products (variant_id). NULL if item has no variant."
+
+  - name: fct_sales_attributions
+    description: "Order-level sales attribution — splits order revenue to sales people by ERPNext sales team percentages."
+    columns:
+      - name: attribution_key
+        description: "Primary key — order_id x sales_team_id."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "Foreign key to fct_sales_orders."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sales_orders')
+                field: order_id
+      - name: sales_person_key
+        description: "Foreign key to dim_sales_persons."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_sales_persons')
+                field: sales_person_id
+
+  - name: dim_sales_products
+    description: "Variant-grain product dimension from catalog."
+    columns:
+      - name: product_key
+        description: "Primary key — variant ID."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_sales_customers
+    description: "Customer dimension — profile from CRM enriched with order metrics."
+    columns:
+      - name: customer_id
+        description: "Primary key — unified customer ID."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_sales_persons
+    description: "Sales person dimension with active, presale, region, store, and position fields."
+    columns:
+      - name: sales_person_id
+        description: "Primary key — ERPNext sales person ID."
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_sales_targets_monthly
+    description: "Monthly salesperson target fact."
+    columns:
+      - name: sales_target_key
+        description: "Primary key for monthly salesperson target records."
+        tests:
+          - unique
+          - not_null
+      - name: sales_person_key
+        description: "Foreign key to dim_sales_persons."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_sales_persons')
+                field: sales_person_id
