@@ -67,7 +67,7 @@ models:
   - name: fct_sales_order_items
     description: "Order-item-level sales fact. INNER JOINs fct_sales_orders to inherit valid-order filters."
     columns:
-      - name: order_item_key
+      - name: order_item_id
         description: "Primary key for the sales order item."
         tests:
           - unique
