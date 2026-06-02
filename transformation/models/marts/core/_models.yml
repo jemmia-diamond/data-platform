@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: dim_dates
+    description: "Shared date dimension generated from 2020-01-01 to 2030-12-31."
+    columns:
+      - name: date_actual
+        description: "Primary key — actual calendar date."
+        tests:
+          - unique
+          - not_null

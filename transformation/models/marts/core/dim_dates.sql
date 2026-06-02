@@ -4,7 +4,8 @@
 ) }}
 
 SELECT
-    datum AS date_actual,
+    datum AS date_timestamp,
+    datum::date AS date_actual,
     TO_CHAR(datum, 'TMDay') AS day_name,
     EXTRACT(ISODOW FROM datum) AS day_of_week,
     EXTRACT(DAY FROM datum) AS day_of_month,
