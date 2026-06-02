@@ -37,10 +37,7 @@ with_roots AS (
     SELECT
         e.sales_order_id,
         e.split_order_group,
-        LEAST(
-            COALESCE(ha.first_order_at, h.created_at),
-            e.real_order_date::timestamp
-        ) AS individual_root_date
+        COALESCE(ha.first_order_at, h.created_at, e.real_order_date::timestamp) AS individual_root_date
     FROM erpnext_orders e
     LEFT JOIN haravan_orders h ON e.haravan_order_id = h.order_id::text
     LEFT JOIN haravan_ancestry ha ON h.order_id = ha.order_id
