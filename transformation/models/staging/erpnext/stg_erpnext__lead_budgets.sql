@@ -25,9 +25,11 @@ SELECT
     _dlt_id
 
 FROM {{ source('erpnext', 'lead_budgets') }}
-WHERE name NOT IN (
-    SELECT deleted_name
-    FROM {{ source('erpnext', 'deleted_documents') }}
-    WHERE deleted_doctype = 'Lead Budget'
-    AND (restored IS NULL OR restored = 0)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM {{ source('erpnext', 'deleted_documents') }} dd
+    WHERE dd.deleted_doctype = 'Lead Budget'
+      AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = name
+      AND dd.data::jsonb->>'budget_label' = budget_label
 )

@@ -27,9 +27,11 @@ SELECT
     _dlt_id
 
 FROM {{ source('erpnext', 'lead_sources') }}
-WHERE name NOT IN (
-    SELECT deleted_name
-    FROM {{ source('erpnext', 'deleted_documents') }}
-    WHERE deleted_doctype = 'Lead Source'
-    AND (restored IS NULL OR restored = 0)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM {{ source('erpnext', 'deleted_documents') }} dd
+    WHERE dd.deleted_doctype = 'Lead Source'
+      AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = name
+      AND dd.data::jsonb->>'source_name' = source_name
 )

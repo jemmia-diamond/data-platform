@@ -11,11 +11,13 @@ WITH unnested_products AS (
     FROM {{ source('erpnext', 'leads') }}
     WHERE preferred_product_types IS NOT NULL 
       AND preferred_product_types::text <> '[]'
-      AND name NOT IN (
-          SELECT deleted_name
-          FROM {{ source('erpnext', 'deleted_documents') }}
-          WHERE deleted_doctype = 'Lead'
-            AND (restored IS NULL OR restored = 0)
+      AND NOT EXISTS (
+          SELECT 1
+          FROM {{ source('erpnext', 'deleted_documents') }} dd
+          WHERE dd.deleted_doctype = 'Lead'
+            AND (dd.restored IS NULL OR dd.restored = 0)
+            AND dd.deleted_name = name
+            AND dd.data::jsonb->>'lead_name' = lead_name
       )
 )
 

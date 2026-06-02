@@ -172,9 +172,11 @@ SELECT
     _dlt_id
 
 FROM {{ source('erpnext', 'sales_orders') }}
-WHERE name NOT IN (
-    SELECT deleted_name
-    FROM {{ source('erpnext', 'deleted_documents') }}
-    WHERE deleted_doctype = 'Sales Order'
-      AND (restored IS NULL OR restored = 0)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM {{ source('erpnext', 'deleted_documents') }} dd
+    WHERE dd.deleted_doctype = 'Sales Order'
+      AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = name
+      AND dd.data::jsonb->>'order_number' = order_number
 )

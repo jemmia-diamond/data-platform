@@ -39,9 +39,11 @@ SELECT
     _db_updated_at
 
 FROM {{ source('erpnext', 'sales_persons') }}
-WHERE name NOT IN (
-    SELECT deleted_name
-    FROM {{ source('erpnext', 'deleted_documents') }}
-    WHERE deleted_doctype = 'Sales Person'
-      AND (restored IS NULL OR restored = 0)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM {{ source('erpnext', 'deleted_documents') }} dd
+    WHERE dd.deleted_doctype = 'Sales Person'
+      AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = name
+      AND dd.data::jsonb->>'sales_person_name' = sales_person_name
 )

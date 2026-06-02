@@ -14,11 +14,13 @@ WITH unnested_items AS (
     FROM {{ source('erpnext', 'sales_orders') }}
     WHERE sales_order_items IS NOT NULL 
       AND sales_order_items::text <> '[]'
-      AND name NOT IN (
-          SELECT deleted_name
-          FROM {{ source('erpnext', 'deleted_documents') }}
-          WHERE deleted_doctype = 'Sales Order'
-            AND (restored IS NULL OR restored = 0)
+      AND NOT EXISTS (
+          SELECT 1
+          FROM {{ source('erpnext', 'deleted_documents') }} dd
+          WHERE dd.deleted_doctype = 'Sales Order'
+            AND (dd.restored IS NULL OR dd.restored = 0)
+            AND dd.deleted_name = name
+            AND dd.data::jsonb->>'order_number' = order_number
       )
 )
 
