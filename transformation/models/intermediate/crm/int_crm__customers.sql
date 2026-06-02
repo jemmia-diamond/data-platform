@@ -81,6 +81,6 @@ SELECT
     h.updated_at AS haravan_updated_at
 
 FROM erpnext_customers e
-FULL OUTER JOIN haravan_customers h 
+LEFT JOIN haravan_customers h 
     ON e.haravan_id = h.customer_id::text
 LEFT JOIN {{ ref('stg_erpnext__lead_sources') }} ls ON e.first_source = ls.lead_source_id

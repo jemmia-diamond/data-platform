@@ -37,12 +37,12 @@ SELECT
     COALESCE(e.split_order_group_name, h.order_number) AS split_order_group_name,
 
     -- Customer
-    COALESCE(h.customer_id::text, e.customer_id::text) AS unified_customer_id,
+    COALESCE(e.customer_id::text, h.customer_id::text) AS unified_customer_id,
     e.customer_id AS erp_customer_id,
     h.customer_id::text AS haravan_customer_id,
-    COALESCE(h.billing_name, e.customer_name) AS customer_name,
-    COALESCE(h.contact_email, e.contact_email) AS customer_email,
-    COALESCE(h.billing_phone, e.phone) AS customer_phone,
+    COALESCE(e.customer_name, h.billing_name ) AS customer_name,
+    COALESCE(e.contact_email,h.contact_email ) AS customer_email,
+    COALESCE(e.phone, h.billing_phone) AS customer_phone,
     h.staff_user_id AS haravan_staff_user_id,
 
     -- Order Profile
