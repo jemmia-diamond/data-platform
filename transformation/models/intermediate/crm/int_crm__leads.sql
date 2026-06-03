@@ -45,7 +45,6 @@ SELECT
     lead_received_date,
     first_reach_at AS lead_entry_at, -- Using first_reach_at as the primary entry point per user request
     qualified_on AS converted_at,
-    preferred_product_types,
     
     -- Business Metrics (Calculated)
     (qualification_status = 'Qualified') AS is_converted,
@@ -63,6 +62,11 @@ SELECT
     lead_owner,
     is_assigned,
     _assign ->> 0 AS assigned_to,
+    
+    -- References
+    budget_lead,
+    purpose_lead,
+    preferred_product_types,
     
     -- Metadata
     _db_updated_at

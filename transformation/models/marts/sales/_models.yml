@@ -184,3 +184,87 @@ models:
         description: "MTD gross revenue / monthly target. NULL when no target."
       - name: month_progress_pct
         description: "Day of month / days in month. Indicates time progress."
+
+  - name: dim_sales_lead_sources
+    description: "Lead source dimension — lookup table for lead origination channels (Facebook pages, Zalo, etc.)."
+    columns:
+      - name: lead_source_id
+        description: "Primary key — ERPNext lead source ID."
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_sales_leads
+    description: "Lead fact table. Grain: 1 row = 1 lead from ERPNext. Includes conversion metrics, sales person attribution, and source info."
+    columns:
+      - name: lead_id
+        description: "Primary key — ERPNext lead ID."
+        tests:
+          - unique
+          - not_null
+      - name: sales_person_key
+        description: "Foreign key to dim_sales_persons. NULL if lead is unassigned."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_sales_persons')
+                field: sales_person_id
+      - name: lead_status
+        description: "Lead status translated to Vietnamese."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Lead'
+                  - 'Đã chuyển đổi'
+                  - 'Đã đạt chất lượng'
+                  - 'Spam'
+                  - 'Cơ hội'
+                  - 'Quan tâm'
+                  - 'Không liên lạc'
+                  - 'Đã liên lạc'
+      - name: qualification_status
+        description: "Qualification status translated to Vietnamese."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Đã đạt chất lượng'
+                  - 'Chưa đạt chất lượng'
+      - name: is_converted
+        description: "Boolean flag indicating if the lead was qualified/converted."
+        tests:
+          - not_null
+      - name: budget_lead
+        description: "Budget range reference ID (e.g. CRM-LEAD-BUDGET-0005)."
+      - name: budget_label
+        description: "Budget range label (e.g. > 120 Triệu, 30 - 50 Triệu)."
+      - name: budget_from
+        description: "Budget range lower bound in VND."
+      - name: budget_to
+        description: "Budget range upper bound in VND."
+      - name: purpose_lead
+        description: "Demand/purpose reference ID (e.g. CRM-LEAD-DEMAND-0011)."
+      - name: demand_label
+        description: "Demand/purpose label (e.g. Mua cầu hôn, Mua cho bản thân)."
+
+  - name: fct_sales_lead_preferred_products
+    description: "Bridge table for lead preferred products. Grain: 1 row = 1 lead × 1 preferred product. 1 lead can have many products (1-n)."
+    columns:
+      - name: preferred_product_id
+        description: "Primary key — unique row ID from ERPNext child table."
+        tests:
+          - unique
+          - not_null
+      - name: lead_id
+        description: "Foreign key to fct_sales_leads."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sales_leads')
+                field: lead_id
+      - name: product_type
+        description: "Product type reference ID (e.g. CRM-LEAD-PRODUCT-0014)."
+      - name: product_label
+        description: "Product type label (e.g. Kim cương viên, Nhẫn Nữ, Dây Chuyền)."

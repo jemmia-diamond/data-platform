@@ -47,3 +47,54 @@ models:
           - unique
           - not_null
 
+  - name: int_crm__lead_sources
+    description: "Lead source lookup table from ERPNext."
+    columns:
+      - name: lead_source_id
+        description: "Primary key for the lead source."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_crm__lead_products
+    description: "Lead product type lookup table from ERPNext."
+    columns:
+      - name: lead_product_id
+        description: "Primary key for the lead product type."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_crm__lead_demands
+    description: "Lead demand/purpose lookup table from ERPNext."
+    columns:
+      - name: lead_demand_id
+        description: "Primary key for the lead demand."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_crm__lead_budgets
+    description: "Lead budget range lookup table from ERPNext."
+    columns:
+      - name: lead_budget_id
+        description: "Primary key for the lead budget range."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_crm__lead_preferred_products
+    description: "Lead preferred products bridge — 1 lead can have many preferred products (1-n). Unnested from JSON array."
+    columns:
+      - name: preferred_product_id
+        description: "Primary key — unique row from ERPNext child table."
+        tests:
+          - unique
+          - not_null
+      - name: lead_id
+        description: "Foreign key to int_crm__leads."
+        tests:
+          - not_null
+      - name: product_type
+        description: "Product type reference ID (e.g. CRM-LEAD-PRODUCT-0014)."
+
