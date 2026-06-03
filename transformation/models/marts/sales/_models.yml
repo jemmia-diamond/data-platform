@@ -155,3 +155,28 @@ models:
               arguments:
                 to: ref('dim_sales_persons')
                 field: sales_person_id
+
+  - name: fct_sales_kpi_daily
+    description: "Daily sales KPI — actual vs target per sales person per day with MTD cumulative. Grain: 1 row = 1 sales_person × 1 date."
+    columns:
+      - name: kpi_daily_key
+        description: "Primary key — sales_person_key:date_actual."
+        tests:
+          - unique
+          - not_null
+      - name: sales_person_key
+        description: "Foreign key to dim_sales_persons."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_sales_persons')
+                field: sales_person_id
+      - name: date_actual
+        description: "Foreign key to dim_sales_dates."
+        tests:
+          - not_null
+      - name: mtd_achievement_gross_pct
+        description: "MTD gross revenue / monthly target. NULL when no target."
+      - name: month_progress_pct
+        description: "Day of month / days in month. Indicates time progress."
