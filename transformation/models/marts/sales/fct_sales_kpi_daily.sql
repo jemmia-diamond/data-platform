@@ -1,6 +1,12 @@
 {{ config(
-    materialized='table',
-    schema='marts_sales'
+    materialized='materialized_view',
+    schema='marts_sales',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_fsk_sales_person_key ON {{ this }} (sales_person_key)",
+      "CREATE INDEX IF NOT EXISTS idx_fsk_date_actual ON {{ this }} USING brin (date_actual)",
+      "CREATE INDEX IF NOT EXISTS idx_fsk_sales_region_name ON {{ this }} (sales_region_name)",
+      "CREATE INDEX IF NOT EXISTS idx_fsk_person_date ON {{ this }} (sales_person_key, date_actual)",
+    ]
 ) }}
 
 WITH daily_actuals AS (

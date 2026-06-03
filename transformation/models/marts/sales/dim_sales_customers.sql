@@ -1,6 +1,10 @@
 {{ config(
     materialized='table',
-    schema='marts_sales'
+    schema='marts_sales',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_dsc_customer_id ON {{ this }} (customer_id)",
+      "CREATE INDEX IF NOT EXISTS idx_dsc_province ON {{ this }} (default_province)",
+    ]
 ) }}
 
 -- Customer dimension — profile from CRM enriched with order metrics

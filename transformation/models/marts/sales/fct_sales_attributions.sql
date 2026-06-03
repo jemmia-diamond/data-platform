@@ -1,6 +1,11 @@
 {{ config(
-    materialized='table',
-    schema='marts_sales'
+    materialized='materialized_view',
+    schema='marts_sales',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_fsa_order_id ON {{ this }} (order_id)",
+      "CREATE INDEX IF NOT EXISTS idx_fsa_sales_person_key ON {{ this }} (sales_person_key)",
+      "CREATE INDEX IF NOT EXISTS idx_fsa_date ON {{ this }} USING brin (order_date)",
+    ]
 ) }}
 
 WITH orders AS (

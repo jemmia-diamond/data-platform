@@ -1,6 +1,12 @@
 {{ config(
-    materialized='table',
-    schema='marts_sales'
+    materialized='materialized_view',
+    schema='marts_sales',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_fsi_order_id ON {{ this }} (order_id)",
+      "CREATE INDEX IF NOT EXISTS idx_fsi_product_key ON {{ this }} (product_key)",
+      "CREATE INDEX IF NOT EXISTS idx_fsi_customer_id ON {{ this }} (customer_id)",
+      "CREATE INDEX IF NOT EXISTS idx_fsi_order_product ON {{ this }} (order_id, product_key)",
+    ]
 ) }}
 
 WITH items AS (

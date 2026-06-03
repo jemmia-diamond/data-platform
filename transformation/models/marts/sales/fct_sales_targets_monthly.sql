@@ -1,6 +1,10 @@
 {{ config(
-    materialized='table',
-    schema='marts_sales'
+    materialized='materialized_view',
+    schema='marts_sales',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_fstm_sales_person_key ON {{ this }} (sales_person_key)",
+      "CREATE INDEX IF NOT EXISTS idx_fstm_region ON {{ this }} (sales_region_name)",
+    ]
 ) }}
 
 WITH targets AS (

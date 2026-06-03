@@ -1,6 +1,11 @@
 {{ config(
     materialized='table',
-    schema='marts_sales'
+    schema='marts_sales',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_dsp_product_key ON {{ this }} (product_key)",
+      "CREATE INDEX IF NOT EXISTS idx_dsp_product_id ON {{ this }} (product_id)",
+      "CREATE INDEX IF NOT EXISTS idx_dsp_product_type ON {{ this }} (product_type)",
+    ]
 ) }}
 
 WITH catalog_variants AS (
