@@ -1,5 +1,5 @@
 {{ config(
-    materialized='materialized_view',
+    materialized='table',
     schema='marts_sales'
 ) }}
 
@@ -19,6 +19,7 @@ SELECT
     operational_status,
     operational_status = 'Active' AS is_active,
     sales_position = 'Presale' AS is_presale,
+    sales_region_name,
     region_name,
     store_name,
     sales_position,

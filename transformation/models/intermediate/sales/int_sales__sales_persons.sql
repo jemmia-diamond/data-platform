@@ -23,16 +23,18 @@ staff_with_parent_config as (
         emp.updated_at,
         emp._db_updated_at,
         
-        -- If the employee is 'Presale Team' or 'BOD', use their own name. 
-        -- Otherwise, inherit the naming configuration from their parent group.
         case 
             when emp.sales_person_name in ('Presale Team', 'BOD') then emp.sales_person_name
             else par.sales_person_name 
-        end as config_name
+        end as config_name,
+
+        sr.sales_region_name
 
     from staging_sales_persons emp
     left join staging_sales_persons par 
         on emp.parent_sales_person = par.sales_person_id
+    left join {{ ref('int_sales__regions') }} sr
+        on emp.sales_region = sr.region_id
     where emp.docstatus < 2 
       and emp.is_group = false
 ),
@@ -69,7 +71,16 @@ select
     updated_at,
     _db_updated_at,
 
-    -- Standardized Geography & Structure (Region Mapping)
+    COALESCE(
+        sales_region_name,
+        CASE region_code
+            WHEN 'HN' THEN 'Miền Bắc'
+            WHEN 'HCM' THEN 'Miền Nam'
+            WHEN 'CT' THEN 'Miền Tây'
+            ELSE 'Miền Nam'
+        END
+    ) AS sales_region_name,
+
     case 
         when config_name in ('Presale Team', 'BOD') then 'National'
         when region_code = 'HN' then 'Hà Nội'

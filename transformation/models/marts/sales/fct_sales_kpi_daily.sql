@@ -1,5 +1,5 @@
 {{ config(
-    materialized='materialized_view',
+    materialized='table',
     schema='marts_sales'
 ) }}
 
@@ -19,6 +19,7 @@ WITH daily_actuals AS (
 target_months AS (
     SELECT
         t.sales_person_key,
+        t.sales_region_name,
         t.target_month_start,
         t.target_month_end,
         EXTRACT(DAY FROM t.target_month_end)::int AS days_in_month,
@@ -32,6 +33,7 @@ target_months AS (
 daily_targets AS (
     SELECT
         tm.sales_person_key,
+        tm.sales_region_name,
         d.date_actual,
         tm.monthly_target_amount / tm.days_in_month AS daily_target_amount,
         tm.monthly_target_quantity / tm.days_in_month AS daily_target_quantity,
@@ -46,9 +48,15 @@ daily_targets AS (
         ON d.date_actual BETWEEN tm.target_month_start AND tm.target_month_end
 ),
 
+persons AS (
+    SELECT sales_person_id, sales_region_name
+    FROM {{ ref('dim_sales_persons') }}
+),
+
 kpi AS (
     SELECT
         COALESCE(a.sales_person_key, t.sales_person_key) AS sales_person_key,
+        COALESCE(pa.sales_region_name, pt.sales_region_name) AS sales_region_name,
         COALESCE(a.date_actual, t.date_actual) AS date_actual,
 
         COALESCE(a.actual_gross_amount, 0) AS actual_gross_amount,
@@ -68,14 +76,69 @@ kpi AS (
         COALESCE(t.day_of_month, EXTRACT(DAY FROM a.date_actual)::int) AS day_of_month,
         COALESCE(t.days_in_month, EXTRACT(DAY FROM (DATE_TRUNC('month', a.date_actual) + INTERVAL '1 month' - INTERVAL '1 day')::date)::int) AS days_in_month
     FROM daily_actuals a
+    LEFT JOIN persons pa
+        ON a.sales_person_key = pa.sales_person_id
     FULL OUTER JOIN daily_targets t
         ON a.sales_person_key = t.sales_person_key
        AND a.date_actual = t.date_actual
+    LEFT JOIN persons pt
+        ON t.sales_person_key = pt.sales_person_id
+),
+
+kpi_mtd AS (
+    SELECT
+        sales_person_key,
+        sales_region_name,
+        date_actual,
+
+        actual_gross_amount,
+        actual_net_amount,
+        actual_quantity,
+        actual_orders,
+        actual_customers,
+
+        daily_target_amount,
+        daily_target_quantity,
+        daily_target_leads,
+
+        SUM(actual_gross_amount) OVER (
+            PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
+            ORDER BY date_actual
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS mtd_actual_gross_amount,
+
+        SUM(actual_net_amount) OVER (
+            PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
+            ORDER BY date_actual
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS mtd_actual_net_amount,
+
+        SUM(actual_quantity) OVER (
+            PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
+            ORDER BY date_actual
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS mtd_actual_quantity,
+
+        SUM(actual_orders) OVER (
+            PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
+            ORDER BY date_actual
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS mtd_actual_orders,
+
+        monthly_target_amount,
+        monthly_target_quantity,
+        monthly_target_leads,
+
+        day_of_month,
+        days_in_month,
+        day_of_month::numeric / days_in_month AS month_progress_pct
+    FROM kpi
 )
 
 SELECT
     sales_person_key || ':' || date_actual::text AS kpi_daily_key,
     sales_person_key,
+    sales_region_name,
     date_actual,
 
     actual_gross_amount,
@@ -88,29 +151,10 @@ SELECT
     daily_target_quantity,
     daily_target_leads,
 
-    SUM(actual_gross_amount) OVER (
-        PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
-        ORDER BY date_actual
-        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS mtd_actual_gross_amount,
-
-    SUM(actual_net_amount) OVER (
-        PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
-        ORDER BY date_actual
-        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS mtd_actual_net_amount,
-
-    SUM(actual_quantity) OVER (
-        PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
-        ORDER BY date_actual
-        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS mtd_actual_quantity,
-
-    SUM(actual_orders) OVER (
-        PARTITION BY sales_person_key, DATE_TRUNC('month', date_actual)
-        ORDER BY date_actual
-        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS mtd_actual_orders,
+    mtd_actual_gross_amount,
+    mtd_actual_net_amount,
+    mtd_actual_quantity,
+    mtd_actual_orders,
 
     monthly_target_amount,
     monthly_target_quantity,
@@ -118,7 +162,7 @@ SELECT
 
     day_of_month,
     days_in_month,
-    day_of_month::numeric / days_in_month AS month_progress_pct,
+    month_progress_pct,
 
     CASE WHEN monthly_target_amount > 0
          THEN ROUND(mtd_actual_gross_amount / monthly_target_amount, 4)
@@ -130,4 +174,4 @@ SELECT
          ELSE NULL
     END AS mtd_achievement_qty_pct
 
-FROM kpi
+FROM kpi_mtd
