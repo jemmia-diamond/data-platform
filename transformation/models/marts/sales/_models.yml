@@ -63,6 +63,10 @@ models:
                 values:
                   - 'Khách mới'
                   - 'Khách cũ'
+      - name: product_categories
+        description: "Comma-separated product category names from ERPNext (e.g. 'Nhẫn Nam, Dây Chuyền'). NULL for Haravan-only orders."
+      - name: purchase_purposes
+        description: "Comma-separated purchase purpose names from ERPNext (e.g. 'BT - Mua cho bản thân, CH - Cầu hôn'). NULL for Haravan-only orders."
 
   - name: fct_sales_order_items
     description: "Order-item-level sales fact. INNER JOINs fct_sales_orders to inherit valid-order filters."
@@ -268,3 +272,49 @@ models:
         description: "Product type reference ID (e.g. CRM-LEAD-PRODUCT-0014)."
       - name: product_label
         description: "Product type label (e.g. Kim cương viên, Nhẫn Nữ, Dây Chuyền)."
+
+  - name: fct_sales_order_product_categories
+    description: "Bridge table for order product categories. Grain: 1 row = 1 order × 1 product category. Only includes ERPNext-matched orders."
+    columns:
+      - name: order_product_category_key
+        description: "Primary key — order_id:product_category_id."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "Foreign key to fct_sales_orders."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sales_orders')
+                field: order_id
+      - name: product_category_id
+        description: "Foreign key to ERPNext Product Category master (e.g. PC08421)."
+        tests:
+          - not_null
+      - name: category_name
+        description: "Product category display name (e.g. Nhẫn Nam KCTN Nguyên Chiếc)."
+
+  - name: fct_sales_order_purchase_purposes
+    description: "Bridge table for order purchase purposes. Grain: 1 row = 1 order × 1 purchase purpose. Only includes ERPNext-matched orders."
+    columns:
+      - name: order_purchase_purpose_key
+        description: "Primary key — order_id:purchase_purpose_id."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "Foreign key to fct_sales_orders."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sales_orders')
+                field: order_id
+      - name: purchase_purpose_id
+        description: "Foreign key to ERPNext Purchase Purpose master (e.g. PP08603)."
+        tests:
+          - not_null
+      - name: purpose_name
+        description: "Purchase purpose display name (e.g. BT - Mua cho bản thân)."

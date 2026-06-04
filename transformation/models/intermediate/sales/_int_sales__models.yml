@@ -27,3 +27,31 @@ models:
         tests:
           - unique
           - not_null
+
+  - name: int_sales__order_product_categories
+    description: "Flattened order product categories from ERPNext Sales Order child table. Grain: 1 row = 1 order × 1 product category."
+    columns:
+      - name: erp_sales_order_id
+        description: "Foreign key to stg_erpnext__sales_orders."
+        tests:
+          - not_null
+      - name: product_category_id
+        description: "ERPNext Product Category ID (e.g. PC08421)."
+        tests:
+          - not_null
+      - name: category_name
+        description: "Product category display name (e.g. Nhẫn Nam KCTN Nguyên Chiếc)."
+
+  - name: int_sales__order_purchase_purposes
+    description: "Flattened order purchase purposes from ERPNext Sales Order child table. Grain: 1 row = 1 order × 1 purchase purpose."
+    columns:
+      - name: erp_sales_order_id
+        description: "Foreign key to stg_erpnext__sales_orders."
+        tests:
+          - not_null
+      - name: purchase_purpose_id
+        description: "ERPNext Purchase Purpose ID (e.g. PP08603)."
+        tests:
+          - not_null
+      - name: purpose_name
+        description: "Purchase purpose display name (e.g. BT - Mua cho bản thân)."

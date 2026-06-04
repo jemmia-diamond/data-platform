@@ -11,6 +11,35 @@
 
 WITH orders AS (
     SELECT * FROM {{ ref('int_sales__orders') }}
+    WHERE order_number LIKE 'ORDER%'
+      AND sales_channel NOT IN ('sendo', 'harafunnel')
+      AND sales_channel NOT LIKE '%bhsc%'
+      AND haravan_cancelled_status = 'uncancelled'
+      AND haravan_confirmed_status = 'confirmed'
+      AND (haravan_tags IS NULL OR haravan_tags NOT LIKE '%Lên bù cho đơn SO%')
+      AND haravan_total_price > '120000'
+),
+
+cat_agg AS (
+    SELECT
+        o.unified_sales_order_id AS order_id,
+        STRING_AGG(opc.category_name, ', ' ORDER BY opc.category_name) AS product_categories
+    FROM orders o
+    LEFT JOIN {{ ref('int_sales__order_product_categories') }} opc
+        ON o.erp_sales_order_id = opc.erp_sales_order_id
+    WHERE opc.category_name IS NOT NULL
+    GROUP BY o.unified_sales_order_id
+),
+
+purpose_agg AS (
+    SELECT
+        o.unified_sales_order_id AS order_id,
+        STRING_AGG(opp.purpose_name, ', ' ORDER BY opp.purpose_name) AS purchase_purposes
+    FROM orders o
+    LEFT JOIN {{ ref('int_sales__order_purchase_purposes') }} opp
+        ON o.erp_sales_order_id = opp.erp_sales_order_id
+    WHERE opp.purpose_name IS NOT NULL
+    GROUP BY o.unified_sales_order_id
 )
 
 SELECT
@@ -155,13 +184,12 @@ SELECT
     -- === NOTES ===
     haravan_tags AS tags,
     haravan_note AS note,
-    order_policies
+    order_policies,
+
+    -- === CLASSIFICATION (ERPNext) ===
+    ca.product_categories,
+    pa.purchase_purposes
 
 FROM orders
-WHERE order_number LIKE 'ORDER%'
-  AND sales_channel NOT IN ('sendo', 'harafunnel')
-  AND sales_channel NOT LIKE '%bhsc%'
-  AND haravan_cancelled_status = 'uncancelled'
-  AND haravan_confirmed_status = 'confirmed'
-  AND (haravan_tags IS NULL OR haravan_tags NOT LIKE '%Lên bù cho đơn SO%')
-  AND haravan_total_price > '120000'
+LEFT JOIN cat_agg ca ON orders.unified_sales_order_id = ca.order_id
+LEFT JOIN purpose_agg pa ON orders.unified_sales_order_id = pa.order_id

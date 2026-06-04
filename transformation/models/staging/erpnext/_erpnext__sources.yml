@@ -68,3 +68,13 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "sales_persons"]
+
+      - name: product_categories
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "product_categories"]
+
+      - name: purchase_purposes
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "purchase_purposes"]
