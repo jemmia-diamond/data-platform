@@ -1,6 +1,12 @@
 {{ config(
-    materialized='view',
+    materialized='table',
     schema='intermediate',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_iso_unified_id ON {{ this }} (unified_sales_order_id)",
+      "CREATE INDEX IF NOT EXISTS idx_iso_erp_id ON {{ this }} (erp_sales_order_id)",
+      "CREATE INDEX IF NOT EXISTS idx_iso_haravan_id ON {{ this }} (haravan_order_id)",
+      "CREATE INDEX IF NOT EXISTS idx_iso_customer_id ON {{ this }} (unified_customer_id)",
+    ],
     meta={
         'depends_on': ['int_haravan__order_ancestry', 'int_erpnext__order_groups']
     }

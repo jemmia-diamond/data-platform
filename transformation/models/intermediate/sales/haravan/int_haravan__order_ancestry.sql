@@ -1,6 +1,9 @@
 {{ config(
-    materialized='view',
-    schema='intermediate'
+    materialized='table',
+    schema='intermediate',
+    post_hook=[
+      "CREATE INDEX IF NOT EXISTS idx_ihoa_order_id ON {{ this }} (order_id)",
+    ]
 ) }}
 
 -- Recursive CTE to trace every Haravan order back to its root ancestor.
