@@ -5,5 +5,5 @@
 
 SELECT
     region_id,
-    region_name AS sales_region_name
+    region_name
 FROM {{ ref('stg_erpnext__regions') }}

@@ -138,10 +138,10 @@ models:
         tests:
           - unique
           - not_null
-      - name: sales_region_name
-        description: "Sales region classification from ERPNext regions master data — Miền Bắc / Miền Nam / Miền Tây."
       - name: region_name
-        description: "Region derived from parent sales person config name parsing (Hà Nội / Hồ Chí Minh / Cần Thơ / National)."
+        description: "Sales region — Miền Bắc / Miền Nam / Miền Tây."
+      - name: city_name
+        description: "City derived from parent sales person config name parsing (Hà Nội / Hồ Chí Minh / Cần Thơ / National)."
 
   - name: fct_sales_targets_monthly
     description: "Monthly salesperson target fact."

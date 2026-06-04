@@ -28,7 +28,7 @@ staff_with_parent_config as (
             else par.sales_person_name 
         end as config_name,
 
-        sr.sales_region_name
+        sr.region_name
 
     from staging_sales_persons emp
     left join staging_sales_persons par 
@@ -72,14 +72,14 @@ select
     _db_updated_at,
 
     COALESCE(
-        sales_region_name,
+        region_name,
         CASE region_code
             WHEN 'HN' THEN 'Miền Bắc'
             WHEN 'HCM' THEN 'Miền Nam'
             WHEN 'CT' THEN 'Miền Tây'
             ELSE 'Miền Nam'
         END
-    ) AS sales_region_name,
+    ) AS region_name,
 
     case 
         when config_name in ('Presale Team', 'BOD') then 'National'
@@ -87,7 +87,7 @@ select
         when region_code = 'HCM' then 'Hồ Chí Minh'
         when region_code = 'CT' then 'Cần Thơ'
         else region_code 
-    end as region_name,
+    end as city_name,
 
     -- Store Mapping
     case 

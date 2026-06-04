@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='materialized_view',
     schema='marts_sales'
 ) }}
 

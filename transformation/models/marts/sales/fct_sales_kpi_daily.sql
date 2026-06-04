@@ -4,7 +4,7 @@
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_fsk_sales_person_key ON {{ this }} (sales_person_key)",
       "CREATE INDEX IF NOT EXISTS idx_fsk_date_actual ON {{ this }} USING brin (date_actual)",
-      "CREATE INDEX IF NOT EXISTS idx_fsk_sales_region_name ON {{ this }} (sales_region_name)",
+      "CREATE INDEX IF NOT EXISTS idx_fsk_region_name ON {{ this }} (region_name)",
       "CREATE INDEX IF NOT EXISTS idx_fsk_person_date ON {{ this }} (sales_person_key, date_actual)",
     ]
 ) }}
@@ -25,7 +25,7 @@ WITH daily_actuals AS (
 target_months AS (
     SELECT
         t.sales_person_key,
-        t.sales_region_name,
+        t.region_name,
         t.target_month_start,
         t.target_month_end,
         EXTRACT(DAY FROM t.target_month_end)::int AS days_in_month,
@@ -39,7 +39,7 @@ target_months AS (
 daily_targets AS (
     SELECT
         tm.sales_person_key,
-        tm.sales_region_name,
+        tm.region_name,
         d.date_actual,
         tm.monthly_target_amount / tm.days_in_month AS daily_target_amount,
         tm.monthly_target_quantity / tm.days_in_month AS daily_target_quantity,
@@ -55,14 +55,14 @@ daily_targets AS (
 ),
 
 persons AS (
-    SELECT sales_person_id, sales_region_name
+    SELECT sales_person_id, region_name
     FROM {{ ref('dim_sales_persons') }}
 ),
 
 kpi AS (
     SELECT
         COALESCE(a.sales_person_key, t.sales_person_key) AS sales_person_key,
-        COALESCE(pa.sales_region_name, pt.sales_region_name) AS sales_region_name,
+        COALESCE(pa.region_name, pt.region_name) AS region_name,
         COALESCE(a.date_actual, t.date_actual) AS date_actual,
 
         COALESCE(a.actual_gross_amount, 0) AS actual_gross_amount,
@@ -94,7 +94,7 @@ kpi AS (
 kpi_mtd AS (
     SELECT
         sales_person_key,
-        sales_region_name,
+        region_name,
         date_actual,
 
         actual_gross_amount,
@@ -144,7 +144,7 @@ kpi_mtd AS (
 SELECT
     sales_person_key || ':' || date_actual::text AS kpi_daily_key,
     sales_person_key,
-    sales_region_name,
+    region_name,
     date_actual,
 
     actual_gross_amount,

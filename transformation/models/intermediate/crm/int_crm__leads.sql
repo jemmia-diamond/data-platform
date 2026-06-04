@@ -42,7 +42,6 @@ SELECT
     qualified_by,
     
     -- Temporal (Raw)
-    lead_received_date,
     first_reach_at AS lead_entry_at, -- Using first_reach_at as the primary entry point per user request
     qualified_on AS converted_at,
     

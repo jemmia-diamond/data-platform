@@ -25,6 +25,11 @@ budgets AS (
 demands AS (
     SELECT lead_demand_id, demand_label
     FROM {{ ref('int_crm__lead_demands') }}
+),
+
+regions AS (
+    SELECT region_id, region_name
+    FROM {{ ref('int_sales__regions') }}
 )
 
 SELECT
@@ -43,6 +48,7 @@ SELECT
     l.birth_date,
 
     l.province,
+    r.region_name AS lead_region,
 
     l.source,
     l.lead_source_name,
@@ -54,6 +60,7 @@ SELECT
     l.pancake_customer_id,
     l.pancake_conversation_id,
 
+    l.qualification_status as qualification_status_raw,
     CASE l.status
         WHEN 'Lead' THEN 'Lead'
         WHEN 'Converted' THEN 'Đã chuyển đổi'
@@ -74,7 +81,7 @@ SELECT
 
     l.lead_entry_at::date AS lead_entry_date,
     l.lead_entry_at,
-    l.lead_received_date,
+    l.converted_at::date AS converted_date,
     l.converted_at,
     l.is_converted,
 
@@ -104,3 +111,5 @@ LEFT JOIN budgets b
     ON l.budget_lead = b.lead_budget_id
 LEFT JOIN demands d
     ON l.purpose_lead = d.lead_demand_id
+LEFT JOIN regions r
+    ON l.region = r.region_id

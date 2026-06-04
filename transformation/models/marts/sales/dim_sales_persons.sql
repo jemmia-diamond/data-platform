@@ -3,7 +3,7 @@
     schema='marts_sales',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_dsperson_id ON {{ this }} (sales_person_id)",
-      "CREATE INDEX IF NOT EXISTS idx_dsperson_region ON {{ this }} (sales_region_name)",
+      "CREATE INDEX IF NOT EXISTS idx_dsperson_region ON {{ this }} (region_name)",
     ]
 ) }}
 
@@ -23,8 +23,8 @@ SELECT
     operational_status,
     operational_status = 'Active' AS is_active,
     sales_position = 'Presale' AS is_presale,
-    sales_region_name,
     region_name,
+    city_name,
     store_name,
     sales_position,
     created_at,
