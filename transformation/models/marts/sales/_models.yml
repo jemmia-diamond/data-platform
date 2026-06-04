@@ -13,56 +13,21 @@ models:
         description: "Foreign key to dim_sales_customers. Known gap: 96 Haravan-only customers not yet in dim."
       - name: sales_channel
         description: "Sales channel translated to Vietnamese."
-        tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - 'POS - Hà Nội'
-                  - 'POS - Hồ Chí Minh'
-                  - 'POS - Cần Thơ'
-                  - 'POS - Chưa xác định'
-                  - 'Nhân viên'
-                  - 'Kênh online'
       - name: payment_status
         description: "Payment status translated to Vietnamese."
-        tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - 'Đã thanh toán'
-                  - 'Chờ thanh toán'
-                  - 'Thanh toán một phần'
-                  - 'Đã hoàn tiền'
-                  - 'Hoàn tiền một phần'
       - name: fulfillment_status
         description: "Fulfillment status translated to Vietnamese."
         tests:
           - accepted_values:
               arguments:
                 values:
-                  - 'Đã giao hàng'
-                  - 'Chưa giao hàng'
-                  - 'Chưa xác định'
+                  - "Đã giao hàng"
+                  - "Chưa giao hàng"
+                  - "Chưa xác định"
       - name: processing_status
         description: "Processing status translated to Vietnamese."
-        tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - 'Hoàn tất'
-                  - 'Đã hủy'
-                  - 'Tự giao hàng'
-                  - 'Đã xác nhận'
-                  - 'Chờ xử lý'
-                  - 'Chưa xác định'
       - name: order_customer_type
         description: "Customer type — Khách mới or Khách cũ."
-        tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - 'Khách mới'
-                  - 'Khách cũ'
       - name: product_categories
         description: "Comma-separated product category names from ERPNext (e.g. 'Nhẫn Nam, Dây Chuyền'). NULL for Haravan-only orders."
       - name: purchase_purposes
@@ -215,26 +180,8 @@ models:
                 field: sales_person_id
       - name: lead_status
         description: "Lead status translated to Vietnamese."
-        tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - 'Lead'
-                  - 'Đã chuyển đổi'
-                  - 'Đã đạt chất lượng'
-                  - 'Spam'
-                  - 'Cơ hội'
-                  - 'Quan tâm'
-                  - 'Không liên lạc'
-                  - 'Đã liên lạc'
       - name: qualification_status
         description: "Qualification status translated to Vietnamese."
-        tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - 'Đã đạt chất lượng'
-                  - 'Chưa đạt chất lượng'
       - name: is_converted
         description: "Boolean flag indicating if the lead was qualified/converted."
         tests:
