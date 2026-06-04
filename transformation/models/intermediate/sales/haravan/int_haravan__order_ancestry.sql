@@ -1,16 +1,13 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
+    unique_key='order_id',
     schema='intermediate',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_ihoa_order_id ON {{ this }} (order_id)",
     ]
 ) }}
 
--- Recursive CTE to trace every Haravan order back to its root ancestor.
--- For each order, computes the earliest date in its chain (first_order_at).
--- Orders with ref_order_id = 0 are root orders (no parent).
-
-WITH RECURSIVE orders AS (
+WITH RECURSIVE all_orders AS (
     SELECT
         order_id,
         ref_order_id,
@@ -18,7 +15,23 @@ WITH RECURSIVE orders AS (
     FROM {{ ref('stg_haravan__orders') }}
 ),
 
--- Walk up the ancestry chain: each iteration follows ref_order_id → parent
+new_orders AS (
+    SELECT order_id
+    FROM all_orders
+    {% if is_incremental() %}
+    WHERE order_id NOT IN (SELECT order_id FROM {{ this }})
+    {% endif %}
+),
+
+orders AS (
+    SELECT
+        ao.order_id,
+        ao.ref_order_id,
+        ao.created_at
+    FROM all_orders ao
+    JOIN new_orders no ON ao.order_id = no.order_id
+),
+
 chain AS (
     SELECT
         order_id,

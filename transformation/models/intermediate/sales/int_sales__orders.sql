@@ -1,5 +1,6 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
+    unique_key='unified_sales_order_id',
     schema='intermediate',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_iso_unified_id ON {{ this }} (unified_sales_order_id)",
@@ -12,16 +13,42 @@
     }
 ) }}
 
--- Unified sales orders: FULL OUTER JOIN Haravan ↔ ERPNext
--- Complex logic (ancestry, split groups) is handled by upstream models.
--- Priority: Haravan first (primary sales system), ERPNext as fallback.
+WITH changed_haravan AS (
+    SELECT order_id FROM {{ ref('stg_haravan__orders') }}
+    {% if is_incremental() %}
+    WHERE _db_updated_at > (SELECT COALESCE(MAX(_db_updated_at), '1900-01-01'::timestamp) FROM {{ this }})
+    {% endif %}
+),
 
-WITH h AS (
+changed_erp AS (
+    SELECT sales_order_id, haravan_order_id FROM {{ ref('stg_erpnext__sales_orders') }}
+    {% if is_incremental() %}
+    WHERE _db_updated_at > (SELECT COALESCE(MAX(_db_updated_at), '1900-01-01'::timestamp) FROM {{ this }})
+    {% endif %}
+),
+
+affected_ids AS (
+    SELECT order_id FROM changed_haravan
+    UNION
+    SELECT haravan_order_id::bigint AS order_id FROM changed_erp WHERE haravan_order_id IS NOT NULL
+),
+
+h AS (
     SELECT * FROM {{ ref('stg_haravan__orders') }}
+    WHERE 
+        order_id IN (SELECT order_id FROM affected_ids)
+        {% if is_incremental() %}
+        OR order_id IN (SELECT order_id FROM changed_haravan)
+        {% endif %}
 ),
 
 e AS (
     SELECT * FROM {{ ref('stg_erpnext__sales_orders') }}
+    WHERE 
+        haravan_order_id::bigint IN (SELECT order_id FROM affected_ids)
+        {% if is_incremental() %}
+        OR sales_order_id IN (SELECT sales_order_id FROM changed_erp WHERE haravan_order_id IS NULL)
+        {% endif %}
 ),
 
 ha AS (
