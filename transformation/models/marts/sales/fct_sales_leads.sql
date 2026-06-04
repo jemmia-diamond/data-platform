@@ -13,7 +13,7 @@ WITH leads AS (
 ),
 
 sales_persons AS (
-    SELECT sales_person_id, employee_email
+    SELECT sales_person_id, sales_person_name, region_name, employee_email
     FROM {{ ref('int_sales__sales_persons') }}
 ),
 
@@ -37,6 +37,11 @@ SELECT
     l.lead_name,
 
     sp.sales_person_id AS sales_person_key,
+    sp.sales_person_name,
+
+    COALESCE(sp.region_name, r.region_name) AS region,
+    sp.region_name AS sales_region,
+    r.region_name AS lead_region,
 
     l.email,
     l.phone,
@@ -48,7 +53,6 @@ SELECT
     l.birth_date,
 
     l.province,
-    r.region_name AS lead_region,
 
     l.source,
     l.lead_source_name,
@@ -60,7 +64,6 @@ SELECT
     l.pancake_customer_id,
     l.pancake_conversation_id,
 
-    l.qualification_status as qualification_status_raw,
     CASE l.status
         WHEN 'Lead' THEN 'Lead'
         WHEN 'Converted' THEN 'Đã chuyển đổi'
@@ -72,6 +75,8 @@ SELECT
         WHEN 'Contacted' THEN 'Đã liên lạc'
         ELSE l.status
     END AS lead_status,
+
+    l.qualification_status AS qualification_status_raw,
 
     CASE l.qualification_status
         WHEN 'Qualified' THEN 'Đã đạt chất lượng'
