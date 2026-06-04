@@ -69,7 +69,49 @@ data-platform/
 - Naming: `stg_<source>__<entity>`, `int_<domain>__<entity>`, `fct_<entity>`, `dim_<entity>`
 - Every model needs a `schema.yml` (or `_models.yml`) with column descriptions and tests
 - Materialization: Staging = view, Intermediate = view, Marts = table or materialized_view
-- Run dbt CLI: `cd transformation && export $(cat ../.env | xargs) && dbt build --profiles-dir .`
+
+### Database Access (psql)
+
+The PostgreSQL database is **remote** (not localhost/Docker). Connection info is in `.env`:
+
+```
+DBT_POSTGRES_HOST=<from .env>
+DBT_POSTGRES_PORT=<from .env>
+DBT_POSTGRES_USER=<from .env>
+DBT_POSTGRES_PASSWORD=<from .env>
+DBT_POSTGRES_DBNAME=jemmia
+```
+
+**psql command pattern** (always use `/opt/homebrew/bin/psql` with `sslmode=disable`):
+
+```bash
+export $(grep -i 'DBT_POSTGRES' .env | xargs) && \
+/opt/homebrew/bin/psql "host=$DBT_POSTGRES_HOST port=$DBT_POSTGRES_PORT dbname=$DBT_POSTGRES_DBNAME user=$DBT_POSTGRES_USER password=$DBT_POSTGRES_PASSWORD sslmode=disable" \
+  -c "SELECT * FROM some_table LIMIT 5;"
+```
+
+**Important rules:**
+
+- NEVER try `localhost:5433` — the DB is remote
+- NEVER use Docker or `docker compose exec` to access the database
+- NEVER use `/opt/homebrew/bin/docker` for anything
+- Use `sslmode=disable` (remote server doesn't support SSL on this port)
+- Use `-c` for single queries, multiple `-c` flags for batch queries
+
+### dbt CLI
+
+dbt binary is at `.venv/bin/dbt`. Always use full path:
+
+```bash
+cd transformation && export $(cat ../.env | xargs) && ../.venv/bin/dbt compile --profiles-dir .
+cd transformation && export $(cat ../.env | xargs) && ../.venv/bin/dbt build --profiles-dir .
+cd transformation && export $(cat ../.env | xargs) && ../.venv/bin/dbt build --select +model_name --profiles-dir .
+```
+
+**Typical workflow:**
+
+1. `dbt compile` — verify SQL syntax, no DB connection needed for most checks
+2. `dbt build --select +<model>` — build model + upstream dependencies + run tests
 
 ### dlt Ingestion
 
