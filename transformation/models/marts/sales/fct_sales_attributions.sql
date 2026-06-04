@@ -35,6 +35,7 @@ SELECT
     o.customer_id,
     o.customer_name,
     o.real_created_at AS business_date,
+    o.real_created_at_vn AS business_date_vn,
     o.order_date,
     o.sales_channel,
 

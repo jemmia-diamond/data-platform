@@ -26,6 +26,7 @@ SELECT
     o.order_id,
     o.order_number,
     o.real_created_at,
+    o.real_created_at_vn,
     o.order_date,
     o.customer_id,
     o.customer_name,

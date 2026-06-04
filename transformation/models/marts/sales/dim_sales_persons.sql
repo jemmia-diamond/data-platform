@@ -28,6 +28,8 @@ SELECT
     store_name,
     sales_position,
     created_at,
+    created_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS created_at_vn,
     updated_at,
+    updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS updated_at_vn,
     _db_updated_at
 FROM sales_persons

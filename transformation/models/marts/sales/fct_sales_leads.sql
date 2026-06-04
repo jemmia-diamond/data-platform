@@ -84,10 +84,12 @@ SELECT
         ELSE l.qualification_status
     END AS qualification_status,
 
-    l.lead_entry_at::date AS lead_entry_date,
+    (l.lead_entry_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS lead_entry_date,
     l.lead_entry_at,
-    l.converted_at::date AS converted_date,
+    l.lead_entry_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS lead_entry_at_vn,
+    (l.converted_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS converted_date,
     l.converted_at,
+    l.converted_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS converted_at_vn,
     l.is_converted,
 
     l.time_to_convert_hours,
