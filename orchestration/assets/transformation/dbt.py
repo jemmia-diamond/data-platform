@@ -24,7 +24,7 @@ class DbtFullRefreshConfig(Config):
     dagster_dbt_translator=TransformationDagsterDbtTranslator(),
 )
 def transformation_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, config: DbtFullRefreshConfig):
-    args = ["build"]
+    args = ["build", "--indirect-selection", "cautious"]
     if config.full_refresh:
         args.append("--full-refresh")
     yield from dbt.cli(args, context=context).stream()
