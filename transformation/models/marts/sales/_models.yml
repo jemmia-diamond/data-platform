@@ -32,6 +32,8 @@ models:
         description: "Comma-separated product category names from ERPNext (e.g. 'Nhẫn Nam, Dây Chuyền'). NULL for Haravan-only orders."
       - name: purchase_purposes
         description: "Comma-separated purchase purpose names from ERPNext (e.g. 'BT - Mua cho bản thân, CH - Cầu hôn'). NULL for Haravan-only orders."
+      - name: price_range
+        description: "Price range bucket (triệu VND) based on total_price summed across split_order_group."
 
   - name: fct_sales_order_items
     description: "Order-item-level sales fact. INNER JOINs fct_sales_orders to inherit valid-order filters."

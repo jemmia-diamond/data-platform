@@ -40,6 +40,14 @@ purpose_agg AS (
         ON o.erp_sales_order_id = opp.erp_sales_order_id
     WHERE opp.purpose_name IS NOT NULL
     GROUP BY o.unified_sales_order_id
+),
+
+group_total AS (
+    SELECT
+        COALESCE(split_order_group, unified_sales_order_id) AS split_key,
+        SUM(haravan_total_price::numeric) AS group_total_price
+    FROM orders
+    GROUP BY COALESCE(split_order_group, unified_sales_order_id)
 )
 
 SELECT
@@ -187,6 +195,20 @@ SELECT
     haravan_note AS note,
     order_policies,
 
+    -- === PRICE RANGE (by split_order_group) ===
+    CASE
+        WHEN gt.group_total_price < 30000000 THEN '1. <30'
+        WHEN gt.group_total_price >= 30000000 AND gt.group_total_price < 50000000 THEN '2. 30-50'
+        WHEN gt.group_total_price >= 50000000 AND gt.group_total_price < 80000000 THEN '3. 50-80'
+        WHEN gt.group_total_price >= 80000000 AND gt.group_total_price < 120000000 THEN '4. 80-120'
+        WHEN gt.group_total_price >= 120000000 AND gt.group_total_price < 200000000 THEN '5. 120-200'
+        WHEN gt.group_total_price >= 200000000 AND gt.group_total_price < 300000000 THEN '6. 200-300'
+        WHEN gt.group_total_price >= 300000000 AND gt.group_total_price < 500000000 THEN '7. 300-500'
+        WHEN gt.group_total_price >= 500000000 AND gt.group_total_price < 800000000 THEN '8. 500-800'
+        WHEN gt.group_total_price >= 800000000 AND gt.group_total_price < 1000000000 THEN '9. 800-1000'
+        ELSE '10. >1000'
+    END AS price_range,
+
     -- === CLASSIFICATION (ERPNext) ===
     ca.product_categories,
     pa.purchase_purposes
@@ -194,3 +216,4 @@ SELECT
 FROM orders
 LEFT JOIN cat_agg ca ON orders.unified_sales_order_id = ca.order_id
 LEFT JOIN purpose_agg pa ON orders.unified_sales_order_id = pa.order_id
+LEFT JOIN group_total gt ON COALESCE(orders.split_order_group, orders.unified_sales_order_id) = gt.split_key
