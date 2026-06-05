@@ -32,6 +32,7 @@ SALES_MARTS_EXECUTION_UNITS = validate_execution_units(
                 "dim_sales_persons",
                 "dim_sales_lead_sources",
                 "dim_sales_dates",
+                "fct_sales_order_all_metrics"
             ),
             description="Refresh all sales marts",
             cadence="hourly_business_hours",
