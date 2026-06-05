@@ -23,7 +23,7 @@ WITH orders AS (
 cat_agg AS (
     SELECT
         o.unified_sales_order_id AS order_id,
-        STRING_AGG(opc.category_name, ', ' ORDER BY opc.category_name) AS product_categories
+        STRING_AGG(opc.category_name, ' + ' ORDER BY opc.category_name) AS product_categories
     FROM orders o
     LEFT JOIN {{ ref('int_sales__order_product_categories') }} opc
         ON o.erp_sales_order_id = opc.erp_sales_order_id
@@ -34,7 +34,7 @@ cat_agg AS (
 purpose_agg AS (
     SELECT
         o.unified_sales_order_id AS order_id,
-        STRING_AGG(opp.purpose_name, ', ' ORDER BY opp.purpose_name) AS purchase_purposes
+        STRING_AGG(opp.purpose_name, ' + ' ORDER BY opp.purpose_name) AS purchase_purposes
     FROM orders o
     LEFT JOIN {{ ref('int_sales__order_purchase_purposes') }} opp
         ON o.erp_sales_order_id = opp.erp_sales_order_id
@@ -60,6 +60,7 @@ SELECT
     customer_email,
     customer_phone,
     haravan_staff_user_id AS staff_id,
+    primary_sales_person AS primary_sales_person_id,
 
     -- === SALES CHANNEL ===
     CASE sales_channel
