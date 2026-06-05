@@ -138,6 +138,7 @@ Jobs and schedules auto-generated from `ExecutionUnitSpec` in `orchestration/cat
 - Spec defines: layer, tool, system, unit, asset_paths, cron_schedule
 - `jobs/common.py` → `build_job_definition(spec)` → `define_asset_job`
 - `schedules/common.py` → `build_schedule_definition(spec, job)` → `ScheduleDefinition`
+- **`build_asset_selection()` uses `.upstream()`** — every job automatically includes all upstream dependencies (staging views, intermediate views). This guarantees upstream models exist before building downstream marts. Without this, dbt `--select` would skip upstream deps and fail if they don't exist in the database.
 
 ### Asset Key Conventions
 

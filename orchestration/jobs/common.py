@@ -4,7 +4,7 @@ from ..catalogs.common import ExecutionUnitSpec
 
 
 def build_asset_selection(*asset_paths: tuple[str, ...]) -> AssetSelection:
-    return AssetSelection.keys(*[AssetKey(list(asset_path)) for asset_path in asset_paths])
+    return AssetSelection.keys(*[AssetKey(list(asset_path)) for asset_path in asset_paths]).upstream()
 
 
 def build_job_definition(spec: ExecutionUnitSpec):
