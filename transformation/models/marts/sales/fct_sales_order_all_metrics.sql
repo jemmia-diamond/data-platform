@@ -9,7 +9,6 @@
     ]
 ) }}
 
-
 select
 -- 	kpi.date_actual,
 -- 	kpi.daily_target_amount,
@@ -43,9 +42,11 @@ select
 	oi.quantity as product_quantity,
 	oi.line_gross_amount as product_total_price,
 	-- customer
-	dc.age_group,
-	dc.gender,
-	dc.default_province,
+	dc.age_group as customer_age_group,
+	dc.gender as customer_gender,
+	dc.default_province as customer_default_province,
+	coalesce(dc.lead_source_name, 'Chưa xác định') as customer_lead_source,
+	o.purchase_purposes,
 	-- product
 	dp.product_name,
 	dp.product_type,
@@ -57,11 +58,11 @@ select
 	ds.sales_position as salesperson_position,
 	ds.sales_person_name as salesperson_name,
 	ds.store_name as salesperson_store,
-	ds.parent_sales_person as salesperson_parent
-from   {{ ref('dim_sales_dates') }} d
-full join {{ ref('fct_sales_orders') }} o on d.date_actual = o.order_date
-left join {{ ref('fct_sales_order_items') }} oi on o.order_id = oi.order_id
-left join {{ ref('fct_sales_attributions') }} sa on sa.order_id = o.order_id
-left join {{ ref('dim_sales_persons') }} ds on ds.sales_person_id = sa.sales_person_key
-left join {{ ref('dim_sales_customers') }} dc on o.customer_id = dc.customer_id
-left join {{ ref('dim_sales_products') }} dp on dp.product_key = oi.product_key and dp.variant_id = oi.variant_id
+	ds.parent_sales_person as sales_person_parent
+from {{ ref('dim_sales_dates')}} d
+full join {{ ref('fct_sales_orders')}} o on d.date_actual = o.order_date
+left join {{ ref('fct_sales_order_items')}} oi on o.order_id = oi.order_id
+left join {{ ref('fct_sales_attributions')}} sa on sa.order_id = o.order_id
+left join {{ ref('dim_sales_persons')}} ds on ds.sales_person_id = sa.sales_person_key
+left join {{ ref('dim_sales_customers')}} dc on o.customer_id = dc.customer_id
+left join {{ ref('dim_sales_products')}} dp on dp.product_key = oi.product_key and dp.variant_id = oi.variant_id
