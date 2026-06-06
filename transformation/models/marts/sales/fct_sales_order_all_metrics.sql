@@ -39,8 +39,11 @@ select
 	sa.allocated_amount,
 	-- chia allocated kpi như allocated total price vì bị dup như trên
 	sa.allocated_amount / count(*) over (partition by o.split_order_group) as allocated_amount_by_order_id,
+	-- chia product quantity và total price theo order_id và product_id
 	oi.quantity as product_quantity,
+	oi.quantity / count(*) over (partition by o.split_order_group, oi.product_key) as allocated_product_quantity_by_order_id,
 	oi.line_gross_amount as product_total_price,
+	oi.line_gross_amount/ count(*) over (partition by o.split_order_group, oi.product_key) as allocated_product_total_price_by_order_id,
 	-- customer
 	dc.age_group as customer_age_group,
 	dc.gender as customer_gender,
@@ -50,9 +53,21 @@ select
 	-- product
 	dp.product_name,
 	dp.product_type,
+	dp.design_type,
+	dp.fineness,
+	dp.size_type,
+	dp.ring_size,
+	dp.material_color,
 	dp.diamond_carat,
 	dp.diamond_color,
 	dp.diamond_shape,
+	dp.diamond_clarity,
+	dp.diamond_cut,
+-- 	dp.diamond_fluoresence,
+-- 	dp.diamond_edge_size,
+-- 	left(diamond_edge_size_1::text, 3)
+-- 	|| ' x ' ||
+-- 	left(diamond_edge_size_2::text, 3) as diamond_edge_size_transformed,
 	-- salesperson
 	ds.region_name as salesperson_region_name,
 	ds.sales_position as salesperson_position,
