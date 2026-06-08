@@ -81,12 +81,10 @@ sales as (
 		dp.diamond_color,
 		dp.diamond_shape,
 		dp.diamond_clarity,
-		dp.diamond_cut
-	-- 	dp.diamond_fluoresence,
-	-- 	dp.diamond_edge_size,
-	-- 	left(diamond_edge_size_1::text, 3)
-	-- 	|| ' x ' ||
-	-- 	left(diamond_edge_size_2::text, 3) as diamond_edge_size_transformed
+		dp.diamond_cut,
+		dp.diamond_fluorescence,
+		dp.diamond_edge_size,
+		dp.diamond_edge_size_display
 	from {{ ref('fct_sales_orders')}} o
 	left join {{ ref('fct_sales_order_items')}} oi on o.order_id = oi.order_id
 	left join {{ ref('fct_sales_attributions')}} sa on sa.order_id = o.order_id

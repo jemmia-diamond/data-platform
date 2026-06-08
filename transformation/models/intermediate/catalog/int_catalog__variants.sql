@@ -53,6 +53,7 @@ SELECT
     nd.shape                                                                AS diamond_shape,
     nd.color                                                                AS diamond_color,
     nd.clarity                                                              AS diamond_clarity,
+    nd.fluorescence                                                         AS diamond_fluorescence,
     nd.cut                                                                  AS diamond_cut,
     nd.cogs                                                                 AS diamond_cogs,
     nd.vendor                                                               AS diamond_vendor,
@@ -60,6 +61,11 @@ SELECT
     nd.report_no,
     nd.edge_size_1                                                          AS diamond_edge_size_1,
     nd.edge_size_2                                                          AS diamond_edge_size_2,
+    ROUND(FLOOR(GREATEST(nd.edge_size_1, nd.edge_size_2) * 10) / 10, 1)    AS diamond_edge_size,
+    CASE
+        WHEN nd.edge_size_1 IS NOT NULL AND nd.edge_size_2 IS NOT NULL THEN
+            CONCAT(ROUND(FLOOR(nd.edge_size_1 * 10) / 10, 1), ' x ', ROUND(FLOOR(nd.edge_size_2 * 10) / 10, 1))
+    END                                                                     AS diamond_edge_size_display,
     nd.qty_onhand                                                           AS diamond_qty_onhand,
     nd.qty_available                                                        AS diamond_qty_available,
     nd.qty_commited                                                         AS diamond_qty_commited,

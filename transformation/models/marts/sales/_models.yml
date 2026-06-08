@@ -91,6 +91,10 @@ models:
         tests:
           - unique
           - not_null
+      - name: diamond_edge_size
+        description: "Larger of diamond_edge_size_1 and diamond_edge_size_2, rounded down to 1 decimal (FLOOR)."
+      - name: diamond_edge_size_display
+        description: "Combined edge sizes as string '4.5 x 5.0' (FLOOR rounded, 1 decimal each). NULL if either is NULL."
 
   - name: dim_sales_customers
     description: "Customer dimension — profile from CRM enriched with order metrics."
