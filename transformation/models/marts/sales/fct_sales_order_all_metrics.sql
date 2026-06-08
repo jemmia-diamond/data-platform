@@ -9,9 +9,28 @@
     ]
 ) }}
 
+with d_date as (
+select *
+from {{ ref('dim_sales_dates')}}
+),
+kpi as (
 select
--- 	kpi.date_actual,
--- 	kpi.daily_target_amount,
+	d.date_actual,
+	kpi.sales_person_key,
+	kpi.daily_target_amount,
+	kpi.daily_target_leads
+from {{ ref('fct_sales_kpi_daily')}} kpi
+inner join d_date d on d.date_actual = kpi.date_actual
+),
+sales as (
+select
+	d.date_actual,
+	d.sales_person_key as sales_person_key_kpi,
+	d.daily_target_amount,
+	--- do gom chung các bảng fact vào nên sẽ bị fan out (dup)
+	--- daily target amount / count row (partition by date_actual, sales_person_key_kpi, split_order_group)
+	count(*) over (partition by d.date_actual, d.sales_person_key) as total_order_id_kpi_cnt,
+	d.daily_target_amount / count(*) over (partition by d.date_actual, d.sales_person_key) as allocated_daily_kpi_target_by_sales_person,
 	o.order_date,
 	o.order_id,
 	o.split_order_group,
@@ -74,10 +93,13 @@ select
 	ds.sales_person_name as salesperson_name,
 	ds.store_name as salesperson_store,
 	ds.parent_sales_person as sales_person_parent
-from {{ ref('dim_sales_dates')}} d
-full join {{ ref('fct_sales_orders')}} o on d.date_actual = o.order_date
+from  kpi d
+left join {{ ref('fct_sales_orders')}} o on d.date_actual = o.order_date
 left join {{ ref('fct_sales_order_items')}} oi on o.order_id = oi.order_id
-left join {{ ref('fct_sales_attributions')}} sa on sa.order_id = o.order_id
+left join {{ ref('fct_sales_attributions')}} sa on sa.order_id = o.order_id and sa.sales_person_key = d.sales_person_key
 left join {{ ref('dim_sales_persons')}} ds on ds.sales_person_id = sa.sales_person_key
 left join {{ ref('dim_sales_customers')}} dc on o.customer_id = dc.customer_id
 left join {{ ref('dim_sales_products')}} dp on dp.product_key = oi.product_key and dp.variant_id = oi.variant_id
+)
+select *
+from sales
