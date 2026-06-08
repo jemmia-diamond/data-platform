@@ -183,6 +183,30 @@ WHERE name NOT IN (
 
 - `generate_schema_name` — custom schema name if provided, else target schema
 - `safe_cast_jsonb(column_name, default_fallback)` — handles NULL, empty string, malformed JSON
+- `materialization_view` — overrides default VIEW: `CREATE OR REPLACE VIEW` (preserves OID, no DROP). Falls back to `DROP + CREATE` only on `--full-refresh`
+- `materialization_table` — overrides default TABLE: `TRUNCATE + INSERT` for normal runs (preserves OID, avoids DROP CASCADE). Backup/rename/drop path only on `--full-refresh`
+- `materialization_incremental` — overrides default INCREMENTAL: normal run uses default merge strategy. Full-refresh creates temp → detects schema changes → ALTER TABLE add columns → TRUNCATE → INSERT. Preserves OID, supports schema changes, no CASCADE
+- `drop_without_cascade` — overrides `postgres__drop_table`, `postgres__drop_materialized_view`, `postgres__drop_view` to remove CASCADE from all DROP operations
+
+### dbt Materialization Safety (PostgreSQL)
+
+**Problem:** dbt-core uses `DROP ... CASCADE` in `__dbt_backup` pattern when rebuilding TABLE models. This destroys dependent VIEWs/MATERIALIZED VIEWs in **other schemas**. Known bug: dbt-core #2801, #9246 (open 5+ years).
+
+**Defense layers:**
+1. **Prefer VIEW for pure SQL models** (e.g. `generate_series`, simple SELECTs) — `CREATE OR REPLACE VIEW` preserves OID, no DROP needed
+2. **TABLE materialization override** (`materialization_table.sql`) — uses `TRUNCATE + INSERT` on normal runs, preserving OID and avoiding any DROP
+3. **INCREMENTAL materialization override** (`materialization_incremental.sql`) — on full-refresh: create temp → detect schema changes → ALTER TABLE → TRUNCATE → INSERT. No rename/swap/`__dbt_backup` pattern, so no CASCADE risk
+4. **DROP macro override** (`drop_without_cascade.sql`) — removes CASCADE from all drop operations as safety net
+
+**Rules:**
+- When a model is pure SQL with no I/O benefit from materialization (e.g. `dim_dates`), use `materialized='view'`
+- When adding a new TABLE model that other schemas reference, be aware of the CASCADE risk
+- After adding new macro files, clear partial parse cache: `rm transformation/target/partial_parse.msgpack`
+
+### dbt Incremental Models
+
+- `unique_key` must be a column that is **never NULL** for any row — otherwise incremental merge produces duplicates
+- When using FULL OUTER JOIN in incremental models, the coalesced ID column may be NULL for one side — always choose a key that exists for ALL rows
 
 ---
 
@@ -210,6 +234,9 @@ All secrets from `.env` (never committed):
 - When adding a new dbt model, check `_sources.yml` first to understand available columns
 - When adding a new ingestion connector, follow existing connector patterns (haravan/frappe/nocodb)
 - If the project structure changes (new directories, renamed folders, etc.), update this file accordingly
+- Prefer VIEW materialization for pure SQL models (no I/O benefit from TABLE) — prevents CASCADE destruction
+- For incremental models, `unique_key` must never be NULL for any row — use a column that always exists
+- After adding new dbt macro files, clear partial parse cache: `rm transformation/target/partial_parse.msgpack`
 
 ---
 

@@ -7,14 +7,17 @@
 --   4. DROP TABLE __dbt_backup CASCADE               (destroys ALL dependent objects!)
 --
 -- This override:
---   Normal run:  TRUNCATE + INSERT  → same OID preserved, no CASCADE, dependents safe
---   Full refresh: DROP CASCADE + CREATE  → intentional full rebuild (all dependents get rebuilt)
+--   First time:    CREATE TABLE (normal)
+--   Normal run:    Create temp → detect schema changes → ALTER TABLE sync → TRUNCATE → INSERT
+--                  Preserves OID, supports schema changes (add columns), no CASCADE
+--   Full refresh:  Same pattern as normal run (full data replacement via TRUNCATE+INSERT)
 --
 -- See: dbt-core issues #2801, #9246 — known 5+ year bug, still open.
 
 {% materialization table, adapter='postgres' %}
   {%- set existing_relation = load_cached_relation(this) -%}
-  {%- set target_relation = this.incorporate(type='table') %}
+  {%- set target_relation = this.incorporate(type='table') -%}
+  {%- set temp_relation = make_temp_relation(target_relation) -%}
   {% set grant_config = config.get('grants') %}
 
   {{ run_hooks(pre_hooks, inside_transaction=False) }}
@@ -27,50 +30,52 @@
     {% call statement('main') -%}
       {{ get_create_table_as_sql(False, target_relation, sql) }}
     {%- endcall %}
-
-  {%- elif should_full_refresh() -%}
-    -- Full refresh (--full-refresh): create tmp → rename swap → drop backup CASCADE
-    -- Intentional: all dependent objects should be rebuilt from scratch
-    {%- set intermediate_relation = make_intermediate_relation(target_relation) -%}
-    {%- set backup_relation_type = existing_relation.type -%}
-    {%- set backup_relation = make_backup_relation(target_relation, backup_relation_type) -%}
-
-    {{ drop_relation_if_exists(load_cached_relation(intermediate_relation)) }}
-    {{ drop_relation_if_exists(load_cached_relation(backup_relation)) }}
-
-    {% call statement('main') -%}
-      {{ get_create_table_as_sql(False, intermediate_relation, sql) }}
-    {%- endcall %}
-
-    {% do create_indexes(intermediate_relation) %}
-
-    {% set existing_relation = load_cached_relation(existing_relation) %}
-    {% if existing_relation is not none %}
-      {{ adapter.rename_relation(existing_relation, backup_relation) }}
-    {% endif %}
-
-    {{ adapter.rename_relation(intermediate_relation, target_relation) }}
-
-    {{ run_hooks(post_hooks, inside_transaction=True) }}
-
-    {% set should_revoke = should_revoke(existing_relation, full_refresh_mode=True) %}
-    {% do apply_grants(target_relation, grant_config, should_revoke=should_revoke) %}
-    {% do persist_docs(target_relation, model) %}
-
-    {{ adapter.commit() }}
-
-    -- Drop backup outside transaction
-    {{ drop_relation_if_exists(backup_relation) }}
-
-    {{ run_hooks(post_hooks, inside_transaction=False) }}
-    {{ return({'relations': [target_relation]}) }}
+    {% do create_indexes(target_relation) %}
 
   {%- else -%}
-    -- Normal run: TRUNCATE + INSERT (preserves OID, no CASCADE, dependents safe)
+    -- Existing table: temp → detect schema changes → ALTER TABLE sync → TRUNCATE → INSERT
+    -- This avoids the rename/swap/__dbt_backup pattern entirely. Preserves OID, no CASCADE.
+
+    -- Step 1: Create temp table from new SQL (to detect new schema)
+    {% do run_query(get_create_table_as_sql(True, temp_relation, sql)) %}
+
+    -- Step 2: Detect and apply schema changes (add new columns)
+    {%- set schema_changes = check_for_schema_changes(temp_relation, existing_relation) -%}
+    {%- if schema_changes['schema_changed'] -%}
+      {%- set add_columns = schema_changes['source_not_in_target'] -%}
+      {%- if add_columns | length > 0 -%}
+        {%- do alter_relation_add_remove_columns(target_relation, add_columns, none) -%}
+        {% set add_msg %}
+          [table] Added {{ add_columns | length }} column(s) to {{ target_relation }}:
+          {% for col in add_columns %}  - {{ col.name }} ({{ col.data_type }})
+          {% endfor %}
+        {% endset %}
+        {% do log(add_msg, info=true) %}
+      {%- endif -%}
+    {%- endif -%}
+
+    -- Step 3-4: TRUNCATE + INSERT (only matching columns)
+    {%- set source_columns = adapter.get_columns_in_relation(temp_relation) -%}
+    {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
+    {%- set dest_col_names = [] -%}
+    {%- for col in dest_columns -%}
+      {%- do dest_col_names.append(col.name) -%}
+    {%- endfor -%}
+    {%- set select_columns = [] -%}
+    {%- for col in source_columns -%}
+      {%- if col.name in dest_col_names -%}
+        {%- do select_columns.append(col.quoted) -%}
+      {%- endif -%}
+    {%- endfor -%}
+
     {% call statement('main') -%}
       truncate table {{ target_relation }};
-      insert into {{ target_relation }} {{ sql }}
+      insert into {{ target_relation }} ({{ select_columns | join(', ') }})
+      select {{ select_columns | join(', ') }} from {{ temp_relation }}
     {%- endcall %}
+
+    -- Step 5: Drop temp table
+    {% do adapter.drop_relation(temp_relation) %}
 
   {%- endif -%}
 
