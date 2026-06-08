@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key='unified_sales_order_id',
+    unique_key='order_number',
     schema='intermediate',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_iso_unified_id ON {{ this }} (unified_sales_order_id)",
