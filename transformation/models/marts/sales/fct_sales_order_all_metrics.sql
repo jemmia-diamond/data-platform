@@ -52,17 +52,17 @@ sales as (
 		  	when total_price > 120*1000000 then '5. >120'
 		end total_price_range,
 		-- allocated total_price do 1 order có nhiều product và nhiều salesperson
-		count(*) over (partition by o.split_order_group) as total_order_id_cnt,
-		o.total_price / count(*) over (partition by o.split_order_group) as allocated_total_price_by_order_id,
+		count(*) over (partition by o.order_id) as total_order_id_cnt,
+		o.total_price / count(*) over (partition by o.order_id) as allocated_total_price_by_order_id,
 		-- allocated amount này là hoa hồng
 		sa.allocated_amount,
 		-- chia allocated kpi như allocated total price vì bị dup như trên
-		sa.allocated_amount / count(*) over (partition by o.split_order_group) as allocated_amount_by_order_id,
+		sa.allocated_amount / count(*) over (partition by o.order_id) as allocated_amount_by_order_id,
 		-- chia product quantity và total price theo order_id và product_id
 		oi.quantity as product_quantity,
-		oi.quantity / count(*) over (partition by o.split_order_group, oi.product_key) as allocated_product_quantity_by_order_id,
+		oi.quantity / count(*) over (partition by o.order_id, oi.product_key) as allocated_product_quantity_by_order_id,
 		oi.line_gross_amount as product_total_price,
-		oi.line_gross_amount/ count(*) over (partition by o.split_order_group, oi.product_key) as allocated_product_total_price_by_order_id,
+		oi.line_gross_amount/ count(*) over (partition by o.order_id, oi.product_key) as allocated_product_total_price_by_order_id,
 		-- customer
 		dc.age_group as customer_age_group,
 		dc.gender as customer_gender,
