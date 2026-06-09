@@ -139,6 +139,10 @@ Jobs and schedules auto-generated from `ExecutionUnitSpec` in `orchestration/cat
 - `jobs/common.py` → `build_job_definition(spec)` → `define_asset_job`
 - `schedules/common.py` → `build_schedule_definition(spec, job)` → `ScheduleDefinition`
 - **`build_asset_selection()` uses `.upstream()`** — every job automatically includes all upstream dependencies (staging views, intermediate views). This guarantees upstream models exist before building downstream marts. Without this, dbt `--select` would skip upstream deps and fail if they don't exist in the database.
+- **Why `.upstream()` is required:** `dagster_dbt` generates `--select <model>` without `+` prefix, so it never includes upstream deps. `.upstream()` is the only clean way to add them.
+- **`.upstream()` does NOT pull ingestion assets into transformation jobs.** Ingestion (`["ingestion", ...]`) and Transformation (`["transformation", ...]`) are separate subgraphs with no Dagster dependency edge between them. dbt source assets (`["transformation", "staging", ..., "sources", ...]`) are external assets with no producer — they don't connect to ingestion assets.
+- **Sales and Marketing marts do NOT cross-contaminate.** They share only `dim_dates`, and `.upstream()` only traverses UP the dependency graph, never sideways to sibling schemas. A sales marts job will never include marketing marts models.
+- **Do NOT remove `.upstream()`.** The alternative is overriding `dagster_dbt` internals to add `+` prefix, which is fragile and hard to maintain.
 
 ### Asset Key Conventions
 
@@ -187,6 +191,7 @@ WHERE name NOT IN (
 - `materialization_table` — overrides default TABLE: `TRUNCATE + INSERT` for normal runs (preserves OID, avoids DROP CASCADE). Backup/rename/drop path only on `--full-refresh`
 - `materialization_incremental` — overrides default INCREMENTAL: normal run uses default merge strategy. Full-refresh creates temp → detects schema changes → ALTER TABLE add columns → TRUNCATE → INSERT. Preserves OID, supports schema changes, no CASCADE
 - `drop_without_cascade` — overrides `postgres__drop_table`, `postgres__drop_materialized_view`, `postgres__drop_view` to remove CASCADE from all DROP operations
+- `set_statement_timeout` — runs in `on-run-start`, reads `DBT_STATEMENT_TIMEOUT_MS` env var (default 1200000ms/20min), sets PostgreSQL `statement_timeout` to prevent runaway queries
 
 ### dbt Materialization Safety (PostgreSQL)
 
@@ -207,6 +212,28 @@ WHERE name NOT IN (
 
 - `unique_key` must be a column that is **never NULL** for any row — otherwise incremental merge produces duplicates
 - When using FULL OUTER JOIN in incremental models, the coalesced ID column may be NULL for one side — always choose a key that exists for ALL rows
+
+### Timeout Safety (3-Layer Defense)
+
+Prevents infinite-running jobs (e.g., 18-hour frappe leads job) using 3 layers:
+
+**L1 — Dagster job timeout:**
+- `max_runtime_seconds` field in `ExecutionUnitSpec` (`orchestration/catalogs/common.py`)
+- Auto-sets `dagster/max_runtime` tag on all jobs — Dagster daemon kills runs exceeding this limit
+- `run_monitoring` in `deploy/dagster.yaml` (poll 60s, global max 7200s, start timeout 300s)
+
+**L2 — dlt resource loop guards:**
+- `ingestion/frappe/apps/erpnext/common.py` — max 500 iterations, max 600s elapsed, cursor stall detection per `while True` loop
+- `ingestion/haravan/resources/inventory_locations.py` — max 180s elapsed per `while True` loop
+
+**L2 — dbt `statement_timeout`:**
+- `transformation/macros/set_statement_timeout.sql` — runs in `on-run-start`, reads `DBT_STATEMENT_TIMEOUT_MS` env var
+- Default 1200000ms (20min) — prevents runaway SQL queries at PostgreSQL level
+
+**Rules:**
+- Every `ExecutionUnitSpec` must have `max_runtime_seconds` set — no unlimited jobs
+- When adding new `while True` loops in ingestion, always add elapsed/iteration guards
+- Timeout values by cadence: 5m→240s, 10m→480s, 20m→900s, hourly→2700s, daily→3600s
 
 ---
 
@@ -237,6 +264,8 @@ All secrets from `.env` (never committed):
 - Prefer VIEW materialization for pure SQL models (no I/O benefit from TABLE) — prevents CASCADE destruction
 - For incremental models, `unique_key` must never be NULL for any row — use a column that always exists
 - After adding new dbt macro files, clear partial parse cache: `rm transformation/target/partial_parse.msgpack`
+- Every `ExecutionUnitSpec` must have `max_runtime_seconds` set — no unlimited jobs
+- When adding new `while True` loops in ingestion, always add elapsed/iteration guards
 
 ---
 
