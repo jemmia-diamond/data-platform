@@ -20,6 +20,7 @@ CORE_MARTS_EXECUTION_UNITS = validate_execution_units(
             asset_paths=_asset_paths("dim_dates"),
             description="Core shared dimensions (static reference data)",
             cadence="manual",
+            max_runtime_seconds=1800,
         ),
     )
 )

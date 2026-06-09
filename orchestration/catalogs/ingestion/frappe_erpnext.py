@@ -24,6 +24,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="1,11,21,31,41,51 * * * *",
             schedule_token="every_10m",
             schedule_description="Run ERPNext leads every 10 minutes",
+            max_runtime_seconds=480,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -37,6 +38,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="3,13,23,33,43,53 * * * *",
             schedule_token="every_10m",
             schedule_description="Run ERPNext sales orders and sales order items every 10 minutes",
+            max_runtime_seconds=480,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -50,6 +52,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="5,15,25,35,45,55 * * * *",
             schedule_token="every_10m",
             schedule_description="Run ERPNext lead products and opportunities every 10 minutes",
+            max_runtime_seconds=480,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -63,6 +66,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="7,17,27,37,47,57 * * * *",
             schedule_token="every_10m",
             schedule_description="Run ERPNext communications and call logs every 10 minutes",
+            max_runtime_seconds=480,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -76,6 +80,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="2,22,42 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext customers every 20 minutes",
+            max_runtime_seconds=900,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -89,6 +94,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="6,26,46 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext contacts every 20 minutes",
+            max_runtime_seconds=900,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -102,6 +108,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="10,30,50 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext addresses records every 20 minutes",
+            max_runtime_seconds=900,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -115,6 +122,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="14,34,54 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext payment entries, bank transactions, and buyback exchanges every 20 minutes",
+            max_runtime_seconds=900,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -128,6 +136,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="18,38,58 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext comments, files, deleted documents, and web forms every 20 minutes",
+            max_runtime_seconds=900,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -149,6 +158,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="10 * * * *",
             schedule_token="hourly",
             schedule_description="Run ERPNext users, logs, permissions, notifications, sales persons, and process subscriptions hourly at minute 10",
+            max_runtime_seconds=2700,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -190,6 +200,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="0 1 * * *",
             schedule_token="daily_01utc",
             schedule_description="Run ERPNext master data daily at 08:00 ICT (01:00 UTC)",
+            max_runtime_seconds=3600,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -200,6 +211,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             description="Refresh ERPNext property setters",
             cadence="manual",
             name_segments=FRAPPE_ERPNEXT_NAME_SEGMENTS,
+            max_runtime_seconds=1800,
         ),
     )
 )

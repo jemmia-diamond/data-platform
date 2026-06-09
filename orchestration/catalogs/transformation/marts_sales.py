@@ -39,6 +39,7 @@ SALES_MARTS_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="0 1-12 * * *",
             schedule_token="hourly_business_hours",
             schedule_description="Run sales marts hourly during business hours 08:00-19:00 ICT (01:00-12:00 UTC)",
+            max_runtime_seconds=2700,
         ),
     )
 )

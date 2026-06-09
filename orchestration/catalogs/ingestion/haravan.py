@@ -20,6 +20,7 @@ HARAVAN_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="*/5 * * * *",
             schedule_token="every_5m",
             schedule_description="Run Haravan inventory locations every 5 minutes",
+            max_runtime_seconds=240,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -32,6 +33,7 @@ HARAVAN_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="*/10 * * * *",
             schedule_token="every_10m",
             schedule_description="Run Haravan orders, products, customers, and events every 10 minutes",
+            max_runtime_seconds=480,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -49,6 +51,7 @@ HARAVAN_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="0 1 * * *",
             schedule_token="daily_01utc",
             schedule_description="Run Haravan custom collections, smart collections, locations, and users daily at 08:00 ICT (01:00 UTC)",
+            max_runtime_seconds=3600,
         ),
     )
 )

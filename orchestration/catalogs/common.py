@@ -21,6 +21,7 @@ class ExecutionUnitSpec:
     cron_schedule: str | None = None
     schedule_token: str | None = None
     schedule_description: str | None = None
+    max_runtime_seconds: int | None = None
 
     @property
     def resolved_name_segments(self) -> tuple[str, ...]:
@@ -28,13 +29,16 @@ class ExecutionUnitSpec:
 
     @property
     def dagster_tags(self) -> dict[str, str]:
-        return build_dagster_tags(
+        tags = build_dagster_tags(
             layer=self.layer,
             tool=self.tool,
             system=self.system,
             unit=self.unit,
             cadence=self.cadence,
         )
+        if self.max_runtime_seconds is not None:
+            tags["dagster/max_runtime"] = str(self.max_runtime_seconds)
+        return tags
 
     @property
     def job_name(self) -> str:

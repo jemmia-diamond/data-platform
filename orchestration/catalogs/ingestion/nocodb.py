@@ -23,6 +23,7 @@ NOCODB_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="02 * * * *",
             schedule_token="every_1h",
             schedule_description="Run Diamond Resources sync every hour at :02",
+            max_runtime_seconds=2700,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -36,6 +37,7 @@ NOCODB_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="22 * * * *",
             schedule_token="every_1h",
             schedule_description="Run Product Catalog sync every hour at :22",
+            max_runtime_seconds=2700,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -49,6 +51,7 @@ NOCODB_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="42 * * * *",
             schedule_token="every_1h",
             schedule_description="Run Inventory sync every hour at :42",
+            max_runtime_seconds=2700,
         ),
         # ── 2-hourly groups ────────────────────────────────────────────
         ExecutionUnitSpec(
@@ -63,6 +66,7 @@ NOCODB_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="12 */2 * * *",
             schedule_token="every_2h",
             schedule_description="Run Design Core sync every 2 hours at :12",
+            max_runtime_seconds=3600,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -82,6 +86,7 @@ NOCODB_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="52 */2 * * *",
             schedule_token="every_2h",
             schedule_description="Run Marketing Collections sync every 2 hours at :52",
+            max_runtime_seconds=3600,
         ),
     )
 )

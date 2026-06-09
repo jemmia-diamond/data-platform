@@ -26,6 +26,7 @@ MARKETING_MARTS_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="0 2,5 * * *",
             schedule_token="twice_daily",
             schedule_description="Run selected marketing marts at 09:00 and 12:00 ICT (02:00 and 05:00 UTC)",
+            max_runtime_seconds=2700,
         ),
     )
 )
