@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import logging
+from time import monotonic
 from typing import Optional
 
 import dlt
@@ -10,6 +12,10 @@ from dlt.extract.resource import DltResource
 from ingestion.frappe.client import FrappeClient, normalize_frappe_datetime
 
 DEFAULT_PAGE_SIZE = 1000
+MAX_ITERATIONS = 500
+MAX_ELAPSED_SECONDS = 600.0
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -231,7 +237,27 @@ def _build_resource(
         last_modified: Optional[str] = None
         last_name: Optional[str] = None
 
+        iteration = 0
+        loop_start = monotonic()
+
         while True:
+            iteration += 1
+            elapsed = monotonic() - loop_start
+
+            if iteration > MAX_ITERATIONS:
+                logger.warning(
+                    "Resource %s: exceeded max iterations (%d). Stopping to prevent infinite loop.",
+                    spec.resource_name, MAX_ITERATIONS,
+                )
+                return
+
+            if elapsed > MAX_ELAPSED_SECONDS:
+                logger.warning(
+                    "Resource %s: exceeded max elapsed time (%.0fs). Stopping to prevent infinite loop.",
+                    spec.resource_name, MAX_ELAPSED_SECONDS,
+                )
+                return
+
             sql = _build_incremental_query(
                 client=client,
                 spec=spec,
@@ -242,6 +268,30 @@ def _build_resource(
             )
             batch_rows = client.execute_sql(sql)
             if not batch_rows:
+                return
+
+            prev_modified = last_modified
+            prev_name = last_name
+
+            for row in batch_rows:
+                name = row.get("name")
+                row_modified = row.get("modified")
+                if name is None or row_modified is None:
+                    continue
+
+                last_name = str(name)
+                last_modified = str(row_modified)
+                row["_db_updated_at"] = sync_timestamp
+                yield row
+
+            if len(batch_rows) < DEFAULT_PAGE_SIZE:
+                return
+
+            if last_modified == prev_modified and last_name == prev_name:
+                logger.warning(
+                    "Resource %s: cursor did not advance (modified=%s, name=%s). Stopping to prevent infinite loop.",
+                    spec.resource_name, last_modified, last_name,
+                )
                 return
 
             for row in batch_rows:

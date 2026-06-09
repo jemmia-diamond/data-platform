@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import logging
 import time
+from time import monotonic
 from typing import Iterable, Optional
 
 import dlt
@@ -18,6 +19,7 @@ MAX_429_RETRIES = 8
 BACKOFF_BASE_SECONDS = 1.0
 BACKOFF_MAX_SECONDS = 30.0
 REQUEST_SPACING_SECONDS = 0.1
+MAX_ELAPSED_SECONDS = 180.0
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +90,13 @@ def _chunked(items: list[str], chunk_size: int) -> Iterable[list[str]]:
 
 def _fetch_location_ids(*, base_url: str, headers: dict[str, str]) -> Iterable[str]:
     page = 1
+    loop_start = monotonic()
 
     while True:
+        if monotonic() - loop_start > MAX_ELAPSED_SECONDS:
+            logger.warning("_fetch_location_ids: exceeded max elapsed time (%.0fs). Stopping.", MAX_ELAPSED_SECONDS)
+            break
+
         response_json = _get_json_with_retry(
             url=f"{base_url}locations.json",
             headers=headers,
@@ -121,8 +128,13 @@ def _fetch_changed_variant_ids_generator(
     page = 1
     max_seen_updated_at = updated_at_min
     max_seen_dt = _parse_haravan_datetime(updated_at_min)
+    loop_start = monotonic()
 
     while True:
+        if monotonic() - loop_start > MAX_ELAPSED_SECONDS:
+            logger.warning("_fetch_changed_variant_ids: exceeded max elapsed time (%.0fs). Stopping.", MAX_ELAPSED_SECONDS)
+            break
+
         params = {
             "limit": 50,
             "page": page,
@@ -209,7 +221,13 @@ def _iter_inventory_locations(
             return
 
         since_id: str | None = None
+        loop_start = monotonic()
+
         while True:
+            if monotonic() - loop_start > MAX_ELAPSED_SECONDS:
+                logger.warning("_iter_inventory_locations: exceeded max elapsed time (%.0fs). Stopping batch.", MAX_ELAPSED_SECONDS)
+                return
+
             try:
                 inventory_locations_data = _fetch_inventory_page(
                     location_batch=location_batch,
