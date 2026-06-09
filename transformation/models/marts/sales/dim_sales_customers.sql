@@ -18,8 +18,8 @@ WITH customers AS (
 order_metrics AS (
     SELECT
         unified_customer_id,
-        (MIN(first_order_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS first_order_date,
-        (MAX(first_order_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS last_order_date,
+        (MIN(first_order_at) AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS first_order_date,
+        (MAX(first_order_at) AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS last_order_date,
         COUNT(*) AS total_orders,
         SUM(gross_amount) AS total_gross_amount,
         SUM(net_amount) AS total_net_amount,
@@ -91,13 +91,13 @@ SELECT
 
     -- === TIMESTAMPS ===
     c.erp_created_at,
-    c.erp_created_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS erp_created_at_vn,
+    c.erp_created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS erp_created_at_vn,
     c.haravan_created_at AS hrv_created_at,
-    c.haravan_created_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS hrv_created_at_vn,
+    c.haravan_created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS hrv_created_at_vn,
     c.erp_updated_at,
-    c.erp_updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS erp_updated_at_vn,
+    c.erp_updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS erp_updated_at_vn,
     c.haravan_updated_at AS hrv_updated_at,
-    c.haravan_updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS hrv_updated_at_vn
+    c.haravan_updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS hrv_updated_at_vn
 
 FROM customers c
 LEFT JOIN order_metrics m

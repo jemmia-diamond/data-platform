@@ -33,9 +33,9 @@ SELECT
     t.target_qualified_to_orders,
     t.target_owner,
     t.created_at,
-    t.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS created_at_vn,
+    t.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS created_at_vn,
     t.updated_at,
-    t.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh' AS updated_at_vn
+    t.updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS updated_at_vn
 FROM targets t
 LEFT JOIN persons p
     ON t.sales_person_id = p.sales_person_id
