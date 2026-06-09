@@ -23,6 +23,7 @@ clean-targets: # directories to be removed by `dbt clean`
 
 on-run-start:
   - "{{ create_raw_indexes() }}"
+  - "{{ set_statement_timeout() }}"
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
