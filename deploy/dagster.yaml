@@ -46,3 +46,9 @@ run_launcher:
   #     - DBT_POSTGRES_PASSWORD
   #     - DBT_POSTGRES_DBNAME
   #     - DBT_POSTGRES_SCHEMA
+
+run_monitoring:
+  enabled: true
+  poll_interval_seconds: 60
+  max_runtime_seconds: 7200
+  start_timeout_seconds: 300
