@@ -68,6 +68,7 @@ sales as (
 		dc.gender as customer_gender,
 		dc.default_province as customer_default_province,
 		coalesce(dc.lead_source_name, 'Chưa xác định') as customer_lead_source,
+        dc.lead_name,
 		o.purchase_purposes,
 		-- product
 		dp.product_name,
