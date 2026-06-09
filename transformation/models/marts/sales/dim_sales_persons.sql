@@ -15,7 +15,7 @@ SELECT
     sales_person_id,
     sales_person_name,
     employee_id,
-    employee_email,
+    {{ mask_email('employee_email') }} AS employee_email,
     parent_sales_person,
     commission_rate,
     assigned_lead_count,

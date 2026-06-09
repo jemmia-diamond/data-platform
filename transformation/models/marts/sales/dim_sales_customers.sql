@@ -43,15 +43,15 @@ SELECT
     c.haravan_customer_id AS hrv_customer_id,
 
     -- === PROFILE ===
-    c.full_name,
-    c.email,
-    c.phone,
+    {{ mask_name('c.full_name') }} AS full_name,
+    {{ mask_email('c.email') }} AS email,
+    {{ mask_phone('c.phone') }} AS phone,
     CASE c.gender
         WHEN 'Male' THEN 'Nam'
         WHEN 'Female' THEN 'Nữ'
         ELSE 'Chưa xác định'
     END AS gender,
-    c.birth_date,
+    {{ mask_birth_date('c.birth_date') }} AS birth_date,
     EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int AS customer_age,
     CASE
         WHEN c.birth_date IS NULL THEN '8. Chưa xác định'

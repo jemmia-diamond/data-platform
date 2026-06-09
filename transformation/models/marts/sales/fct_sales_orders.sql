@@ -64,9 +64,9 @@ SELECT
 
     -- === CUSTOMER ===
     unified_customer_id as customer_id,
-    customer_name,
-    customer_email,
-    customer_phone,
+    {{ mask_name('customer_name') }} AS customer_name,
+    {{ mask_email('customer_email') }} AS customer_email,
+    {{ mask_phone('customer_phone') }} AS customer_phone,
     haravan_staff_user_id AS staff_id,
     primary_sales_person AS primary_sales_person_id,
 
@@ -119,9 +119,8 @@ SELECT
     haravan_total_weight AS total_weight,
 
     -- === SHIPPING ===
-    shipping_name,
-    shipping_phone,
-    shipping_address1,
+    {{ mask_name('shipping_name') }} AS shipping_name,
+    {{ mask_phone('shipping_phone') }} AS shipping_phone,
     shipping_ward,
     shipping_district,
     shipping_province,

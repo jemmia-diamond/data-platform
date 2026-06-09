@@ -192,6 +192,7 @@ WHERE name NOT IN (
 - `materialization_incremental` — overrides default INCREMENTAL: normal run uses default merge strategy. Full-refresh creates temp → detects schema changes → ALTER TABLE add columns → TRUNCATE → INSERT. Preserves OID, supports schema changes, no CASCADE
 - `drop_without_cascade` — overrides `postgres__drop_table`, `postgres__drop_materialized_view`, `postgres__drop_view` to remove CASCADE from all DROP operations
 - `set_statement_timeout` — runs in `on-run-start`, reads `DBT_STATEMENT_TIMEOUT_MS` env var (default 1200000ms/20min), sets PostgreSQL `statement_timeout` to prevent runaway queries
+- `mask_email`, `mask_phone`, `mask_name`, `mask_birth_date` — PII masking macros for marts layer. Partial masking: email (`n***@domain.com`), phone (`090***567`), name (`Nguyễn T***`), birth_date (year only)
 
 ### dbt Materialization Safety (PostgreSQL)
 
@@ -235,6 +236,14 @@ Prevents infinite-running jobs (e.g., 18-hour frappe leads job) using 3 layers:
 - When adding new `while True` loops in ingestion, always add elapsed/iteration guards
 - Timeout values by cadence: 5m→240s, 10m→480s, 20m→900s, hourly→2700s, daily→3600s
 
+### Data Masking (PII)
+
+- PII columns in marts layer use `mask_*` macros (`mask_email`, `mask_phone`, `mask_name`, `mask_birth_date`)
+- Masking is applied directly in dbt marts SQL models — marts data contains masked values
+- Raw, staging, intermediate layers remain **unmasked** — only source apps (ERPNext/Haravan) show real data
+- When adding new PII columns to marts, always apply masking macro
+- Sales person names (`sales_person_name`, `lead_name`) are NOT masked (internal data)
+
 ---
 
 ## Environment Variables
@@ -266,6 +275,7 @@ All secrets from `.env` (never committed):
 - After adding new dbt macro files, clear partial parse cache: `rm transformation/target/partial_parse.msgpack`
 - Every `ExecutionUnitSpec` must have `max_runtime_seconds` set — no unlimited jobs
 - When adding new `while True` loops in ingestion, always add elapsed/iteration guards
+- When adding new PII columns to marts models, always apply `mask_*` macros — email, phone, customer name must be masked
 
 ---
 

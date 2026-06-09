@@ -43,14 +43,14 @@ SELECT
     sp.region_name AS sales_region,
     r.region_name AS lead_region,
 
-    l.email,
-    l.phone,
+    {{ mask_email('l.email') }} AS email,
+    {{ mask_phone('l.phone') }} AS phone,
     CASE l.gender
         WHEN 'Male' THEN 'Nam'
         WHEN 'Female' THEN 'Nữ'
         ELSE 'Chưa xác định'
     END AS gender,
-    l.birth_date,
+    {{ mask_birth_date('l.birth_date') }} AS birth_date,
 
     l.province,
 
