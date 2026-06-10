@@ -110,6 +110,7 @@ sales_kpi as (
 		ds.sales_position as salesperson_position,
 		ds.sales_person_name as salesperson_name,
 		ds.store_name as salesperson_store,
+        ds.city_name as salesperson_city,
 		ds.parent_sales_person as sales_person_parent
 	from kpi kpi
 	left join sales s on kpi.date_actual = s.order_date and kpi.sales_person_key = s.sales_person_key
