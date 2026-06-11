@@ -16,20 +16,14 @@ WITH RECURSIVE all_orders AS (
 ),
 
 new_orders AS (
-    SELECT order_id
+    SELECT
+        order_id,
+        ref_order_id,
+        created_at
     FROM all_orders
     {% if is_incremental() %}
     WHERE order_id NOT IN (SELECT order_id FROM {{ this }})
     {% endif %}
-),
-
-orders AS (
-    SELECT
-        ao.order_id,
-        ao.ref_order_id,
-        ao.created_at
-    FROM all_orders ao
-    JOIN new_orders no ON ao.order_id = no.order_id
 ),
 
 chain AS (
@@ -37,8 +31,10 @@ chain AS (
         order_id,
         ref_order_id,
         created_at,
-        created_at AS root_date
-    FROM orders
+        created_at AS root_date,
+        ARRAY[order_id] AS path,
+        1 AS depth
+    FROM new_orders
 
     UNION ALL
 
@@ -46,10 +42,14 @@ chain AS (
         c.order_id,
         o.ref_order_id,
         o.created_at,
-        LEAST(c.root_date, o.created_at) AS root_date
+        LEAST(c.root_date, o.created_at) AS root_date,
+        c.path || o.order_id AS path,
+        c.depth + 1 AS depth
     FROM chain c
-    JOIN orders o ON c.ref_order_id = o.order_id
+    JOIN all_orders o ON c.ref_order_id = o.order_id
     WHERE c.ref_order_id != 0
+      AND NOT o.order_id = ANY(c.path)
+      AND c.depth < 100
 )
 
 SELECT
