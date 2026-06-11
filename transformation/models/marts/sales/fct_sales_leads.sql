@@ -10,6 +10,7 @@
 
 WITH leads AS (
     SELECT * FROM {{ ref('int_crm__leads') }}
+    WHERE lead_source_platform IS DISTINCT FROM 'Zalo'
 ),
 
 sales_persons AS (

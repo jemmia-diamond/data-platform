@@ -38,6 +38,8 @@ models:
         description: "Lead source for the order's customer, resolved through customer lead when available and coalesced to Chưa xác định."
       - name: customer_lead_id
         description: "Lead ID linked from the order's customer profile."
+      - name: customer_lead_scope_status
+        description: "Whether the linked customer lead is included in sales lead reporting, missing, or excluded from scope."
       - name: customer_lead_name
         description: "Lead display name linked from the order's customer profile."
       - name: customer_lead_source_platform

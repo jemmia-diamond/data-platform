@@ -54,6 +54,7 @@ SELECT
     o.customer_total_orders,
     o.is_repeat_customer,
     o.customer_lead_id,
+    o.customer_lead_scope_status,
     o.customer_lead_name,
     o.customer_lead_source_name,
     o.customer_lead_source_platform,

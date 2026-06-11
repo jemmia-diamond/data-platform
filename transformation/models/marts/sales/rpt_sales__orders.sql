@@ -43,7 +43,8 @@ SELECT
     o.split_order_group_name,
     o.split_order_group,
     CASE
-        WHEN NULLIF(c.lead_name, '') IS NOT NULL THEN COALESCE(o.split_order_group::text, o.order_id::text)
+        WHEN NULLIF(c.lead_name, '') IS NOT NULL
+         AND l.lead_id IS NOT NULL THEN COALESCE(o.split_order_group::text, o.order_id::text)
     END AS customer_lead_order_group_key,
 
     -- === CUSTOMER ===
@@ -61,23 +62,64 @@ SELECT
     {{ filter_text('c.rank') }} AS customer_rank_raw,
     {{ filter_text('c.customer_journey') }} AS customer_journey,
     NULLIF(c.lead_name, '') AS customer_lead_id,
-    {{ filter_text('l.lead_name', 'Không có lead') }} AS customer_lead_name,
-    COALESCE(
-        NULLIF(NULLIF(TRIM(l.lead_source_name), ''), 'Chưa xác định'),
-        NULLIF(NULLIF(TRIM(c.lead_source_name), ''), 'Chưa xác định'),
-        'Chưa xác định'
-    ) AS customer_lead_source_name,
-    {{ filter_text('l.lead_source_platform') }} AS customer_lead_source_platform,
-    COALESCE(
-        NULLIF(NULLIF(TRIM(l.pancake_platform), ''), 'Chưa xác định'),
-        NULLIF(NULLIF(TRIM(c.pancake_platform), ''), 'Chưa xác định'),
-        'Chưa xác định'
-    ) AS customer_pancake_platform,
-    {{ filter_text('l.pancake_page_name', 'Không có lead') }} AS customer_pancake_page_name,
-    {{ filter_text('l.budget_label', 'Chưa khai báo') }} AS customer_lead_budget_label,
-    {{ filter_text('l.demand_label', 'Chưa khai báo') }} AS customer_lead_demand_label,
-    {{ filter_text('l.lead_status', 'Không có lead') }} AS customer_lead_status,
-    {{ filter_text('l.qualification_status', 'Không có lead') }} AS customer_lead_qualification_status,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE 'Trong phạm vi báo cáo'
+    END AS customer_lead_scope_status,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE {{ filter_text('l.lead_name') }}
+    END AS customer_lead_name,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN COALESCE(NULLIF(NULLIF(TRIM(c.lead_source_name), ''), 'Chưa xác định'), 'Ngoài phạm vi')
+        ELSE COALESCE(
+            NULLIF(NULLIF(TRIM(l.lead_source_name), ''), 'Chưa xác định'),
+            NULLIF(NULLIF(TRIM(c.lead_source_name), ''), 'Chưa xác định'),
+            'Chưa xác định'
+        )
+    END AS customer_lead_source_name,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Zalo'
+        ELSE {{ filter_text('l.lead_source_platform') }}
+    END AS customer_lead_source_platform,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN COALESCE(NULLIF(NULLIF(TRIM(c.pancake_platform), ''), 'Chưa xác định'), 'Ngoài phạm vi')
+        ELSE COALESCE(
+            NULLIF(NULLIF(TRIM(l.pancake_platform), ''), 'Chưa xác định'),
+            NULLIF(NULLIF(TRIM(c.pancake_platform), ''), 'Chưa xác định'),
+            'Chưa xác định'
+        )
+    END AS customer_pancake_platform,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE {{ filter_text('l.pancake_page_name') }}
+    END AS customer_pancake_page_name,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE {{ filter_text('l.budget_label', 'Chưa khai báo') }}
+    END AS customer_lead_budget_label,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE {{ filter_text('l.demand_label', 'Chưa khai báo') }}
+    END AS customer_lead_demand_label,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE {{ filter_text('l.lead_status') }}
+    END AS customer_lead_status,
+    CASE
+        WHEN NULLIF(c.lead_name, '') IS NULL THEN 'Không có lead'
+        WHEN l.lead_id IS NULL THEN 'Ngoài phạm vi'
+        ELSE {{ filter_text('l.qualification_status') }}
+    END AS customer_lead_qualification_status,
     l.is_converted AS customer_lead_is_converted,
     l.lead_entry_date AS customer_lead_entry_date,
     l.converted_date AS customer_lead_converted_date,
@@ -184,7 +226,7 @@ lead_order_groups AS (
         MIN(real_created_at) AS lead_order_group_at,
         MIN(order_date) AS lead_order_group_date
     FROM enriched_orders
-    WHERE customer_lead_id IS NOT NULL
+    WHERE customer_lead_order_group_key IS NOT NULL
     GROUP BY 1, 2
 ),
 

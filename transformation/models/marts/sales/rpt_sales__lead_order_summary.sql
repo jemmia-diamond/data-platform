@@ -25,6 +25,7 @@ all_lead_orders AS (
         ) AS all_order_rank
     FROM orders
     WHERE customer_lead_id IS NOT NULL
+      AND customer_lead_scope_status = 'Trong phạm vi báo cáo'
 ),
 
 all_order_summary AS (
@@ -89,6 +90,7 @@ first_group_orders AS (
         ) AS first_group_order_rank
     FROM orders
     WHERE customer_lead_id IS NOT NULL
+      AND customer_lead_scope_status = 'Trong phạm vi báo cáo'
       AND is_customer_lead_first_order_group
 ),
 
