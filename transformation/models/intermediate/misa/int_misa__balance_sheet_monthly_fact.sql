@@ -2,12 +2,6 @@
     materialized='incremental',
     unique_key='time_item_key',
     schema='intermediate'
---     post_hook=[
---       "CREATE INDEX IF NOT EXISTS idx_iso_unified_id ON {{ this }} (unified_sales_order_id)",
---       "CREATE INDEX IF NOT EXISTS idx_iso_erp_id ON {{ this }} (erp_sales_order_id)",
---       "CREATE INDEX IF NOT EXISTS idx_iso_haravan_id ON {{ this }} (haravan_order_id)",
---       "CREATE INDEX IF NOT EXISTS idx_iso_customer_id ON {{ this }} (unified_customer_id)",
---     ]
 ) }}
 
 -- bảng cân đối
