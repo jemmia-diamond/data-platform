@@ -20,7 +20,7 @@ SELECT
     pp.preferred_product_id,
     pp.lead_id,
     pp.product_type,
-    p.product_label,
+    {{ filter_text('p.product_label') }} AS product_label,
     pp.idx
 FROM preferred_products pp
 LEFT JOIN products p

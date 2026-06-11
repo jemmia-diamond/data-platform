@@ -62,7 +62,7 @@ persons AS (
 kpi AS (
     SELECT
         COALESCE(a.sales_person_key, t.sales_person_key) AS sales_person_key,
-        COALESCE(pa.region_name, pt.region_name) AS region_name,
+        {{ filter_text('COALESCE(pa.region_name, pt.region_name)') }} AS region_name,
         COALESCE(a.date_actual, t.date_actual) AS date_actual,
 
         COALESCE(a.actual_gross_amount, 0) AS actual_gross_amount,

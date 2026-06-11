@@ -65,18 +65,18 @@ SELECT
     END AS age_group,
 
     -- === ADDRESS ===
-    c.default_province,
-    c.default_district,
-    c.default_ward,
-    c.default_country,
+    {{ filter_text('c.default_province') }} AS default_province,
+    {{ filter_text('c.default_district') }} AS default_district,
+    {{ filter_text('c.default_ward') }} AS default_ward,
+    {{ filter_text('c.default_country') }} AS default_country,
 
     -- === CRM & MARKETING ===
-    c.customer_rank,
-    c.rank,
-    c.customer_journey,
+    {{ filter_text('c.customer_rank') }} AS customer_rank,
+    {{ filter_text('c.rank') }} AS rank,
+    {{ filter_text('c.customer_journey') }} AS customer_journey,
     c.lead_name,
-    c.lead_source_name,
-    c.pancake_platform,
+    {{ filter_text('c.lead_source_name') }} AS lead_source_name,
+    {{ filter_text('c.pancake_platform') }} AS pancake_platform,
     c.accepts_marketing,
     c.haravan_tags AS tags,
 

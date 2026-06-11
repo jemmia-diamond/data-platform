@@ -23,7 +23,7 @@ SELECT
     o.order_number,
     o.order_date,
     c.product_category_id,
-    c.category_name
+    {{ filter_text('c.category_name') }} AS category_name
 
 FROM orders o
 INNER JOIN categories c

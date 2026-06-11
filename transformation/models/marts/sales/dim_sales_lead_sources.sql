@@ -9,8 +9,8 @@ WITH lead_sources AS (
 
 SELECT
     lead_source_id,
-    source_name,
-    details,
-    pancake_platform,
+    {{ filter_text('source_name') }} AS source_name,
+    {{ filter_text('details') }} AS details,
+    {{ filter_text('pancake_platform') }} AS pancake_platform,
     pancake_page_id
 FROM lead_sources

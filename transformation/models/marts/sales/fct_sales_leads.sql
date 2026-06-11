@@ -34,14 +34,14 @@ regions AS (
 
 SELECT
     l.lead_id,
-    l.lead_name,
+    {{ filter_text('l.lead_name') }} AS lead_name,
 
     sp.sales_person_id AS sales_person_key,
-    sp.sales_person_name,
+    {{ filter_text('sp.sales_person_name', 'Chưa gán sales') }} AS sales_person_name,
 
-    COALESCE(sp.region_name, r.region_name) AS region,
-    sp.region_name AS sales_region,
-    r.region_name AS lead_region,
+    {{ filter_text('COALESCE(sp.region_name, r.region_name)') }} AS region,
+    {{ filter_text('sp.region_name', 'Chưa gán sales') }} AS sales_region,
+    {{ filter_text('r.region_name') }} AS lead_region,
 
     {{ mask_email('l.email') }} AS email,
     {{ mask_phone('l.phone') }} AS phone,
@@ -52,14 +52,14 @@ SELECT
     END AS gender,
     {{ mask_birth_date('l.birth_date') }} AS birth_date,
 
-    l.province,
+    {{ filter_text('l.province') }} AS province,
 
     l.source,
-    l.lead_source_name,
-    l.lead_source_platform,
+    {{ filter_text('l.lead_source_name') }} AS lead_source_name,
+    {{ filter_text('l.lead_source_platform') }} AS lead_source_platform,
 
-    l.pancake_platform,
-    l.pancake_page_name,
+    {{ filter_text('l.pancake_platform') }} AS pancake_platform,
+    {{ filter_text('l.pancake_page_name') }} AS pancake_page_name,
     l.pancake_page_id,
     l.pancake_customer_id,
     l.pancake_conversation_id,
@@ -79,12 +79,12 @@ SELECT
         'Khác'
     ) AS lead_status,
 
-    l.qualification_status AS qualification_status_raw,
+    {{ filter_text('l.qualification_status') }} AS qualification_status_raw,
 
     CASE l.qualification_status
         WHEN 'Qualified' THEN 'Đã đạt chất lượng'
         WHEN 'Unqualified' THEN 'Chưa đạt chất lượng'
-        ELSE l.qualification_status
+        ELSE {{ filter_text('l.qualification_status') }}
     END AS qualification_status,
 
     (l.lead_entry_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS lead_entry_date,
@@ -98,19 +98,19 @@ SELECT
     l.time_to_convert_hours,
     l.current_lead_age_days,
 
-    l.lead_owner,
+    {{ filter_text('l.lead_owner', 'Chưa gán') }} AS lead_owner,
     l.is_assigned,
-    l.assigned_to,
+    {{ filter_text('l.assigned_to', 'Chưa gán') }} AS assigned_to,
 
     l.budget_lead,
-    b.budget_label,
+    {{ filter_text('b.budget_label', 'Chưa khai báo') }} AS budget_label,
     b.budget_from,
     b.budget_to,
 
     l.purpose_lead,
-    d.demand_label,
+    {{ filter_text('d.demand_label', 'Chưa khai báo') }} AS demand_label,
 
-    l.preferred_product_types,
+    {{ filter_text('l.preferred_product_types', 'Chưa khai báo') }} AS preferred_product_types,
 
     l._db_updated_at
 

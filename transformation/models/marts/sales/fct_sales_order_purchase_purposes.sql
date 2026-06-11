@@ -23,7 +23,7 @@ SELECT
     o.order_number,
     o.order_date,
     p.purchase_purpose_id,
-    p.purpose_name
+    {{ filter_text('p.purpose_name') }} AS purpose_name
 
 FROM orders o
 INNER JOIN purposes p

@@ -71,15 +71,16 @@ SELECT
     primary_sales_person AS primary_sales_person_id,
 
     -- === SALES CHANNEL ===
-    CASE sales_channel
-        WHEN 'pos-cua-hang-hn' THEN 'POS - Hà Nội'
-        WHEN 'pos-cua-hang-hcm' THEN 'POS - Hồ Chí Minh'
-        WHEN 'pos cua hang can tho' THEN 'POS - Cần Thơ'
-        WHEN 'pos' THEN 'POS - Chưa xác định'
-        WHEN 'staff' THEN 'Nhân viên'
+    CASE
+        WHEN NULLIF(TRIM(sales_channel), '') IS NULL THEN 'Chưa xác định'
+        WHEN sales_channel = 'pos-cua-hang-hn' THEN 'POS - Hà Nội'
+        WHEN sales_channel = 'pos-cua-hang-hcm' THEN 'POS - Hồ Chí Minh'
+        WHEN sales_channel = 'pos cua hang can tho' THEN 'POS - Cần Thơ'
+        WHEN sales_channel = 'pos' THEN 'POS - Chưa xác định'
+        WHEN sales_channel = 'staff' THEN 'Nhân viên'
         ELSE 'Kênh online'
     END AS sales_channel,
-    sales_channel AS sales_channel_raw,
+    {{ filter_text('sales_channel') }} AS sales_channel_raw,
 
     -- === DATES ===
     expected_delivery_date,
@@ -121,13 +122,13 @@ SELECT
     -- === SHIPPING ===
     {{ mask_name('shipping_name') }} AS shipping_name,
     {{ mask_phone('shipping_phone') }} AS shipping_phone,
-    shipping_ward,
-    shipping_district,
-    shipping_province,
-    shipping_country,
-    haravan_location_name AS location_name,
-    assigned_location_name,
-    latest_transaction_kind,
+    {{ filter_text('shipping_ward') }} AS shipping_ward,
+    {{ filter_text('shipping_district') }} AS shipping_district,
+    {{ filter_text('shipping_province') }} AS shipping_province,
+    {{ filter_text('shipping_country') }} AS shipping_country,
+    {{ filter_text('haravan_location_name') }} AS location_name,
+    {{ filter_text('assigned_location_name') }} AS assigned_location_name,
+    {{ filter_text('latest_transaction_kind') }} AS latest_transaction_kind,
 
     -- === PAYMENT STATUS ===
     CASE haravan_financial_status
@@ -136,7 +137,7 @@ SELECT
         WHEN 'partially_paid' THEN 'Thanh toán một phần'
         WHEN 'refunded' THEN 'Đã hoàn tiền'
         WHEN 'partially_refunded' THEN 'Hoàn tiền một phần'
-        ELSE haravan_financial_status
+        ELSE {{ filter_text('haravan_financial_status') }}
     END AS payment_status,
 
     -- === FULFILLMENT STATUS ===
@@ -153,7 +154,7 @@ SELECT
         ELSE 'Chưa xác định'
     END AS hrv_fulfillment_status,
 
-    haravan_carrier_status AS carrier_status,
+    {{ filter_text('haravan_carrier_status') }} AS carrier_status,
 
     -- === PROCESSING STATUS ===
     CASE haravan_processing_status
@@ -190,9 +191,9 @@ SELECT
     END AS order_customer_type,
 
     -- === NOTES ===
-    haravan_tags AS tags,
-    haravan_note AS note,
-    order_policies,
+    {{ filter_text('haravan_tags', 'Không có tag') }} AS tags,
+    {{ filter_text('haravan_note', 'Không có ghi chú') }} AS note,
+    {{ filter_text('order_policies', 'Không có chính sách') }} AS order_policies,
 
     -- === PRICE RANGE (by split_order_group) ===
     CASE
@@ -209,8 +210,8 @@ SELECT
     END AS price_range,
 
     -- === CLASSIFICATION (ERPNext) ===
-    ca.product_categories,
-    pa.purchase_purposes
+    {{ filter_text('ca.product_categories') }} AS product_categories,
+    {{ filter_text('pa.purchase_purposes') }} AS purchase_purposes
 
 FROM orders
 LEFT JOIN cat_agg ca ON orders.unified_sales_order_id = ca.order_id

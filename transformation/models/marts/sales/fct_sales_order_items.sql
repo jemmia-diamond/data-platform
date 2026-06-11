@@ -37,10 +37,10 @@ SELECT
     i.variant_id,
     i.sku,
     i.barcode,
-    i.product_name,
-    i.variant_title,
-    i.product_type,
-    i.vendor,
+    {{ filter_text('i.product_name') }} AS product_name,
+    {{ filter_text('i.variant_title') }} AS variant_title,
+    {{ filter_text('i.product_type') }} AS product_type,
+    {{ filter_text('i.vendor') }} AS vendor,
 
     i.erp_sales_order_id,
     i.haravan_order_id,
@@ -59,29 +59,29 @@ SELECT
     i.line_net_amount,
     i.gross_profit,
 
-    i.warehouse,
+    {{ filter_text('i.warehouse') }} AS warehouse,
     i.total_weight,
-    i.weight_uom,
+    {{ filter_text('i.weight_uom') }} AS weight_uom,
     i.valuation_rate,
     i.serial_numbers,
     i.serial,
-    i.diamond_details,
-    i.product_details,
+    {{ filter_text('i.diamond_details', 'Không có thông tin kim cương') }} AS diamond_details,
+    {{ filter_text('i.product_details', 'Không có thông tin sản phẩm') }} AS product_details,
 
-    i.promotion_1,
-    i.promotion_2,
-    i.promotion_3,
-    i.promotion_4,
-    i.promotion_5,
-    i.new_promotions,
+    {{ filter_text('i.promotion_1') }} AS promotion_1,
+    {{ filter_text('i.promotion_2') }} AS promotion_2,
+    {{ filter_text('i.promotion_3') }} AS promotion_3,
+    {{ filter_text('i.promotion_4') }} AS promotion_4,
+    {{ filter_text('i.promotion_5') }} AS promotion_5,
+    {{ filter_text('i.new_promotions') }} AS new_promotions,
     CASE i.product_availability_status
         WHEN 'Pre-order' THEN 'Hàng order'
         WHEN 'In Stock' THEN 'Hàng có sẵn'
         ELSE 'Chưa xác định'
     END AS product_availability_status,
-    i.pricing_rules,
+    {{ filter_text('i.pricing_rules', 'Không áp dụng') }} AS pricing_rules,
 
-    i.status_info,
+    {{ filter_text('i.status_info') }} AS status_info,
     i.transaction_date,
     i.applied_discounts_json,
 
