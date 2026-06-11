@@ -10,6 +10,7 @@
 --     ]
 ) }}
 
+
 select *,
 		CASE
 	        WHEN LEFT(COALESCE(account_number, ''), 3) = '214'
