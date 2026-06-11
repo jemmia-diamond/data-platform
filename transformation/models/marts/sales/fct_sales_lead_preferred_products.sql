@@ -11,6 +11,11 @@ WITH preferred_products AS (
     SELECT * FROM {{ ref('int_crm__lead_preferred_products') }}
 ),
 
+leads AS (
+    SELECT lead_id
+    FROM {{ ref('fct_sales_leads') }}
+),
+
 products AS (
     SELECT lead_product_id, product_type AS product_label
     FROM {{ ref('int_crm__lead_products') }}
@@ -23,5 +28,7 @@ SELECT
     {{ filter_text('p.product_label') }} AS product_label,
     pp.idx
 FROM preferred_products pp
+INNER JOIN leads l
+    ON pp.lead_id = l.lead_id
 LEFT JOIN products p
     ON pp.product_type = p.lead_product_id
