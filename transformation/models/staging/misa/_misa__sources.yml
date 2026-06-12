@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: misa
+    schema: raw_misa
+    tables:
+      - name: balance_sheet_monthly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "balance_sheet_monthly_fact"]
+      - name: income_statement_monthly_fact
+        meta:
+          dagster:
+            asset_key: [ "misa", "income_statement_monthly_fact" ]
+      - name: cash_flow_monthly_fact
+        meta:
+          dagster:
+            asset_key: [ "misa", "cash_flow_monthly_fact" ]
+      - name: journal_entries
+        meta:
+          dagster:
+            asset_key: [ "misa", "journal_entries" ]
