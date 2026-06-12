@@ -15,3 +15,4 @@ select *,
 			THEN credit_amount::NUMERIC ELSE 0
 		END as taikhoan_331_phatsinh_co
 from {{ ref('stg_misa__journal_entries')}}
+
