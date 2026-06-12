@@ -6,6 +6,7 @@
     ]
 ) }}
 
+with
 int_misa_risk_supplier_monthly as (
     SELECT
         account_object_name as ncc_name,
