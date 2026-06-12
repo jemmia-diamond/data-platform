@@ -46,6 +46,9 @@ models:
       marketing:
         +schema: marts_marketing
         +materialized: materialized_view
+      finance:
+        +schema: marts_finance
+        +materialized: materialized_view
       core:
         +schema: marts_core
         +materialized: table
