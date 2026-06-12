@@ -29,3 +29,4 @@ select
     sum(NKC_taikhoan_214_phatsinh_co) as NKC_taikhoan_214_phatsinh_co,
     sum(NKC_taikhoan_331_phatsinh_co) as NKC_taikhoan_331_phatsinh_co
 from journal_entries_monthly
+group by 1
