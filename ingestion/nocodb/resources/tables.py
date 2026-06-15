@@ -140,7 +140,8 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="collections",
         table_id="muqhbu3bfkfhxpk",
         primary_key="id",
-        incremental_field="database_updated_at",
+        # Full-load (no incremental): the `design_code` field is a NocoDB Lookup
+        incremental_field=None,
         fields="id,collection_name,design_code,database_created_at,database_updated_at",
     ),
     TableSpec(
