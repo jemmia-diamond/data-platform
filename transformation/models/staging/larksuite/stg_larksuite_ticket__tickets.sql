@@ -28,4 +28,4 @@ select
 	completed_at,
 	processed_at,
 	responded_at
-from {{ source('larksuite', 'tickets') }}
+from {{ source('larksuite', 'tech_tickets') }}
