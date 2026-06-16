@@ -1,9 +1,9 @@
 {{ config(
     materialized='incremental',
-    unique_key='ticket_id',
+    unique_key='record_id',
     schema='intermediate',
     post_hook=[
-      "CREATE INDEX IF NOT EXISTS idx_iso_ticket_id ON {{ this }} (ticket_id)",
+      "CREATE INDEX IF NOT EXISTS idx_iso_record_id ON {{ this }} (record_id)",
       "CREATE INDEX IF NOT EXISTS idx_iso_created_date ON {{ this }} (created_date)"
     ]
 ) }}
