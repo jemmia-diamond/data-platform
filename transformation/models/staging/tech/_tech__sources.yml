@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: tech
+    schema: raw_tech
+    tables:
+      - name: uptime_reports
+        meta:
+          dagster:
+            asset_key: ["tech", "uptime_reports"]

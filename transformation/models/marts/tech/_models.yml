@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: fct_system_uptime_reports
+    description: >
+      Unified uptime report combining daily and monthly aggregations per monitor.
+      Each row represents either a single day or a full calendar month of uptime metrics,
+      enriched with SLA compliance status, business risk level, and recommended action.
+      Source: int_system__uptime_reports.
+    columns:
+      - name: date
+        description: >
+          For daily rows: the exact date of the report.
+          For monthly rows: the first day of the month (date_trunc to month).
+        tests:
+          - not_null
+
+      - name: monitor_name
+        description: "Human-readable name or domain of the monitored service."
+        tests:
+          - not_null
+
+      - name: total_time
+        description: >
+          Total time in seconds covered by the period.
+          Daily: 86400. Monthly: sum of daily total_time within the month.
+
+      - name: uptime
+        description: "Total uptime in seconds during the period."
+
+      - name: downtime
+        description: "Total downtime in seconds during the period."
+
+      - name: uptime_percentage
+        description: >
+          Percentage of time the monitor was up.
+          Daily: raw value. Monthly: average of daily uptime_percentage values.
+
+      - name: sla_status
+        description: >
+          SLA compliance status based on uptime ratio (uptime / total_time).
+          'Compliant' if ratio >= 99.9%, otherwise 'Breached'.
+        tests:
+          - accepted_values:
+              values: ['Compliant', 'Breached']
+
+      - name: business_risk_level
+        description: >
+          Business risk classification based on uptime ratio.
+          'Low' if >= 99.9%, 'Medium' if >= 99%, 'High' otherwise.
+        tests:
+          - accepted_values:
+              values: ['Low', 'Medium', 'High']
+
+      - name: action
+        description: >
+          Recommended operational action based on uptime_percentage.
+          'Monitor' if >= 99.9%, 'Investigate' if >= 99%, 'Immediate review' otherwise.
+        tests:
+          - accepted_values:
+              values: ['Monitor', 'Investigate', 'Immediate review']
+
+      - name: period
+        description: "Granularity of the row. Either 'daily' or 'monthly'."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['daily', 'monthly']

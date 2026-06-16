@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_system__uptime_reports
+    description: "System uptime reports — one row per monitor per day with uptime and downtime metrics."
+    columns:
+      - name: id
+        description: "Primary key of the uptime report record."
+        tests:
+          - unique
+          - not_null
+
+      - name: monitor_id
+        description: "Foreign key referencing the monitor being tracked."
+        tests:
+          - not_null
+
+      - name: monitor_name
+        description: "Human-readable name or domain of the monitored service."
+
+      - name: date
+        description: "The date this uptime report covers (YYYY-MM-DD)."
+        tests:
+          - not_null
+
+      - name: total_time
+        description: "Total time in seconds in the reporting period (typically 86400 for a full day)."
+
+      - name: uptime
+        description: "Total uptime in seconds during the reporting period."
+
+      - name: downtime
+        description: "Total downtime in seconds during the reporting period."
+
+      - name: uptime_percentage
+        description: "Percentage of total time the monitor was up (0–100)."
+
+      - name: created_at
+        description: "Timestamp when the record was created."
+
+      - name: updated_at
+        description: "Timestamp when the record was last updated."
