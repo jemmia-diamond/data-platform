@@ -29,3 +29,4 @@ select
 	processed_at,
 	responded_at
 from {{ source('larksuite', 'tech_tickets') }}
+
