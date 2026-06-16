@@ -8,14 +8,58 @@
     ]
 ) }}
 
-with int_ticket as (
-    select *
+with ticket_add_created_time_bh as (
+    select *,
+    	CASE
+          WHEN created_time IS NULL THEN NULL
+          WHEN EXTRACT(ISODOW FROM created_time) = 6 THEN date_trunc('day', created_time) + interval '2 day 9 hour'
+          WHEN EXTRACT(ISODOW FROM created_time) = 7 THEN date_trunc('day', created_time) + interval '1 day 9 hour'
+          WHEN created_time::time < time '09:00' THEN date_trunc('day', created_time) + interval '9 hour'
+          WHEN created_time::time >= time '12:30' AND created_time::time < time '13:30' THEN date_trunc('day', created_time) + interval '13 hour 30 minute'
+          WHEN created_time::time >= time '18:00' AND EXTRACT(ISODOW FROM created_time) = 5 THEN date_trunc('day', created_time) + interval '3 day 9 hour'
+          WHEN created_time::time >= time '18:00' THEN date_trunc('day', created_time) + interval '1 day 9 hour'
+          ELSE created_time
+        END AS created_time_bh
     from {{ ref('stg_larksuite_ticket__tickets')}}
+),
+ticket_add_time_fixed as (
+	select *,
+		GREATEST(COALESCE(responded_at, created_time_bh), created_time_bh) AS responded_at_fixed,
+		GREATEST(COALESCE(processed_at, created_time_bh), created_time_bh) AS processed_at_fixed,
+		COALESCE(completed_at, completed_time) AS completed_time_raw,
+		GREATEST(COALESCE(completed_at, completed_time, created_time_bh), created_time_bh) AS completed_time_fixed
+	from ticket_add_created_time_bh
+),
+ticket_add_resolve_minute as (
+	select *,
+		CASE
+			WHEN completed_time_fixed <= created_time_bh THEN 0
+		    ELSE (
+		        SELECT COALESCE(SUM(
+		          GREATEST(EXTRACT(EPOCH FROM (
+		            LEAST(date_trunc('day', gs) + interval '12 hour 30 minute', completed_time_fixed)
+		            - GREATEST(date_trunc('day', gs) + interval '9 hour', created_time_bh)
+		          )) / 60, 0)
+		          +
+		          GREATEST(EXTRACT(EPOCH FROM (
+		            LEAST(date_trunc('day', gs) + interval '18 hour', completed_time_fixed)
+		            - GREATEST(date_trunc('day', gs) + interval '13 hour 30 minute', created_time_bh)
+		          )) / 60, 0)
+		        ), 0)::int
+		        FROM generate_series(
+		          date_trunc('day', created_time_bh),
+		          date_trunc('day', completed_time_fixed),
+		          interval '1 day'
+		        ) gs
+		        WHERE EXTRACT(ISODOW FROM gs) BETWEEN 1 AND 5
+		      )/60
+		    END AS resolve_hours
+    from ticket_add_time_fixed
 ),
 ticket_normalized_status_priority as (
     select
         record_id,
-        created_time::date as created_date,
+        created_time_bh::date as created_date,
         ticket_id,
         ticket_name,
         ticket_type,
@@ -31,6 +75,7 @@ ticket_normalized_status_priority as (
         ticket_status,
         case
             when lower(ticket_status) like '%ticket mới%' then 'New'
+            -- for special character --> need to add this duplicate
             when lower(ticket_status) like '%ticket mới%' then 'New'
 
             when ticket_status like '%2️⃣ Đã Tiếp Nhận%' then 'Accepted'
@@ -68,12 +113,11 @@ ticket_normalized_status_priority as (
         sla_50_percent,
         completed_at,
         processed_at,
-        responded_at
-    from int_ticket
+        responded_at,
+        resolve_hours,
+        created_time_bh
+    from ticket_add_resolve_minute
 )
-select *,
-    case
-        when ticket_status_normalized = 'Closed'
-        then extract(epoch from (new_deadline - completed_time)) / 3600.0
-    end as resolve_hour
+select *
 from ticket_normalized_status_priority
+

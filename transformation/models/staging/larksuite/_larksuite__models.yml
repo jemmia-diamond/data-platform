@@ -9,9 +9,6 @@ models:
         tests:
           - unique
 
-      - name: created_date
-        description: Ticket creation date.
-
       - name: ticket_id
         description: Ticket identifier.
 
