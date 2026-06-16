@@ -4,7 +4,7 @@ sources:
   - name: larksuite
     schema: raw_larksuite
     tables:
-      - name: tickets
+      - name: tech_tickets
         meta:
           dagster:
             asset_key: [ "larksuite", "tickets" ]
