@@ -10,7 +10,7 @@
 
 with int_ticket as (
     select *
-    from {{ ref('stg_tech_ticket__tickets')}}
+    from {{ ref('stg_larksuite_ticket__tickets')}}
 ),
 ticket_normalized_status_priority as (
     select
