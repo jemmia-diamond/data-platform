@@ -15,7 +15,7 @@ select *,
     case 
         when ticket_priority_normalized in ('Critical')
         and ticket_status_normalized = 'Closed'
-        and resolve_hour <= 5 then 1
+        and resolve_hours <= 5 then 1
         else 0
     end as critital_ticket_completed_in_5_hours,
     case
@@ -28,7 +28,7 @@ select *,
     case
         when ticket_priority_normalized in ('High')
         and ticket_status_normalized = 'Closed'
-        and resolve_hour <= 16 then 1
+        and resolve_hours <= 16 then 1
         else 0
     end as high_ticket_completed_in_16_hours,
     case
@@ -41,7 +41,7 @@ select *,
     case
         when ticket_priority_normalized in ('Medium')
         and ticket_status_normalized = 'Closed'
-        and resolve_hour <= 40 then 1
+        and resolve_hours <= 40 then 1
         else 0
     end as medium_ticket_completed_in_40_hours,
     case

@@ -42,107 +42,138 @@ models:
         description: "Timestamp when the record was last updated."
 
   - name: int_tech_ticket__tickets
-    description: Intermediate model for tech support tickets from LarkSuite.
+    description: >
+      Intermediate model for LarkSuite support tickets.
+      Normalizes ticket priority and status from Vietnamese to English,
+      adjusts timestamps to business hours (Mon–Fri, 09:00–12:30 and 13:30–18:00),
+      and calculates resolution time in business hours.
+      Incremental model keyed on ticket_id.
     columns:
-      - name: record_id
-        description: Unique record identifier from the source system.
+      - name: ticket_id
+        description: "Primary key of the ticket."
         tests:
           - unique
+          - not_null
+
+      - name: record_id
+        description: "Raw record identifier from LarkSuite."
 
       - name: created_date
-        description: Ticket creation date.
-
-      - name: ticket_id
-        description: Ticket identifier.
+        description: "Date the ticket was created and transformed from created_time_bh."
+        tests:
+          - not_null
 
       - name: ticket_name
-        description: Ticket title or summary.
+        description: "Title or subject of the ticket."
 
       - name: ticket_type
-        description: Type or category of the ticket.
+        description: "Category or type of the ticket."
 
       - name: ticket_priority
-        description: Original ticket priority value from LarkSuite.
+        description: "Raw priority value as received from LarkSuite (Vietnamese)."
 
       - name: ticket_priority_normalized
-        description: Normalized ticket priority.
+        description: >
+          Normalized ticket priority in English.
+          Mapped from Vietnamese values: Critical, High, Medium, Low, Unknown.
         tests:
+          - not_null
           - accepted_values:
-              values:
-                - Critical
-                - High
-                - Medium
-                - Low
-                - Unknown
+              values: [ 'Critical', 'High', 'Medium', 'Low', 'Unknown' ]
 
       - name: ticket_status
-        description: Original ticket status from LarkSuite.
+        description: "Raw status value as received from LarkSuite (Vietnamese, may contain emojis)."
 
       - name: ticket_status_normalized
-        description: Normalized ticket status.
+        description: >
+          Normalized ticket status in English.
+          Values: New, Accepted, In Progress, In Review, Waiting Response, On Hold, Closed, Cancelled, Unknown.
         tests:
+          - not_null
           - accepted_values:
-              values:
-                - New
-                - Accepted
-                - In Progress
-                - In Review
-                - Waiting Response
-                - On Hold
-                - Closed
-                - Cancelled
-                - Unknown
+              values: [ 'New', 'Accepted', 'In Progress', 'In Review', 'Waiting Response', 'On Hold', 'Closed', 'Cancelled', 'Unknown' ]
 
       - name: description
-        description: Ticket description.
+        description: "Ticket description or problem statement."
 
       - name: solution_update
-        description: Updates or notes regarding the ticket resolution.
+        description: "Notes on the solution or progress update."
 
       - name: created_time
-        description: Ticket creation timestamp.
+        description: "Raw timestamp when the ticket was created."
+
+      - name: created_time_bh
+        description: >
+          Business-hours-adjusted created time.
+          If created outside business hours (before 09:00, during lunch 12:30–13:30,
+          after 18:00, or on weekends), shifted forward to the next valid business hour window.
 
       - name: updated_time
-        description: Last update timestamp from source.
+        description: "Timestamp when the ticket was last updated."
 
       - name: manual_updated_time
-        description: Timestamp when the ticket was manually updated.
+        description: "Timestamp of the last manual update on the ticket."
 
       - name: completed_time
-        description: Original completion timestamp from source.
-
-      - name: expected_completion_time
-        description: Expected completion timestamp.
-
-      - name: ticket_no_in_month
-        description: Ticket sequence number within the month.
-
-      - name: current_number_in_month
-        description: Current running ticket number within the month.
-
-      - name: synced_at
-        description: Timestamp when data was synchronized into the warehouse.
-
-      - name: manager
-        description: Assigned manager or ticket owner.
-
-      - name: new_deadline
-        description: Updated deadline for ticket completion.
-
-      - name: reminder_time
-        description: Reminder timestamp.
-
-      - name: sla_50_percent
-        description: Timestamp representing 50 percent SLA threshold.
+        description: "Raw completion timestamp from the source system."
 
       - name: completed_at
-        description: Normalized completion timestamp.
-
-      - name: processed_at
-        description: Timestamp when ticket processing started.
+        description: "Completion timestamp recorded by the assignee."
 
       - name: responded_at
-        description: Timestamp when the first response was provided.
+        description: "Timestamp when the ticket first received a response."
 
-      - name: resolve_hour
-        description: Hour from deadline till completed time
+      - name: processed_at
+        description: "Timestamp when the ticket started being processed."
+
+      - name: responded_at_fixed
+        description: >
+          Business-hours-adjusted responded_at.
+          Uses GREATEST(COALESCE(responded_at, created_time_bh), created_time_bh)
+          to ensure it is never earlier than created_time_bh.
+
+      - name: processed_at_fixed
+        description: >
+          Business-hours-adjusted processed_at.
+          Uses GREATEST(COALESCE(processed_at, created_time_bh), created_time_bh).
+
+      - name: completed_time_raw
+        description: "COALESCE of completed_at and completed_time — the first non-null completion timestamp."
+
+      - name: completed_time_fixed
+        description: >
+          Business-hours-adjusted completion time.
+          GREATEST(COALESCE(completed_at, completed_time, created_time_bh), created_time_bh).
+
+      - name: resolve_hours
+        description: >
+          Total resolution time in business hours (decimal).
+          Calculated by summing valid business hour minutes across each day
+          between created_time_bh and completed_time_fixed,
+          excluding weekends and the lunch break (12:30–13:30).
+
+      - name: expected_completion_time
+        description: "SLA expected completion timestamp set on the ticket."
+
+      - name: new_deadline
+        description: "Revised deadline if the original expected completion time was updated."
+
+      - name: reminder_time
+        description: "Scheduled reminder timestamp for the ticket."
+
+      - name: sla_50_percent
+        description: "Timestamp representing 50% of the SLA window — used for early warning."
+
+      - name: ticket_no_in_month
+        description: "Sequential ticket number within the month."
+
+      - name: current_number_in_month
+        description: "Current running count of tickets in the same month."
+
+      - name: manager
+        description: "Name or ID of the manager responsible for the ticket."
+
+      - name: synced_at
+        description: "Timestamp when the record was last synced from LarkSuite."
+
+

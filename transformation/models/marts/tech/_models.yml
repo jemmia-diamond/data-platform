@@ -128,6 +128,12 @@ models:
       - name: created_time
         description: Ticket creation timestamp.
 
+      - name: created_time_bh
+        description: >
+          Business-hours-adjusted created time.
+          If created outside business hours (before 09:00, during lunch 12:30–13:30,
+          after 18:00, or on weekends), shifted forward to the next valid business hour window.
+
       - name: updated_time
         description: Last update timestamp from source.
 
@@ -170,7 +176,7 @@ models:
       - name: responded_at
         description: Timestamp when the first response was provided.
 
-      - name: resolve_hour
+      - name: resolve_hours
         description: Hour from deadline till completed time.
 
       - name: ticket_completed
