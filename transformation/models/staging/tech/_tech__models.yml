@@ -40,3 +40,79 @@ models:
 
       - name: updated_at
         description: "Timestamp when the record was last updated."
+  - name: stg_tech_ticket__tickets
+    description: Staging model for tech support tickets from LarkSuite.
+    columns:
+      - name: record_id
+        description: Unique record identifier from the source system.
+        tests:
+          - unique
+
+      - name: created_date
+        description: Ticket creation date.
+
+      - name: ticket_id
+        description: Ticket identifier.
+
+      - name: ticket_name
+        description: Ticket title or summary.
+
+      - name: ticket_type
+        description: Type or category of the ticket.
+
+      - name: ticket_priority
+        description: Original ticket priority value from LarkSuite.
+
+      - name: ticket_status
+        description: Original ticket status from LarkSuite.
+
+      - name: description
+        description: Ticket description.
+
+      - name: solution_update
+        description: Updates or notes regarding the ticket resolution.
+
+      - name: created_time
+        description: Ticket creation timestamp.
+
+      - name: updated_time
+        description: Last update timestamp from source.
+
+      - name: manual_updated_time
+        description: Timestamp when the ticket was manually updated.
+
+      - name: completed_time
+        description: Original completion timestamp from source.
+
+      - name: expected_completion_time
+        description: Expected completion timestamp.
+
+      - name: ticket_no_in_month
+        description: Ticket sequence number within the month.
+
+      - name: current_number_in_month
+        description: Current running ticket number within the month.
+
+      - name: synced_at
+        description: Timestamp when data was synchronized into the warehouse.
+
+      - name: manager
+        description: Assigned manager or ticket owner.
+
+      - name: new_deadline
+        description: Updated deadline for ticket completion.
+
+      - name: reminder_time
+        description: Reminder timestamp.
+
+      - name: sla_50_percent
+        description: Timestamp representing 50 percent SLA threshold.
+
+      - name: completed_at
+        description: Normalized completion timestamp.
+
+      - name: processed_at
+        description: Timestamp when ticket processing started.
+
+      - name: responded_at
+        description: Timestamp when the first response was provided.
