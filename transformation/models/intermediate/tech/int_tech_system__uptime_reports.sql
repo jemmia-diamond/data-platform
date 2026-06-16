@@ -9,4 +9,4 @@
 ) }}
 
 select *
-from {{ ref('stg_system__uptime_reports')}}
+from {{ ref('stg_tech_system__uptime_reports')}}

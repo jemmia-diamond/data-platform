@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: int_system__uptime_reports
+  - name: int_tech_system__uptime_reports
     description: "System uptime reports — one row per monitor per day with uptime and downtime metrics."
     columns:
       - name: id

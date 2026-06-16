@@ -31,7 +31,7 @@ with monthly as (
 			else 'Immediate review'
 		end as "action",
 		'monthly' as period
-	from {{ ref('int_system__uptime_reports')}}
+	from {{ ref('int_tech_system__uptime_reports')}}
 	group by 1,2
 ),
 daily as (
@@ -57,7 +57,7 @@ daily as (
 			else 'Immediate review'
 		end as "action",
 		'daily' as period
-	from {{ ref('int_system__uptime_reports')}}
+	from {{ ref('int_tech_system__uptime_reports')}}
 )
 select *
 from monthly

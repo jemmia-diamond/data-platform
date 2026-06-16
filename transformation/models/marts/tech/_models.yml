@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: fct_system_uptime_reports
+  - name: fct_tech_system_uptime_reports
     description: >
       Unified uptime report combining daily and monthly aggregations per monitor.
       Each row represents either a single day or a full calendar month of uptime metrics,
