@@ -18,7 +18,7 @@ from .resources import (
     build_hr_sheet_resource
 )
 
-@dlt.source(name="hr_google_sheets")
+@dlt.source(name="google_sheets")
 def hr_google_sheets_source(
     specs: tuple[SheetSpec, ...] = DEFAULT_HR_SHEET_SPECS,
     max_api_retries: int = 5,
