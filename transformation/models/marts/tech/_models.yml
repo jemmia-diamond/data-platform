@@ -1,0 +1,219 @@
+version: 2
+
+models:
+  - name: fct_tech_system_uptime_reports
+    description: >
+      Unified uptime report combining daily and monthly aggregations per monitor.
+      Each row represents either a single day or a full calendar month of uptime metrics,
+      enriched with SLA compliance status, business risk level, and recommended action.
+      Source: int_system__uptime_reports.
+    columns:
+      - name: date
+        description: >
+          For daily rows: the exact date of the report.
+          For monthly rows: the first day of the month (date_trunc to month).
+        tests:
+          - not_null
+
+      - name: monitor_name
+        description: "Human-readable name or domain of the monitored service."
+        tests:
+          - not_null
+
+      - name: total_time
+        description: >
+          Total time in seconds covered by the period.
+          Daily: 86400. Monthly: sum of daily total_time within the month.
+
+      - name: uptime
+        description: "Total uptime in seconds during the period."
+
+      - name: downtime
+        description: "Total downtime in seconds during the period."
+
+      - name: uptime_percentage
+        description: >
+          Percentage of time the monitor was up.
+          Daily: raw value. Monthly: average of daily uptime_percentage values.
+
+      - name: sla_status
+        description: >
+          SLA compliance status based on uptime ratio (uptime / total_time).
+          'Compliant' if ratio >= 99.9%, otherwise 'Breached'.
+        tests:
+          - accepted_values:
+              values: ['Compliant', 'Breached']
+
+      - name: business_risk_level
+        description: >
+          Business risk classification based on uptime ratio.
+          'Low' if >= 99.9%, 'Medium' if >= 99%, 'High' otherwise.
+        tests:
+          - accepted_values:
+              values: ['Low', 'Medium', 'High']
+
+      - name: action
+        description: >
+          Recommended operational action based on uptime_percentage.
+          'Monitor' if >= 99.9%, 'Investigate' if >= 99%, 'Immediate review' otherwise.
+        tests:
+          - accepted_values:
+              values: ['Monitor', 'Investigate', 'Immediate review']
+
+      - name: period
+        description: "Granularity of the row. Either 'daily' or 'monthly'."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['daily', 'monthly']
+
+  - name: fct_tech_ticket_tickets
+    description: Add key metrics for tech support tickets from LarkSuite.
+    columns:
+      - name: record_id
+        description: Unique record identifier from the source system.
+        tests:
+          - unique
+
+      - name: created_date
+        description: Ticket creation date.
+
+      - name: ticket_id
+        description: Ticket identifier.
+
+      - name: ticket_name
+        description: Ticket title or summary.
+
+      - name: ticket_type
+        description: Type or category of the ticket.
+
+      - name: ticket_priority
+        description: Original ticket priority value from LarkSuite.
+
+      - name: ticket_priority_normalized
+        description: Normalized ticket priority.
+        tests:
+          - accepted_values:
+              values:
+                - Critical
+                - High
+                - Medium
+                - Low
+                - Unknown
+
+      - name: ticket_status
+        description: Original ticket status from LarkSuite.
+
+      - name: ticket_status_normalized
+        description: Normalized ticket status.
+        tests:
+          - accepted_values:
+              values:
+                - New
+                - Accepted
+                - In Progress
+                - In Review
+                - Waiting Response
+                - On Hold
+                - Closed
+                - Cancelled
+                - Unknown
+
+      - name: description
+        description: Ticket description.
+
+      - name: solution_update
+        description: Updates or notes regarding the ticket resolution.
+
+      - name: created_time
+        description: Ticket creation timestamp.
+
+      - name: created_time_bh
+        description: >
+          Business-hours-adjusted created time.
+          If created outside business hours (before 09:00, during lunch 12:30–13:30,
+          after 18:00, or on weekends), shifted forward to the next valid business hour window.
+
+      - name: updated_time
+        description: Last update timestamp from source.
+
+      - name: manual_updated_time
+        description: Timestamp when the ticket was manually updated.
+
+      - name: completed_time
+        description: Original completion timestamp from source.
+
+      - name: expected_completion_time
+        description: Expected completion timestamp.
+
+      - name: ticket_no_in_month
+        description: Ticket sequence number within the month.
+
+      - name: current_number_in_month
+        description: Current running ticket number within the month.
+
+      - name: synced_at
+        description: Timestamp when data was synchronized into the warehouse.
+
+      - name: manager
+        description: Assigned manager or ticket owner.
+
+      - name: new_deadline
+        description: Updated deadline for ticket completion.
+
+      - name: reminder_time
+        description: Reminder timestamp.
+
+      - name: sla_50_percent
+        description: Timestamp representing 50 percent SLA threshold.
+
+      - name: completed_at
+        description: Normalized completion timestamp.
+
+      - name: processed_at
+        description: Timestamp when ticket processing started.
+
+      - name: responded_at
+        description: Timestamp when the first response was provided.
+
+      - name: resolve_hours
+        description: Hour from deadline till completed time.
+
+      - name: ticket_completed
+        description: Record ID of tickets that have been successfully closed. Null for tickets that are not closed.
+
+      - name: critital_ticket_completed_in_5_hours
+        description: Indicator for critical-priority tickets resolved within 5 hours.
+        tests:
+          - accepted_values:
+              values: [ 0, 1 ]
+
+      - name: critital_ticket_completed
+        description: Indicator for critical-priority tickets that have been closed.
+        tests:
+          - accepted_values:
+              values: [ 0, 1 ]
+
+      - name: high_ticket_completed_in_16_hours
+        description: Indicator for high-priority tickets resolved within 16 hours.
+        tests:
+          - accepted_values:
+              values: [ 0, 1 ]
+
+      - name: high_ticket_completed
+        description: Indicator for high-priority tickets that have been closed.
+        tests:
+          - accepted_values:
+              values: [ 0, 1 ]
+
+      - name: medium_ticket_completed_in_40_hours
+        description: Indicator for medium-priority tickets resolved within 40 hours.
+        tests:
+          - accepted_values:
+              values: [ 0, 1 ]
+
+      - name: medium_ticket_completed
+        description: Indicator for medium-priority tickets that have been closed.
+        tests:
+          - accepted_values:
+              values: [ 0, 1 ]
