@@ -119,6 +119,23 @@ cd transformation && export $(cat ../.env | xargs) && ../.venv/bin/dbt build --s
 - Always set `primary_key` and `write_disposition`
 - API tokens from env vars: `SOURCES__<CONNECTOR>__*`
 - Pipeline dataset naming: `raw_<connector_name>`
+- **dlt `@dlt.source` config override trap:** dlt auto-resolves function parameters from env vars by matching parameter name → config key (e.g. `spreadsheet_url_or_id` → `SOURCES__GOOGLE_SHEETS__SPREADSHEET_URL_OR_ID`). This overrides Python defaults. **Fix:** do NOT expose IDs/URLs as `@dlt.source` function parameters. Hardcode them inside the function body or in a dataclass spec instead.
+- **Google Sheets pattern:** Each sheet is a `SheetSpec(resource_name, range_name, spreadsheet_id, ...)`. The `spreadsheet_id` is hardcoded per-spec (not in env vars). Column names mapped from Vietnamese → English via `column_mapping`. Credentials (GCP service account) come from env vars `SOURCES__GOOGLE_SHEETS__CREDENTIALS__*`.
+
+### Adding a New Ingestion Connector — Checklist
+
+When adding a new connector (or new resources to an existing connector), **follow this checklist in order**. Missing any step causes runtime errors in Docker deployment:
+
+1. **`ingestion/<connector>/source.py`** — connector source code with `SheetSpec`/`ResourceSpec`, `@dlt.source` function, `build_<connector>_source()` helper
+2. **`ingestion/<connector>/__init__.py`** — exports (`DEFAULT_SHEET_SPECS` or equivalent, `build_<connector>_source`, `build_<connector>_pipeline`)
+3. **`.env`** — add all required env vars: `SOURCES__<CONNECTOR>__*` (tokens, credentials, URLs)
+4. **`.env.example`** — add the SAME env var keys with empty values as template
+5. **`docker-compose.yml`** — add env vars to `dagster_code` service `environment:` section (Docker does NOT auto-load `.env` for named services — each var must be explicitly mapped as `KEY: ${KEY}`)
+6. **`orchestration/assets/ingestion/<connector>.py`** — define `@dlt_assets` function
+7. **`orchestration/assets/ingestion/__init__.py`** — import the assets function
+8. **`orchestration/catalogs/ingestion/<connector>.py`** — define `ExecutionUnitSpec` for each resource (with `max_runtime_seconds`)
+9. **`orchestration/catalogs/ingestion/__init__.py`** — import the execution units
+10. **Verify:** `.venv/bin/python -c "from orchestration.definitions import defs; print('OK')"`
 
 ### Docker
 
@@ -256,6 +273,7 @@ All secrets from `.env` (never committed):
 - `SOURCES__HARAVAN__*` — Haravan connector
 - `SOURCES__FRAPPE__*` — ERPNext connector
 - `SOURCES__NOCODB__*` — NocoDB connector
+- `SOURCES__GOOGLE_SHEETS__CREDENTIALS__*` — Google Sheets GCP service account (project_id, client_email, private_key)
 - `DAGSTER_AUTH_*` — AuthKit config
 
 ---
@@ -268,7 +286,10 @@ All secrets from `.env` (never committed):
 - After editing Dagster assets, run `dagster dev` to verify no import errors
 - ERPNext models must always filter `deleted_documents`
 - When adding a new dbt model, check `_sources.yml` first to understand available columns
-- When adding a new ingestion connector, follow existing connector patterns (haravan/frappe/nocodb)
+- When adding a new ingestion connector, follow existing connector patterns (haravan/frappe/nocodb/google_sheets)
+- **When adding a new ingestion connector, follow the checklist in "Adding a New Ingestion Connector" section — missing `.env.example` or `docker-compose.yml` env vars causes Docker deploy failures**
+- When adding a new env var, ALWAYS update 3 places: `.env`, `.env.example`, AND `docker-compose.yml` `dagster_code` service `environment:` section
+- Do NOT expose IDs/URLs as `@dlt.source` function parameters — dlt auto-resolves them from env vars, overriding Python defaults. Hardcode inside function body or dataclass spec instead
 - If the project structure changes (new directories, renamed folders, etc.), update this file accordingly
 - Prefer VIEW materialization for pure SQL models (no I/O benefit from TABLE) — prevents CASCADE destruction
 - For incremental models, `unique_key` must never be NULL for any row — use a column that always exists
