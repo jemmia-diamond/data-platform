@@ -2,10 +2,7 @@
 from ingestion.pipelines import build_dlt_pipeline
 
 from .source import (
-    DEFAULT_SHEET_SPECS,
-    SheetSpec,
     build_google_sheets_source,
-    google_sheets_source,
 )
 
 GOOGLE_SHEETS_PIPELINE_NAME = "google_sheets"
@@ -21,11 +18,8 @@ def build_google_sheets_pipeline(pipeline_name: str = GOOGLE_SHEETS_PIPELINE_NAM
 
 
 __all__ = [
-    "DEFAULT_SHEET_SPECS",
     "GOOGLE_SHEETS_DATASET_NAME",
     "GOOGLE_SHEETS_PIPELINE_NAME",
-    "SheetSpec",
     "build_google_sheets_pipeline",
-    "build_google_sheets_source",
-    "google_sheets_source",
+    "build_google_sheets_source"
 ]
