@@ -52,3 +52,6 @@ models:
       core:
         +schema: marts_core
         +materialized: table
+      metabot:
+        +schema: marts_metabot
+        +materialized: materialized_view

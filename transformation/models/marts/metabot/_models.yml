@@ -1,0 +1,374 @@
+version: 2
+
+models:
+  - name: fct_metabot_orders
+    description: "Metabot orders fact. Grain: 1 row = 1 order group (order_id = COALESCE(split_order_group, unified_sales_order_id)). Dimensions use FIRST-NON-NULL from the earliest physical order in the group. product_categories and purchase_purposes are STRING_AGG'd at group level (display convenience — use bridge tables fct_metabot_order_purposes and fct_metabot_order_product_categories for N:N analysis). Measures SUM across all orders in the group."
+    columns:
+      - name: order_id
+        description: "Primary key — COALESCE(split_order_group, unified_sales_order_id). Defensive against NULL split_order_group (ERP-only non-split orders)."
+        tests:
+          - unique
+          - not_null
+      - name: order_date
+        description: "Earliest order date in the group (VN timezone). FK to dim_metabot_dates.date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_dates')
+                field: date
+      - name: customer_id
+        description: "FK to dim_metabot_customers.customer_id (nullable — NULL if no customer in the group)."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_customers')
+                field: customer_id
+      - name: primary_sales_person_id
+        description: "FK to dim_metabot_sales_persons.sales_person_id (nullable — NULL if no primary sales person assigned)."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_sales_persons')
+                field: sales_person_id
+      - name: processing_status
+        description: "Processing status in Vietnamese. Defaults to 'Chưa xác định' (Unknown) when NULL. Values: 'Hoàn tất' (Complete), 'Đã hủy' (Canceled), 'Đã xác nhận' (Confirmed), 'Chờ xử lý' (Pending), 'Tự giao hàng' (Self delivery), 'Chưa xác định' (Unknown)."
+      - name: payment_status
+        description: "Payment status in Vietnamese. Defaults to 'Chưa xác định' (Unknown) when NULL. Values: 'Đã thanh toán' (Paid), 'Chờ thanh toán' (Pending), 'Thanh toán một phần' (Partially paid), 'Đã hoàn tiền' (Refunded), 'Chưa xác định' (Unknown)."
+      - name: fulfillment_status
+        description: "Fulfillment status in Vietnamese. Defaults to 'Chưa xác định' (Unknown) when NULL. Values: 'Đã giao hàng' (Delivered), 'Chưa giao hàng' (Not delivered), 'Chưa xác định' (Unknown)."
+      - name: order_customer_type
+        description: "Customer type: 'Khách mới' (New) or 'Khách cũ' (Returning). Defaults to 'Chưa xác định' (Unknown) when NULL. Derived from the first order's customer_type in the group."
+      - name: price_range
+        description: "Group total price bucket in millions VND. Values: '1. <30', '2. 30-50', ..., '10. >1000'."
+      - name: product_categories
+        description: "Group-level aggregated product categories (STRING_AGG DISTINCT, separated by ' + '). Display convenience — use fct_metabot_order_product_categories bridge for N:N analysis. NULL for Haravan-only orders."
+      - name: purchase_purposes
+        description: "Group-level aggregated purchase purposes (STRING_AGG DISTINCT, separated by ' + '). Display convenience — use fct_metabot_order_purposes bridge for N:N analysis. NULL for Haravan-only orders."
+
+  - name: fct_metabot_order_items
+    description: "Metabot order items fact. Grain: 1 row = 1 line item. INNER JOIN int_sales__orders (valid-order filter). order_id references the ORDER GROUP (not individual order); source_order_number preserves physical order traceability."
+    columns:
+      - name: order_item_id
+        description: "Primary key — COALESCE(erp_sales_order_item_id, haravan_line_item_id)."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "FK to fct_metabot_orders.order_id (order group)."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_metabot_orders')
+                field: order_id
+      - name: customer_id
+        description: "FK to dim_metabot_customers.customer_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_customers')
+                field: customer_id
+      - name: product_key
+        description: "FK to dim_metabot_products.product_key (variant_id). NULL if line item has no variant match. Known gap: some items reference variants no longer in catalog (same as marts_sales). No relationships test enforced."
+      - name: order_date
+        description: "Group order date (VN timezone). FK to dim_metabot_dates.date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_dates')
+                field: date
+
+  - name: fct_metabot_commissions
+    description: "Metabot commissions fact. Grain: 1 row = 1 order group × 1 sales person. group_share_pct = SUM(allocated_amount) / NULLIF(group_net_total, 0) × 100. Source: int_sales__sales_teams JOIN valid-order int_sales__orders."
+    columns:
+      - name: commission_id
+        description: "Primary key — order_id:sales_person_id."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "FK to fct_metabot_orders.order_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_metabot_orders')
+                field: order_id
+      - name: sales_person_id
+        description: "FK to dim_metabot_sales_persons.sales_person_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_sales_persons')
+                field: sales_person_id
+
+  - name: fct_metabot_order_purposes
+    description: "Metabot order-purposes bridge. Grain: 1 row = 1 order group × 1 purchase purpose. Allocated metrics are EVEN SPLIT across purposes within a group (purpose_count_per_order). Caveat: purposes are ERPNext manual tags — even-split is approximate, not line-item accurate. Use with fct_metabot_orders for N:N analysis."
+    columns:
+      - name: purpose_link_id
+        description: "Primary key — order_id:purpose_name."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "FK to fct_metabot_orders.order_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_metabot_orders')
+                field: order_id
+      - name: purpose_name
+        description: "Purchase purpose label (e.g., 'Cầu Hôn', 'Mua cho bản thân')."
+      - name: purpose_count_per_order
+        description: "Number of distinct purposes for this order group (used to compute even-split allocation)."
+      - name: allocated_gross_vnd
+        description: "Allocated gross amount = group_gross / purpose_count. Even-split — approximate, not line-item accurate. SUM across purposes = group total (no double-count within a group)."
+      - name: allocated_net_vnd
+        description: "Allocated net amount = group_net / purpose_count. Even-split — approximate."
+      - name: allocated_quantity
+        description: "Allocated quantity = group_qty / purpose_count. Fractional quantity is analytical (even-split), not physical."
+
+  - name: fct_metabot_order_product_categories
+    description: "Metabot order-categories bridge. Grain: 1 row = 1 order group × 1 product category. Allocated metrics are EVEN SPLIT across categories within a group (category_count_per_order). Caveat: categories are ERPNext manual tags — even-split is approximate."
+    columns:
+      - name: category_link_id
+        description: "Primary key — order_id:category_name."
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: "FK to fct_metabot_orders.order_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_metabot_orders')
+                field: order_id
+      - name: category_name
+        description: "Product category label (e.g., 'Nhẫn Nam', 'Dây Chuyền')."
+      - name: category_count_per_order
+        description: "Number of distinct categories for this order group (used to compute even-split allocation)."
+      - name: allocated_gross_vnd
+        description: "Allocated gross amount = group_gross / category_count. Even-split — approximate."
+      - name: allocated_net_vnd
+        description: "Allocated net amount = group_net / category_count. Even-split — approximate."
+      - name: allocated_quantity
+        description: "Allocated quantity = group_qty / category_count. Even-split — analytical, not physical."
+
+  - name: fct_metabot_lead_preferred_products
+    description: "Metabot lead-preferred-products bridge. Grain: 1 row = 1 lead × 1 preferred product type. No allocation (leads have no direct revenue). preferred_product_name is the human-readable label (e.g., 'Kim cương viên') resolved from int_crm__lead_products."
+    columns:
+      - name: preferred_link_id
+        description: "Primary key — lead_id:product_type."
+        tests:
+          - unique
+          - not_null
+      - name: lead_id
+        description: "FK to dim_metabot_leads.lead_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_leads')
+                field: lead_id
+      - name: product_type
+        description: "Raw product type reference ID (e.g., 'CRM-LEAD-PRODUCT-0014'). FK to int_crm__lead_products.lead_product_id."
+      - name: preferred_product_name
+        description: "Human-readable preferred product label (e.g., 'Kim cương viên', 'Nhẫn Nữ'). Resolved via int_crm__lead_products."
+
+  - name: dim_metabot_customers
+    description: "Metabot customer dimension. Grain: 1 row = 1 customer. Profile from int_crm__customers + order metrics from int_sales__orders (valid filter). total_orders counts DISTINCT order groups (consistent with fct_metabot_orders grain). PII (full_name, email, phone, birth_date) is masked via mask_* macros."
+    columns:
+      - name: customer_id
+        description: "Primary key — unified_customer_id."
+        tests:
+          - unique
+          - not_null
+      - name: lead_id
+        description: "FK to dim_metabot_leads.lead_id. Note: int_crm__customers.lead_name stores the lead_id per ERPNext convention. Nullable — NULL if customer has no lead source."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_leads')
+                field: lead_id
+      - name: days_since_last_order
+        description: "Days since customer's last order (recency). Computed as CURRENT_DATE - last_order_date. NULL if customer has never ordered. Refreshes daily with the materialized view. Useful for churn/recency analysis."
+
+  - name: dim_metabot_leads
+    description: "Metabot lead dimension. Grain: 1 row = 1 lead. Includes sales person resolution (assigned_to = employee_email), budget/demand/region joins. PII (email, phone, birth_date) is masked; lead_name is NOT masked (internal business data)."
+    columns:
+      - name: lead_id
+        description: "Primary key — ERPNext lead ID."
+        tests:
+          - unique
+          - not_null
+      - name: sales_person_id
+        description: "FK to dim_metabot_sales_persons.sales_person_id. NULL if lead is unassigned."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_sales_persons')
+                field: sales_person_id
+      - name: lead_age_bucket
+        description: "Lead age bucket in days: '1. < 7 ngày' (under 7 days), '2. 7-30 ngày' (1-4 weeks), '3. 31-90 ngày' (1-3 months), '4. > 90 ngày' (over 3 months). Derived from current_lead_age_days."
+      - name: preferred_products
+        description: "Comma-separated list of preferred product labels (e.g., 'Bông tai, Kim cương viên'). Resolved from int_crm__lead_preferred_products JOIN int_crm__lead_products. NULL if lead has no preferred products on record."
+
+  - name: dim_metabot_products
+    description: "Metabot product dimension. Grain: 1 row = 1 product variant (product_key = variant_id). Source: int_catalog__variants + int_catalog__products (COALESCE design_code/gold_weight)."
+    columns:
+      - name: product_key
+        description: "Primary key — variant_id."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_metabot_sales_persons
+    description: "Metabot sales person dimension. Grain: 1 row = 1 sales person. is_active = operational_status='Active'; is_presale = sales_position='Presale'. employee_email is masked; sales_person_name is NOT masked (internal business data)."
+    columns:
+      - name: sales_person_id
+        description: "Primary key — ERPNext sales person ID."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_metabot_dates
+    description: "Metabot date dimension — fully independent (own generate_series 2020-2030, no dependency on marts_core). Grain: 1 row = 1 calendar date. Vietnamese-friendly day/month names via TMDay/TMMonth format."
+    columns:
+      - name: date
+        description: "Primary key — calendar date."
+        tests:
+          - unique
+          - not_null
+      - name: is_month_start
+        description: "Flag: true if date is the first day of the month."
+      - name: is_month_end
+        description: "Flag: true if date is the last day of the month."
+      - name: is_quarter_start
+        description: "Flag: true if date is the first day of the quarter."
+      - name: is_quarter_end
+        description: "Flag: true if date is the last day of the quarter."
+
+  - name: fct_metabot_marketing_spend
+    description: "Metabot marketing spend fact. Grain: 1 row = 1 date × 1 platform (Facebook/Google/TikTok). UNION of 3 staging ads tables + date×platform grid from dim_metabot_dates. Fully decoupled from marts_marketing."
+    columns:
+      - name: marketing_perf_key
+        description: "Primary key — md5(date_platform)."
+        tests:
+          - unique
+          - not_null
+      - name: report_date
+        description: "FK to dim_metabot_dates.date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_dates')
+                field: date
+      - name: cpc_vnd
+        description: "Cost per click in VND (total_spend / total_clicks). NULL when total_clicks = 0."
+      - name: cpm_vnd
+        description: "Cost per 1000 impressions in VND (total_spend / total_impressions × 1000). NULL when total_impressions = 0."
+      - name: ctr_pct
+        description: "Click-through rate percentage (total_clicks / total_impressions × 100). NULL when total_impressions = 0."
+
+  - name: fct_metabot_inventory_stock
+    description: "Metabot inventory stock by location. Grain: 1 row = 1 location × 1 variant."
+    columns:
+      - name: location_id
+        description: "FK to stg_haravan__locations.location_id."
+        tests:
+          - not_null
+      - name: variant_id
+        description: "FK to dim_metabot_products.product_key."
+        tests:
+          - not_null
+      - name: product_type
+        description: "Product type from Haravan."
+      - name: qty_available
+        description: "Quantity available for sale at this location."
+      - name: _db_updated_at
+        description: "Last updated timestamp."
+    tests: []
+
+  - name: fct_metabot_inventory_serials
+    description: "Metabot inventory at serial level. Grain: 1 row = 1 serial item. Enriched with product name from dim_metabot_products."
+    columns:
+      - name: item_id
+        description: "Primary key — serial_id from stg_nocodb__variant_serials."
+        tests:
+          - unique
+          - not_null
+      - name: variant_id
+        description: "FK to dim_metabot_products.product_key. NULL if the serial item has no variant match. Known gap: some serial items reference variants not in the product catalog (same as marts_sales). No relationships test enforced."
+      - name: serial_number
+        description: "Unique serial number of the item."
+      - name: stock_location
+        description: "Current stock location of the serial item."
+
+  - name: fct_metabot_targets_monthly
+    description: "Metabot monthly sales targets per sales person. Grain: 1 row = 1 sales person × 1 target month. Filtered for the last 2 years of targets."
+    columns:
+      - name: sales_target_id
+        description: "Primary key — sales_target_id from int_sales__sales_person_targets."
+        tests:
+          - unique
+          - not_null
+      - name: sales_person_id
+        description: "FK to dim_metabot_sales_persons.sales_person_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_sales_persons')
+                field: sales_person_id
+      - name: target_month_start
+        description: "Start date of the target month. FK to dim_metabot_dates.date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_dates')
+                field: date
+      - name: target_amount
+        description: "Monthly target amount."
+      - name: target_quantity
+        description: "Monthly target quantity."
+
+  - name: fct_metabot_kpi_daily
+    description: "Metabot daily sales KPI per sales person. Grain: 1 row = 1 sales person × 1 date. Includes daily actuals, daily targets, and Month-To-Date (MTD) calculations."
+    columns:
+      - name: kpi_daily_key
+        description: "Primary key — sales_person_key:date_actual."
+        tests:
+          - unique
+          - not_null
+      - name: sales_person_key
+        description: "FK to dim_metabot_sales_persons.sales_person_id."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_sales_persons')
+                field: sales_person_id
+      - name: date_actual
+        description: "Date of the KPI record. FK to dim_metabot_dates.date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_metabot_dates')
+                field: date
+      - name: actual_gross_amount
+        description: "Actual gross sales amount for the day."
+      - name: daily_target_amount
+        description: "Daily target amount."
+      - name: mtd_actual_gross_amount
+        description: "Month-To-Date actual gross sales amount."
+      - name: mtd_achievement_gross_pct
+        description: "Month-To-Date achievement percentage for gross sales."
