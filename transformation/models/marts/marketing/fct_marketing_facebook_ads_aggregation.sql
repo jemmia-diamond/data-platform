@@ -11,6 +11,9 @@ select
     campaign_status,
     fx_adset_audience_name,
     fx_adset_region,
+    ad_name,
+    fx_adset_gender,
+    fx_adset_age_range_targeting,
     case
         when fx_ads_goal = 'Sales' and fx_campaign_segment IN ('30-50','50-80','80-120','120-200','>200') then fx_campaign_segment
         else 'Chưa xác định'
