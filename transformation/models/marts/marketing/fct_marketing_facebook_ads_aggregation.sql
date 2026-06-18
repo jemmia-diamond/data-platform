@@ -15,9 +15,13 @@ select
     fx_adset_gender,
     fx_adset_age_range_targeting,
     case
+		when fx_ads_goal = 'Sales' and fx_ads_segment IN ('30-50','50-80','80-120','120-200','>200') then fx_ads_segment
+	    else 'Chưa xác định'
+	END as ads_price_segment,
+    case
         when fx_ads_goal = 'Sales' and fx_campaign_segment IN ('30-50','50-80','80-120','120-200','>200') then fx_campaign_segment
         else 'Chưa xác định'
-    end as price_segment,
+    end as campaign_price_segment,
     case
         when fx_campaign_fanpage = 'JD' then 'Jemmia Diamond'
         when fx_campaign_fanpage = 'KHX' then 'Kiệt Hột Xoàn'
