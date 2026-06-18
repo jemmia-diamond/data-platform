@@ -41,3 +41,63 @@ models:
         tests:
           - unique
           - not_null
+
+  - name: fct_marketing_facebook_ads_aggregation
+    description: "Marketing Facebook Ads daily with standardized dimensions"
+    columns:
+      - name: report_date
+        description: "Report date"
+
+      - name: account_id
+        description: "Ad account ID"
+
+      - name: ad_status
+        description: "Ad status"
+
+      - name: ad_id
+        description: "Ad ID"
+
+      - name: campaign_status
+        description: "Campaign status"
+
+      - name: fx_adset_audience_name
+        description: "Adset audience name"
+
+      - name: fx_adset_region
+        description: "Adset region"
+
+      - name: price_segment
+        description: "Ad price segment (Sales goal only)"
+
+      - name: ad_channel
+        description: "Ad channel by fanpage"
+
+      - name: ad_objective
+        description: "Campaign objective (Mess / View / Push)"
+
+      - name: ad_purpose
+        description: "Ad purpose (Sales / Branding)"
+
+      - name: ad_region
+        description: "Ad region"
+
+      - name: ad_type
+        description: "Ad type (Knowed / Lookalike / New)"
+
+      - name: product_category
+        description: "Product category (Sales goal only)"
+
+      - name: product_type
+        description: "Product type (Sales goal only)"
+
+      - name: audience_type
+        description: "Audience type (Knowed / Lookalike / New)"
+
+      - name: spend
+        description: "Ad spend"
+
+      - name: lead
+        description: "Number of conversation started"
+
+      - name: qualified_lead
+        description: "Number of qualified leads"
