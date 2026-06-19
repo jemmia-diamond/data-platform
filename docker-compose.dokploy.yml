@@ -24,6 +24,7 @@ services:
 
   dagster_code:
     image: ghcr.io/jemmia-diamond/data-platform/dagster-code:latest
+    pull_policy: always
     container_name: dagster_code
     environment:
       DAGSTER_POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
@@ -60,6 +61,7 @@ services:
 
   dagster_webserver:
     image: ghcr.io/jemmia-diamond/data-platform/dagster-webserver:latest
+    pull_policy: always
     container_name: dagster_webserver
     environment:
       DAGSTER_POSTGRES_USER: ${DAGSTER_POSTGRES_USER}
