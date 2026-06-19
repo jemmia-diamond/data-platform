@@ -1,0 +1,36 @@
+name: Build & Deploy to Dokploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Image 1: dagster_code (code server + dbt + ingestion + orchestration)
+      - name: Build & push dagster-code
+        uses: fongfan999/github-actions/dokploy-deploy@main
+        with:
+          image_name: jemmia-diamond/data-platform/dagster-code
+          file: ./Dockerfile
+          context: .
+          deploy_hook_url: ${{ secrets.DOKPLOY_DEPLOY_HOOK_URL }}
+
+      # Image 2: dagster_webserver (webserver + authkit)
+      - name: Build & push dagster-webserver + trigger Dokploy
+        uses: fongfan999/github-actions/dokploy-deploy@main
+        with:
+          image_name: jemmia-diamond/data-platform/dagster-webserver
+          file: ./deploy/Dockerfile.authkit-webserver
+          context: ./deploy
+          deploy_hook_url: ${{ secrets.DOKPLOY_DEPLOY_HOOK_URL }}
