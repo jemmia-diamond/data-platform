@@ -30,11 +30,19 @@ demands AS (
 regions AS (
     SELECT region_id, region_name
     FROM {{ ref('int_sales__regions') }}
-)
+),
+
+contacts as (
+	select
+		pancake_customer_id,
+		ad_ids
+	from {{ ref('int_crm__contacts')}}
+),
 
 SELECT
     l.lead_id,
     l.lead_name,
+    c.ad_ids,
 
     sp.sales_person_id AS sales_person_key,
     sp.sales_person_name,
@@ -123,3 +131,5 @@ LEFT JOIN demands d
     ON l.purpose_lead = d.lead_demand_id
 LEFT JOIN regions r
     ON l.region = r.region_id
+LEFT JOIN contacts c
+	ON c.pancake_customer_id = l.pancake_customer_id

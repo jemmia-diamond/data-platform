@@ -16,6 +16,7 @@ extracted_contacts as (
             THEN dynamic_links #>> '{0, link_name}'
             ELSE NULL 
         END AS primary_lead_id,
+        ad_ids,
 
         -- 3. Core Information
         full_name,
@@ -66,4 +67,20 @@ extracted_contacts as (
     from staging_contacts
 )
 
-select * from extracted_contacts
+-- only get the last ad_ids list of customer (based on updated_at)
+add_rn_ad_ids_customer as (
+	select *,
+		ROW_NUMBER() OVER (
+               PARTITION BY pancake_customer_id
+               ORDER BY updated_at desc
+           ) rn
+	from extracted_contacts
+),
+
+get_last_ad_ids_customer as (
+	select *
+	from add_rn_ad_ids_customer
+	where rn = 1
+)
+
+select * from get_last_ad_ids_customer
