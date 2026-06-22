@@ -37,7 +37,7 @@ contacts as (
 		pancake_customer_id,
 		ad_ids
 	from {{ ref('int_crm__contacts')}}
-),
+)
 
 SELECT
     l.lead_id,

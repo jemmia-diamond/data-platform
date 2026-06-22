@@ -65,7 +65,7 @@ extracted_contacts as (
         _db_updated_at
 
     from staging_contacts
-)
+),
 
 -- only get the last ad_ids list of customer (based on updated_at)
 add_rn_ad_ids_customer as (
