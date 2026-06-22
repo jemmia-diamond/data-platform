@@ -32,6 +32,7 @@ extracted_periods as (
         (target_item ->> 'target_lead_received')::integer as target_lead_received,
         (target_item ->> 'target_qualified_leads')::integer as target_qualified_leads,
         (target_item ->> 'target_qualified_to_orders')::integer as target_qualified_to_orders,
+        (target_item ->> 'target_previous_month_qualified')::integer as target_previous_month_qualified,
         
         target_item ->> 'owner' as target_owner,
         (target_item ->> 'creation')::timestamp without time zone as created_at,
@@ -68,6 +69,7 @@ select
     target_lead_received,
     target_qualified_leads,
     target_qualified_to_orders,
+    target_previous_month_qualified,
     
     -- 5. Audit Metadata
     target_owner,

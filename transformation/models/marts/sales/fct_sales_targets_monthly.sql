@@ -31,6 +31,7 @@ SELECT
     t.target_lead_received,
     t.target_qualified_leads,
     t.target_qualified_to_orders,
+    t.target_previous_month_qualified,
     t.target_owner,
     t.created_at,
     t.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS created_at_vn,
