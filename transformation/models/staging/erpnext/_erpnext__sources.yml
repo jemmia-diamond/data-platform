@@ -78,3 +78,8 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "purchase_purposes"]
+
+      - name: promotions
+        meta:
+          dagster:
+            asset_key: [ "frappe_erpnext", "promotions" ]
