@@ -25,12 +25,6 @@ kpi as (
 ),
 sales as (
 	select
-	-- 	d.sales_person_key as sales_person_key_kpi,
-	-- 	d.daily_target_amount,
-		--- do gom chung các bảng fact vào nên sẽ bị fan out (dup)
-		--- daily target amount / count row (partition by date_actual, sales_person_key_kpi, split_order_group)
-	-- 	count(*) over (partition by d.date_actual, d.sales_person_key) as total_order_id_kpi_cnt,
-	-- 	d.daily_target_amount / count(*) over (partition by d.date_actual, d.sales_person_key) as allocated_daily_kpi_target_by_sales_person,
 		o.order_date,
 		o.order_id,
 		o.split_order_group,
@@ -89,7 +83,9 @@ sales as (
         left(diamond_edge_size_1::text, 3)
         || ' x ' ||
         left(diamond_edge_size_2::text, 3) as diamond_edge_size_transformed,
-        o.consultation_date
+        o.consultation_date,
+        o.order_promotion,
+        oi.new_promotions as order_item_promotion
 	from {{ ref('fct_sales_orders')}} o
 	left join {{ ref('fct_sales_order_items')}} oi on o.order_id = oi.order_id
 	left join {{ ref('fct_sales_attributions')}} sa on sa.order_id = o.order_id
