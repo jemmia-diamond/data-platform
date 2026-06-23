@@ -61,6 +61,7 @@ SELECT
     haravan_order_id AS hrv_order_id,
     split_order_group_name,
     split_order_group,
+    order_promotion,
 
     -- === CUSTOMER ===
     unified_customer_id as customer_id,
