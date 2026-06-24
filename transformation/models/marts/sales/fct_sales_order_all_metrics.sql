@@ -85,7 +85,14 @@ sales as (
         left(diamond_edge_size_2::text, 3) as diamond_edge_size_transformed,
         o.consultation_date,
         o.order_promotion,
-        oi.new_promotions as order_item_promotion
+        oi.new_promotions as order_item_promotion,
+        o.processing_status,
+        o.cancelled_status,
+        o.confirmed_status,
+        o.fulfillment_status,
+        o.payment_status,
+        o.closed_status,
+        o.carrier_status
 	from {{ ref('fct_sales_orders')}} o
 	left join {{ ref('fct_sales_order_items')}} oi on o.order_id = oi.order_id
 	left join {{ ref('fct_sales_attributions')}} sa on sa.order_id = o.order_id
