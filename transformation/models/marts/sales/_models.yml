@@ -271,3 +271,88 @@ models:
           - not_null
       - name: purpose_name
         description: "Purchase purpose display name (e.g. BT - Mua cho bản thân)."
+
+  - name: fct_sales_leads_orders
+    description: >
+      Fact table combining lead source data with qualified lead metrics and sales order data.
+      Materialized as a materialized view in the marts_sales schema.
+      Performs a full join between lead entries and qualified leads, then left joins with sales orders.
+    config:
+      materialized: materialized_view
+      schema: marts_sales
+
+    columns:
+      - name: date
+        description: "Primary date field — coalesced from lead_entry_date (entry side) or converted_date (qualified side)."
+
+      - name: lead_entry_date
+        description: "Date the lead was entered into the system."
+
+      - name: converted_date
+        description: "Date the lead was converted / qualified."
+
+      - name: qualification_status_raw
+        description: "Raw qualification status of the lead (e.g. 'Qualified')."
+
+      - name: lead_id_unified
+        description: "Unified lead ID, coalesced from both sides of the full join."
+
+      - name: l_lead_id
+        description: "Lead ID from the lead_source (entry date) side of the full join."
+
+      - name: q_lead_id
+        description: "Lead ID from the qualified_lead_source (converted date) side of the full join."
+
+      - name: sales_region
+        description: "Sales region associated with the lead, coalesced from both join sides."
+
+      - name: region
+        description: "Geographic region of the lead, coalesced from both join sides."
+
+      - name: budget_label
+        description: "Budget classification label for the lead."
+
+      - name: lead_owner
+        description: "Name or identifier of the person who owns the lead."
+
+      - name: lead_source_name
+        description: "Name of the lead source channel."
+        meta:
+          indexed: true
+
+      - name: lead_source_platform
+        description: "Platform associated with the lead source."
+
+      - name: demand_label
+        description: "Demand classification label for the lead."
+
+      - name: gender
+        description: "Gender of the lead contact."
+
+      - name: consultation_date_range
+        description: >
+          Bucketed time difference (in days) between lead_entry_date and converted_date.
+          Values: '7 Ngày' (≤7 days), '14 Ngày' (≤14 days), '30 ngày' (≤30 days),
+          '60 ngày' (≤60 days), '90 ngày' (≤90 days), 'trên 90' (>90 days),
+          'Chưa xác định' (NULL or no match).
+
+      - name: qualified_lead_id
+        description: "Lead ID if qualification_status_raw = 'Qualified', otherwise NULL."
+
+      - name: qualified_lead_id_not_in_month
+        description: >
+          Lead ID for qualified leads where lead_entry_date and converted_date fall in different months.
+          NULL otherwise.
+
+      - name: qualified_lead_id_in_month
+        description: >
+          Lead ID for qualified leads where lead_entry_date and converted_date fall in the same month.
+          NULL otherwise.
+
+      - name: qualified_lead_id_in_day
+        description: >
+          Lead ID for qualified leads where lead_entry_date equals converted_date (converted on the same day).
+          NULL otherwise.
+
+      - name: product_name
+        description: "Product name from the sales order, joined via lead_id_unified = lead_name."
