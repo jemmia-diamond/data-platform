@@ -32,9 +32,7 @@ def _selected_pancake_resources(context: AssetExecutionContext) -> list[str]:
 
 
 @dlt_assets(
-    dlt_source=build_pancake_source(
-        user_access_token="[PLACEHOLDER]",
-    ),
+    dlt_source=build_pancake_source(),
     dlt_pipeline=build_pancake_pipeline(),
     name="pancake_dlt_assets",
     dagster_dlt_translator=IngestionDagsterDltTranslator(),

@@ -1,10 +1,5 @@
 tables:
 
-  - endpoint: /v1/pages
-    name: pages
-    primary_key: id
-    sync_type: full_refresh
-
   - endpoint: /public_api/v2/pages/{page_id}/conversations
     name: conversations
     response_key: conversations

@@ -12,13 +12,7 @@ import dlt
 import yaml
 from dlt.extract.resource import DltResource
 
-from ._client import (
-    PAGE_SLEEP_SECONDS,
-    generate_page_access_token,
-    get_activated_pages,
-    get_all_pages,
-    get_with_retry,
-)
+from ._client import PAGE_SLEEP_SECONDS, get_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -52,31 +46,22 @@ def _apply_hints(resource: DltResource) -> DltResource:
 def _iter_per_page(
     spec: TableSpec,
     base_url: str,
-    user_access_token: str,
+    page_access_tokens: dict,
     sync_ts: str,
     since_unix: Optional[int] = None,
     until_unix: Optional[int] = None,
 ):
-    """Iterate across all activated pages, generating per-page access tokens on the fly."""
+    """Iterate across configured pages using pre-stored PATs from env/secrets."""
     skip_ids = {
         s.strip()
         for s in os.environ.get("SOURCES__PANCAKE__SKIP_PAGE_IDS", "").split(",")
         if s.strip()
     }
-    pages = get_activated_pages(base_url=base_url, user_access_token=user_access_token)
 
-    for page in reversed(pages):
-        page_id = str(page.get("id", ""))
+    for page_id, pat in page_access_tokens.items():
+        page_id = str(page_id)
         if page_id in skip_ids:
-            logger.info("Skipping page %s (%s) per SKIP_PAGE_IDS.", page_id, page.get("name"))
-            continue
-
-        try:
-            pat = generate_page_access_token(
-                base_url=base_url, page_id=page_id, user_access_token=user_access_token
-            )
-        except Exception as exc:
-            logger.warning("Could not generate PAT for page %s — skipping. %s", page_id, exc)
+            logger.info("Skipping page %s per SKIP_PAGE_IDS.", page_id)
             continue
 
         url = f"{base_url}/{spec.endpoint.lstrip('/').replace('{page_id}', page_id)}"
@@ -124,21 +109,12 @@ def _iter_per_page(
 def build_resource(
     spec: TableSpec,
     base_url: str,
-    user_access_token: str,
+    page_access_tokens: dict,
     start_date: str,
     end_date: Optional[str] = None,
 ) -> DltResource:
     sync_ts = datetime.now(timezone.utc).isoformat()
 
-    # Pages: single global call with user_access_token (no {page_id} in endpoint)
-    if "{page_id}" not in spec.endpoint:
-        @dlt.resource(name=spec.name, primary_key=spec.primary_key, write_disposition="merge")
-        def _global():
-            for page in get_all_pages(base_url=base_url, user_access_token=user_access_token):
-                yield {**page, "_db_updated_at": sync_ts}
-        return _apply_hints(_global)
-
-    # Per-page incremental (conversations, page_customers)
     if spec.sync_type == "incremental":
         @dlt.resource(name=spec.name, primary_key=spec.primary_key, write_disposition="merge")
         def _incremental(
@@ -150,24 +126,23 @@ def build_resource(
                 if end_date
                 else int(datetime.now(timezone.utc).timestamp())
             )
-            yield from _iter_per_page(spec, base_url, user_access_token, sync_ts, since, until)
+            yield from _iter_per_page(spec, base_url, page_access_tokens, sync_ts, since, until)
         return _apply_hints(_incremental)
 
-    # Per-page full refresh (page_users, tags)
     @dlt.resource(name=spec.name, primary_key=spec.primary_key, write_disposition="merge")
     def _full_refresh():
-        yield from _iter_per_page(spec, base_url, user_access_token, sync_ts)
+        yield from _iter_per_page(spec, base_url, page_access_tokens, sync_ts)
     return _apply_hints(_full_refresh)
 
 
 def build_all_resources(
     base_url: str,
-    user_access_token: str,
+    page_access_tokens: dict,
     start_date: str,
     end_date: Optional[str] = None,
 ) -> list[DltResource]:
     return [
-        build_resource(spec, base_url, user_access_token, start_date, end_date)
+        build_resource(spec, base_url, page_access_tokens, start_date, end_date)
         for spec in load_table_specs()
     ]
 
