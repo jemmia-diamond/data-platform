@@ -72,7 +72,7 @@ qualified_lead_source as (
 ),
 lead_join_qualified as (
 	select
-		COALESCE(l.lead_entry_date, q.converted_date) AS date,
+		GREATEST(l.lead_entry_date, q.converted_date) AS date,
 		coalesce(l.lead_entry_date, q.lead_entry_date) as lead_entry_date,
 		coalesce(l.converted_date, q.converted_date) as converted_date,
 		coalesce(l.qualification_status_raw, q.qualification_status_raw) as qualification_status_raw,
@@ -108,9 +108,12 @@ sales as (
 lead_sales as (
 	select
 		l.*,
-		s.product_name
+        s.order_date,
+        s.split_order_group as lead_name_has_order,
+        s.total_price as total_price_lead_name_has_order
 	from lead_join_qualified l
-	left join sales s on l.lead_id_unified = s.lead_name
+	left join sales s
+        on l.date <= s.order_date and l.lead_id_unified = s.lead_name
 )
 select *
 from lead_sales
