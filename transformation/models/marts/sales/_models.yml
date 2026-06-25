@@ -283,7 +283,7 @@ models:
 
     columns:
       - name: date
-        description: "Primary date field — coalesced from lead_entry_date (entry side) or converted_date (qualified side)."
+        description: "Primary date field — greatest from lead_entry_date (entry side) or converted_date (qualified side)."
 
       - name: lead_entry_date
         description: "Date the lead was entered into the system."
@@ -354,5 +354,14 @@ models:
           Lead ID for qualified leads where lead_entry_date equals converted_date (converted on the same day).
           NULL otherwise.
 
-      - name: product_name
-        description: "Product name from the sales order, joined via lead_id_unified = lead_name."
+      - name: order_date
+        description: >
+          Order date that occurs after qualified date (coverted_date)
+
+      - name: lead_name_has_order
+        description: >
+          Order group name that occurs after qualified date (coverted_date)
+
+      - name: total_price_lead_name_has_order
+        description: >
+          Total price of Qualified lead that has order that occurs after the qualified date (coverted_date)
