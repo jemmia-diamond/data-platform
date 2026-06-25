@@ -1,0 +1,35 @@
+tables:
+
+  - endpoint: /v1/pages
+    name: pages
+    primary_key: id
+    sync_type: full_refresh
+
+  - endpoint: /public_api/v2/pages/{page_id}/conversations
+    name: conversations
+    response_key: conversations
+    primary_key: id
+    sync_type: incremental
+    paginated: true
+    page_size: 60
+    cursor_field: last_conversation_id
+
+  - endpoint: /public_api/v1/pages/{page_id}/page_customers
+    name: page_customers
+    response_key: customers
+    primary_key: id
+    sync_type: incremental
+    paginated: true
+    page_size: 100
+
+  - endpoint: /public_api/v1/pages/{page_id}/users
+    name: page_users
+    response_key: users
+    primary_key: id
+    sync_type: full_refresh
+
+  - endpoint: /public_api/v1/pages/{page_id}/tags
+    name: tags
+    response_key: tags
+    primary_key: [id, page_id]
+    sync_type: full_refresh
