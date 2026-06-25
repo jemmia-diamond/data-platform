@@ -64,7 +64,14 @@ SELECT
 
     l.source,
     l.lead_source_name,
-    l.lead_source_platform,
+--     l.lead_source_platform,
+    CASE
+        WHEN lead_source_platform IS NULL THEN 'Chưa xác định'
+        WHEN LOWER(lead_source_platform) = 'google' THEN 'Google'
+        WHEN LOWER(lead_source_platform) = 'instagram' THEN 'Facebook'
+        WHEN LOWER(lead_source_platform) = 'call-center' THEN 'Hotline'
+        ELSE lead_source_platform
+    END AS lead_source_platform,
 
     l.pancake_platform,
     l.pancake_page_name,
