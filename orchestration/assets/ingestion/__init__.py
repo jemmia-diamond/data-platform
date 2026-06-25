@@ -2,18 +2,20 @@
 Ingestion layer Dagster asset wrappers.
 """
 
-from .haravan import haravan_assets
 from .frappe import frappe_assets
-from .nocodb import nocodb_assets
 from .google_sheets import google_sheets_assets
+from .haravan import haravan_assets
+from .nocodb import nocodb_assets
+from .pancake import pancake_assets
 
-all_assets = [haravan_assets, frappe_assets, nocodb_assets, google_sheets_assets]
+all_assets = [haravan_assets, frappe_assets, nocodb_assets, google_sheets_assets, pancake_assets]
 
 __all__ = [
     "all_assets",
-    "haravan_assets",
     "frappe_assets",
-    "nocodb_assets",
     "google_sheets_assets",
+    "haravan_assets",
+    "nocodb_assets",
+    "pancake_assets",
 ]
 
