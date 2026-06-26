@@ -35,7 +35,8 @@ lead_source as (
 		lead_source_platform,
 		demand_label,
 		gender,
-        consultation_date_range
+        consultation_date_range,
+        time_to_convert_hours
 	from lead_data l
 	where 1 = 1
 ),
@@ -54,6 +55,7 @@ qualified_lead_source as (
 		demand_label,
 		gender,
         consultation_date_range,
+        time_to_convert_hours,
 		case when qualification_status_raw = 'Qualified' then lead_id end as qualified_lead_id,
 		CASE
 		    WHEN DATE_TRUNC('month', lead_entry_date)
@@ -88,6 +90,7 @@ lead_join_qualified as (
 	    COALESCE(l.demand_label, q.demand_label) AS demand_label,
 	    COALESCE(l.gender, q.gender) AS gender,
 	    COALESCE(l.consultation_date_range, q.consultation_date_range) AS consultation_date_range,
+        COALESCE(l.time_to_convert_hours, q.time_to_convert_hours) as time_to_convert_hours,
 	    q.qualified_lead_id,
 	    q.qualified_lead_id_not_in_month,
 	    q.qualified_lead_id_in_month,
@@ -109,8 +112,9 @@ lead_sales as (
 	select
 		l.*,
         s.order_date,
-        s.split_order_group as lead_name_has_order,
-        s.total_price as total_price_lead_name_has_order
+        s.split_order_group as lead_name_has_order_group,
+        s.order_number as lead_name_has_order_number,
+        s.allocated_total_price_by_order_id as total_price_lead_name_has_order
 	from lead_join_qualified l
 	left join sales s
         on l.date <= s.order_date and l.lead_id_unified = s.lead_name

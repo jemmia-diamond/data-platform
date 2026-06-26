@@ -27,6 +27,7 @@ sales as (
 	select
 		o.order_date,
 		o.order_id,
+        o.order_number,
 		o.split_order_group,
 		o.customer_id,
 		sa.sales_person_key,
