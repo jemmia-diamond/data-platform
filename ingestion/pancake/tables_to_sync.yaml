@@ -1,14 +1,5 @@
 tables:
 
-  - endpoint: /public_api/v2/pages/{page_id}/conversations
-    name: conversations
-    response_key: conversations
-    primary_key: id
-    sync_type: incremental
-    paginated: true
-    page_size: 60
-    cursor_field: last_conversation_id
-
   - endpoint: /public_api/v1/pages/{page_id}/page_customers
     name: page_customers
     response_key: customers
