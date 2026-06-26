@@ -34,7 +34,7 @@ def pancake_source(
       SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__<page_id>=<token>
     PATs do not expire — only update when adding a new page.
     """
-    if not page_access_tokens:
+    if page_access_tokens is None:
         page_access_tokens = _load_page_access_tokens_from_env()
 
     return tuple(

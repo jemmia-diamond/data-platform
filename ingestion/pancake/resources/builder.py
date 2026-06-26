@@ -13,7 +13,7 @@ import yaml
 from dlt.extract.resource import DltResource
 
 from ._client import PAGE_SLEEP_SECONDS, get_with_retry
-from .conversations import build_conversations_and_messages
+from .conversations import _apply_hints, build_conversations_and_messages
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +35,6 @@ class TableSpec:
 def load_table_specs() -> list[TableSpec]:
     with open(_YAML_PATH) as f:
         return [TableSpec(**t) for t in yaml.safe_load(f)["tables"]]
-
-
-def _apply_hints(resource: DltResource) -> DltResource:
-    resource.apply_hints(columns={"_db_updated_at": {"data_type": "timestamp", "nullable": False}})
-    resource.max_table_nesting = 0
-    return resource
 
 
 def build_resource(
@@ -78,7 +72,7 @@ def build_resource(
                     p |= {"page_number": page_number, "page_size": spec.page_size}
 
                 data = get_with_retry(url=url, params=p).json()
-                if isinstance(data, dict) and not data.get("success", True):
+                if isinstance(data, dict) and not data.get("success", False):
                     logger.warning(
                         "API error for page %s: error_code=%s msg='%s' — skipping.",
                         page_id, data.get("error_code"), data.get("message", ""),

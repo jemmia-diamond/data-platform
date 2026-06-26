@@ -68,7 +68,7 @@ def build_conversations_and_messages(
                     p["last_conversation_id"] = cursor
 
                 data = get_with_retry(url=url, params=p).json()
-                if isinstance(data, dict) and not data.get("success", True):
+                if isinstance(data, dict) and not data.get("success", False):
                     logger.warning(
                         "API error for page %s: error_code=%s msg='%s' — skipping.",
                         page_id, data.get("error_code"), data.get("message", ""),
@@ -101,8 +101,9 @@ def build_conversations_and_messages(
         if not page_id or not conv_id:
             return
 
-        pat = page_access_tokens.get(page_id) or page_access_tokens.get(int(page_id))
+        pat = page_access_tokens.get(page_id)
         if not pat:
+            logger.warning("No PAT found for page %s — skipping messages.", page_id)
             return
 
         msg_url = (
@@ -117,7 +118,7 @@ def build_conversations_and_messages(
             params = {"page_access_token": pat, "current_count": current_count}
             msg_data = get_with_retry(url=msg_url, params=params).json()
 
-            if not isinstance(msg_data, dict) or not msg_data.get("success", True):
+            if not isinstance(msg_data, dict) or not msg_data.get("success", False):
                 logger.warning("Failed to fetch messages for conv %s page %s.", conv_id, page_id)
                 break
 
