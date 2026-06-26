@@ -358,10 +358,18 @@ models:
         description: >
           Order date that occurs after qualified date (coverted_date)
 
-      - name: lead_name_has_order
+      - name: lead_name_has_order_group
+        description: >
+          Order group name that occurs after qualified date (coverted_date)
+
+      - name: lead_name_has_order_group
         description: >
           Order group name that occurs after qualified date (coverted_date)
 
       - name: total_price_lead_name_has_order
         description: >
           Total price of Qualified lead that has order that occurs after the qualified date (coverted_date)
+
+      - name: time_to_convert_hours
+        description: >
+          Hour from converted lead till has first order
