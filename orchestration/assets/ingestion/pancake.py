@@ -7,7 +7,6 @@ from ingestion.pancake import (
     DEFAULT_START_DATE,
     build_pancake_pipeline,
     build_pancake_source,
-    get_pancake_start_date,
 )
 
 from .translator import IngestionDagsterDltTranslator
@@ -32,7 +31,9 @@ def _selected_pancake_resources(context: AssetExecutionContext) -> list[str]:
 
 
 @dlt_assets(
-    dlt_source=build_pancake_source(),
+    dlt_source=build_pancake_source(
+        page_access_tokens={"0": "[ENCRYPTION_KEY]"},
+    ),
     dlt_pipeline=build_pancake_pipeline(),
     name="pancake_dlt_assets",
     dagster_dlt_translator=IngestionDagsterDltTranslator(),
@@ -42,15 +43,12 @@ def pancake_assets(
     dlt: DagsterDltResource,
     config: PancakeIngestionConfig,
 ):
-    """Run Pancake ingestion through dagster-dlt."""
     refresh = "drop_data" if config.full_refresh else None
-    # When neither full_refresh nor explicit start_date is set, auto-detect per table.
-    auto_detect = not config.full_refresh and config.start_date == DEFAULT_START_DATE
+    start = DEFAULT_START_DATE if config.full_refresh else config.start_date
     selected_resources = _selected_pancake_resources(context)
 
     if not selected_resources:
         context.log.warning("No selected Pancake resources; running full pipeline.")
-        start = DEFAULT_START_DATE if config.full_refresh else get_pancake_start_date()
         yield from dlt.run(
             context=context,
             dlt_source=build_pancake_source(
@@ -62,17 +60,24 @@ def pancake_assets(
         )
         return
 
-    for resource_name in selected_resources:
-        if auto_detect:
-            start = get_pancake_start_date(table=resource_name)
-        elif config.full_refresh:
-            start = DEFAULT_START_DATE
-        else:
-            start = config.start_date
+    # messages is a transformer that depends on conversations — always run together.
+    resources_to_skip = set()
+    if "conversations" in selected_resources and "messages" in selected_resources:
+        resources_to_skip.add("messages")
 
-        pipeline_name = f"pancake_{resource_name}"
+    for resource_name in selected_resources:
+        if resource_name in resources_to_skip:
+            continue
+
+        if resource_name == "conversations" and "messages" in selected_resources:
+            run_resources = ["conversations", "messages"]
+            pipeline_name = "pancake_conversations_messages"
+        else:
+            run_resources = [resource_name]
+            pipeline_name = f"pancake_{resource_name}"
+
         context.log.info(
-            f"Running Pancake resource={resource_name} "
+            f"Running Pancake resources={run_resources} "
             f"start_date={start} end_date={config.end_date} "
             f"full_refresh={config.full_refresh} pipeline_name={pipeline_name}"
         )
@@ -81,7 +86,7 @@ def pancake_assets(
             dlt_source=build_pancake_source(
                 start_date=start,
                 end_date=config.end_date,
-            ).with_resources(resource_name),
+            ).with_resources(*run_resources),
             dlt_pipeline=build_pancake_pipeline(pipeline_name=pipeline_name),
             refresh=refresh,
         )
