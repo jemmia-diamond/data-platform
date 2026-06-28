@@ -51,7 +51,7 @@ def build_conversations_and_messages(
         for page_id, pat in page_access_tokens.items():
             page_id = str(page_id)
             if not pat:
-                logger.warning("Empty PAT for page %s — skipping.", page_id)
+                logger.warning("Empty PAT for page %s - skipping.", page_id)
                 continue
             url = f"{base_url}/{_CONV_ENDPOINT.lstrip('/').replace('{page_id}', page_id)}"
             params: dict[str, Any] = {
@@ -70,7 +70,7 @@ def build_conversations_and_messages(
                 data = get_with_retry(url=url, params=p).json()
                 if isinstance(data, dict) and not data.get("success", False):
                     logger.warning(
-                        "API error for page %s: error_code=%s msg='%s' — skipping.",
+                        "API error for page %s: error_code=%s msg='%s' - skipping.",
                         page_id, data.get("error_code"), data.get("message", ""),
                     )
                     break
@@ -103,7 +103,7 @@ def build_conversations_and_messages(
 
         pat = page_access_tokens.get(page_id)
         if not pat:
-            logger.warning("No PAT found for page %s — skipping messages.", page_id)
+            logger.warning("No PAT found for page %s - skipping messages.", page_id)
             return
 
         msg_url = (

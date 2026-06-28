@@ -74,7 +74,7 @@ def build_resource(
                 data = get_with_retry(url=url, params=p).json()
                 if isinstance(data, dict) and not data.get("success", False):
                     logger.warning(
-                        "API error for page %s: error_code=%s msg='%s' — skipping.",
+                        "API error for page %s: error_code=%s msg='%s' - skipping.",
                         page_id, data.get("error_code"), data.get("message", ""),
                     )
                     break
