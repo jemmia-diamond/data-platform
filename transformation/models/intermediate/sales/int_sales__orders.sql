@@ -68,6 +68,7 @@ SELECT
     h.order_id AS haravan_order_id,
     COALESCE(e.split_order_group, h.order_id::text) AS split_order_group,
     COALESCE(e.split_order_group_name, h.order_number) AS split_order_group_name,
+    e.order_promotion,
 
     -- Customer
     COALESCE(e.customer_id::text, h.customer_id::text) AS unified_customer_id,
