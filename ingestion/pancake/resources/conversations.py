@@ -39,20 +39,14 @@ def build_conversations_and_messages(
     sync_ts = datetime.now(timezone.utc).isoformat()
 
     @dlt.resource(name="conversations", primary_key="id", write_disposition="merge")
-    def conversations(
-        _cursor=dlt.sources.incremental(
-            "updated_at",
-            initial_value=start_date,
-            last_value_func=max,
-        ),
-    ):
+    def conversations():
         """Yield conversations across pages, filtered by updated_at (since/until)."""
-        since_cursor = _to_ts(_cursor.last_value)
+        since_cursor = _to_ts(start_date)
         db_max = get_max_updated_at("raw_pancake", "conversations")
         if db_max is not None and int(db_max.timestamp()) > since_cursor:
             logger.info(
-                "DB max updated_at %s > cursor %s — advancing since to avoid backfill overlap.",
-                db_max.isoformat(), _cursor.last_value,
+                "DB max updated_at %s > since %s - advancing since to avoid backfill overlap.",
+                db_max.isoformat(), start_date,
             )
             since = int(db_max.timestamp())
         else:
