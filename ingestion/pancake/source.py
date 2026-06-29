@@ -1,24 +1,13 @@
 from __future__ import annotations
 
-import os
 from typing import Optional
 
 import dlt
 
+from ._env_utils import load_page_access_tokens_from_env
 from .resources import build_all_resources
 
-DEFAULT_START_DATE = "2018-01-01T00:00:00+00:00"
-
-_PAT_ENV_PREFIX = "SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__"
-
-
-def _load_page_access_tokens_from_env() -> dict:
-    """Read PATs from SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__<page_id> env vars."""
-    return {
-        k[len(_PAT_ENV_PREFIX):]: v
-        for k, v in os.environ.items()
-        if k.startswith(_PAT_ENV_PREFIX) and v
-    }
+DEFAULT_START_DATE = "2024-01-01T00:00:00+00:00"
 
 
 @dlt.source(name="pancake")
@@ -35,7 +24,7 @@ def pancake_source(
     PATs do not expire - only update when adding a new page.
     """
     if page_access_tokens is None:
-        page_access_tokens = _load_page_access_tokens_from_env()
+        page_access_tokens = load_page_access_tokens_from_env()
 
     return tuple(
         build_all_resources(

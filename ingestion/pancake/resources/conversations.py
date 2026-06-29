@@ -8,6 +8,8 @@ from typing import Any, Optional
 import dlt
 from dlt.extract.resource import DltResource
 
+from ingestion.db_utils import get_max_updated_at
+
 from ._client import PAGE_SLEEP_SECONDS, get_with_retry
 
 logger = logging.getLogger(__name__)
@@ -45,7 +47,16 @@ def build_conversations_and_messages(
         ),
     ):
         """Yield conversations across pages, filtered by updated_at (since/until)."""
-        since = _to_ts(_cursor.last_value)
+        since_cursor = _to_ts(_cursor.last_value)
+        db_max = get_max_updated_at("raw_pancake", "conversations")
+        if db_max is not None and int(db_max.timestamp()) > since_cursor:
+            logger.info(
+                "DB max updated_at %s > cursor %s — advancing since to avoid backfill overlap.",
+                db_max.isoformat(), _cursor.last_value,
+            )
+            since = int(db_max.timestamp())
+        else:
+            since = since_cursor
         until = _to_ts(end_date) if end_date else int(datetime.now(timezone.utc).timestamp())
 
         for page_id, pat in page_access_tokens.items():
@@ -68,7 +79,7 @@ def build_conversations_and_messages(
                     p["last_conversation_id"] = cursor
 
                 data = get_with_retry(url=url, params=p).json()
-                if isinstance(data, dict) and not data.get("success", False):
+                if isinstance(data, dict) and data.get("success") is False:
                     logger.warning(
                         "API error for page %s: error_code=%s msg='%s' - skipping.",
                         page_id, data.get("error_code"), data.get("message", ""),
@@ -118,7 +129,7 @@ def build_conversations_and_messages(
             params = {"page_access_token": pat, "current_count": current_count}
             msg_data = get_with_retry(url=msg_url, params=params).json()
 
-            if not isinstance(msg_data, dict) or not msg_data.get("success", False):
+            if not isinstance(msg_data, dict) or msg_data.get("success") is False:
                 logger.warning("Failed to fetch messages for conv %s page %s.", conv_id, page_id)
                 break
 

@@ -72,7 +72,7 @@ def build_resource(
                     p |= {"page_number": page_number, "page_size": spec.page_size}
 
                 data = get_with_retry(url=url, params=p).json()
-                if isinstance(data, dict) and not data.get("success", False):
+                if isinstance(data, dict) and data.get("success") is False:
                     logger.warning(
                         "API error for page %s: error_code=%s msg='%s' - skipping.",
                         page_id, data.get("error_code"), data.get("message", ""),
