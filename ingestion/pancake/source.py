@@ -66,13 +66,15 @@ def build_pancake_source(
     start_date: str = DEFAULT_START_DATE,
     end_date: Optional[str] = None,
     *,
-    base_url: Optional[str] = None,
+    base_url: str = DEFAULT_PANCAKE_BASE_URL,
     page_access_tokens: Optional[dict] = None,
 ):
     """Helper for creating a Pancake source with optional explicit overrides."""
-    kwargs: dict = {"start_date": start_date, "end_date": end_date}
-    if base_url is not None:
-        kwargs["base_url"] = base_url
+    kwargs: dict = {
+        "start_date": start_date,
+        "end_date": end_date,
+        "base_url": base_url,
+    }
     if page_access_tokens is not None:
         kwargs["page_access_tokens"] = page_access_tokens
     return pancake_source(**kwargs)
