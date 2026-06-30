@@ -97,7 +97,7 @@ def build_backfill_resources(
     page_access_tokens: dict,
     target_start: str = _DEFAULT_BACKFILL_START,
     overlap_hours: int = 7,
-    initial_until: Optional[str] = None,
+    initial_until: Optional[dict[str, str]] = None,
 ) -> tuple[DltResource, DltResource]:
     """Build backfill resources that crawl conversations+messages from now back to target_start.
 
@@ -111,6 +111,9 @@ def build_backfill_resources(
         page_access_tokens: Mapping of page_id → page_access_token.
         target_start: ISO-8601 date to stop backfilling at (inclusive lower bound).
         overlap_hours: Hours of overlap added to the checkpoint on resume to avoid gaps.
+        initial_until: Per-page upper bound for the very first run (page_id → ISO-8601).
+            Derived from the DB max updated_at of each page. Ignored on resume runs
+            because the global checkpoint takes precedence.
 
     Returns:
         Tuple of (conversations DltResource, messages DltResource).
@@ -123,22 +126,12 @@ def build_backfill_resources(
         checkpoint_iso: Optional[str] = state.get(_STATE_KEY)
 
         if checkpoint_iso:
-            until_dt = _from_iso(checkpoint_iso) + timedelta(hours=overlap_hours)
-            logger.info("Resuming backfill: checkpoint=%s → until=%s", checkpoint_iso, until_dt.isoformat())
-        elif initial_until:
-            until_dt = _from_iso(initial_until)
-            logger.info("Starting backfill from DB max: until=%s", until_dt.isoformat())
+            resume_until_dt = _from_iso(checkpoint_iso) + timedelta(hours=overlap_hours)
+            logger.info("Resuming backfill: checkpoint=%s → until=%s", checkpoint_iso, resume_until_dt.isoformat())
         else:
-            until_dt = datetime.now(timezone.utc)
-            logger.info("Starting fresh backfill: until=%s", until_dt.isoformat())
+            resume_until_dt = None
 
         target_dt = _from_iso(target_start)
-        if until_dt <= target_dt:
-            logger.info("Backfill already complete.")
-            return
-
-        since_ts = _to_ts(target_dt)
-        until_ts = _to_ts(until_dt)
         sync_ts = datetime.now(timezone.utc).isoformat()
         rate_limiter = AdaptiveRateLimiter()
         run_min_updated_at: Optional[datetime] = None
@@ -148,6 +141,22 @@ def build_backfill_resources(
             if not pat:
                 logger.warning("Empty PAT for page %s - skipping.", page_id)
                 continue
+
+            if resume_until_dt is not None:
+                until_dt = resume_until_dt
+            elif initial_until and page_id in initial_until:
+                until_dt = _from_iso(initial_until[page_id])
+                logger.info("Page %s: starting from DB max updated_at=%s", page_id, until_dt.isoformat())
+            else:
+                until_dt = datetime.now(timezone.utc)
+                logger.info("Page %s: no DB data found — starting fresh until=%s", page_id, until_dt.isoformat())
+
+            if until_dt <= target_dt:
+                logger.info("Page %s: backfill already complete.", page_id)
+                continue
+
+            since_ts = _to_ts(target_dt)
+            until_ts = _to_ts(until_dt)
 
             url = f"{base_url}/{_CONV_ENDPOINT.lstrip('/').replace('{page_id}', page_id)}"
             params: dict[str, Any] = {
@@ -244,7 +253,7 @@ def backfill_source(
     page_access_tokens: Optional[dict] = None,
     target_start: str = _DEFAULT_BACKFILL_START,
     overlap_hours: int = 7,
-    initial_until: Optional[str] = None,
+    initial_until: Optional[dict[str, str]] = None,
 ):
     """dlt source for the one-time historical backfill.
 
@@ -253,8 +262,8 @@ def backfill_source(
         page_access_tokens: Mapping page_id → PAT; loaded from env if omitted.
         target_start: Earliest updated_at to backfill to (ISO-8601).
         overlap_hours: Hours of overlap on resume to close time-window gaps.
-        initial_until: Upper bound for the very first run (e.g. DB max updated_at).
-            Ignored when a checkpoint already exists in dlt state.
+        initial_until: Per-page upper bound for the very first run
+            (page_id → ISO-8601 string). Ignored when a checkpoint already exists.
 
     Returns:
         Tuple of (backfill_conversations, backfill_messages) dlt resources.
@@ -274,21 +283,28 @@ def run_backfill(
     target_start: str = _DEFAULT_BACKFILL_START,
     overlap_hours: int = 7,
 ) -> None:
-    """Query DB max updated_at, then run the backfill pipeline to completion.
+    """Query DB max updated_at per page, then run the backfill pipeline to completion.
 
     Re-run as many times as needed — each run resumes from the last checkpoint.
-    Backfill is complete when the log says "Backfill already complete."
+    Backfill is complete when the log says all pages are "already complete."
 
     Args:
         target_start: Earliest updated_at to backfill to (ISO-8601).
         overlap_hours: Hours of overlap on resume to close time-window gaps.
     """
-    db_max = get_max_updated_at(_DATASET_NAME, "conversations")
-    initial_until = db_max.isoformat() if db_max else None
-    if initial_until:
-        logger.info("DB max updated_at = %s — using as initial_until.", initial_until)
-    else:
-        logger.info("conversations table empty — backfill will start from now.")
+    page_access_tokens = load_page_access_tokens_from_env()
+
+    initial_until: dict[str, str] = {}
+    for page_id in page_access_tokens:
+        page_id_str = str(page_id)
+        db_max = get_max_updated_at(
+            _DATASET_NAME, "conversations", filters={"page_id": page_id_str}
+        )
+        if db_max:
+            initial_until[page_id_str] = db_max.isoformat()
+            logger.info("Page %s: DB max updated_at=%s", page_id_str, initial_until[page_id_str])
+        else:
+            logger.info("Page %s: no data in DB — will start from now.", page_id_str)
 
     pipeline = build_dlt_pipeline(
         connector_name=_PIPELINE_NAME,
@@ -296,9 +312,10 @@ def run_backfill(
     )
     pipeline.run(
         backfill_source(
+            page_access_tokens=page_access_tokens,
             target_start=target_start,
             overlap_hours=overlap_hours,
-            initial_until=initial_until,
+            initial_until=initial_until or None,
         )
     )
 

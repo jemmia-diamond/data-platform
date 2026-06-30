@@ -42,15 +42,6 @@ def build_conversations_and_messages(
     def conversations():
         """Yield conversations across pages, filtered by updated_at (since/until)."""
         since_cursor = _to_ts(start_date)
-        db_max = get_max_updated_at("raw_pancake", "conversations")
-        if db_max is not None and int(db_max.timestamp()) > since_cursor:
-            logger.info(
-                "DB max updated_at %s > since %s - advancing since to avoid backfill overlap.",
-                db_max.isoformat(), start_date,
-            )
-            since = int(db_max.timestamp())
-        else:
-            since = since_cursor
         until = _to_ts(end_date) if end_date else int(datetime.now(timezone.utc).timestamp())
 
         for page_id, pat in page_access_tokens.items():
@@ -58,6 +49,17 @@ def build_conversations_and_messages(
             if not pat:
                 logger.warning("Empty PAT for page %s - skipping.", page_id)
                 continue
+
+            db_max = get_max_updated_at("raw_pancake", "conversations", filters={"page_id": page_id})
+            if db_max is not None and int(db_max.timestamp()) > since_cursor:
+                logger.info(
+                    "Page %s: DB max updated_at %s > since %s - advancing since.",
+                    page_id, db_max.isoformat(), start_date,
+                )
+                since = int(db_max.timestamp())
+            else:
+                since = since_cursor
+
             url = f"{base_url}/{_CONV_ENDPOINT.lstrip('/').replace('{page_id}', page_id)}"
             params: dict[str, Any] = {
                 "page_access_token": pat,
