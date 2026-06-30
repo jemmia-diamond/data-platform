@@ -22,6 +22,7 @@ _MSG_ENDPOINT = "/public_api/v1/pages/{page_id}/conversations/{conversation_id}/
 _CONV_PAGE_SIZE = 60
 _MSG_PAGE_SIZE = 30
 _STATE_KEY = "backfill_min_updated_at"
+_DEFAULT_BACKFILL_START = "2026-01-01T00:00:00+00:00"
 
 
 def _from_iso(value: str) -> datetime:
@@ -94,7 +95,7 @@ def _fetch_messages(
 def build_backfill_resources(
     base_url: str,
     page_access_tokens: dict,
-    target_start: str = "2024-01-01T00:00:00+00:00",
+    target_start: str = _DEFAULT_BACKFILL_START,
     overlap_hours: int = 7,
     initial_until: Optional[str] = None,
 ) -> tuple[DltResource, DltResource]:
@@ -241,7 +242,7 @@ _DATASET_NAME = "raw_pancake"
 def backfill_source(
     base_url: str = dlt.config.value,
     page_access_tokens: Optional[dict] = None,
-    target_start: str = "2024-01-01T00:00:00+00:00",
+    target_start: str = _DEFAULT_BACKFILL_START,
     overlap_hours: int = 7,
     initial_until: Optional[str] = None,
 ):
@@ -270,7 +271,7 @@ def backfill_source(
 
 
 def run_backfill(
-    target_start: str = "2024-01-01T00:00:00+00:00",
+    target_start: str = _DEFAULT_BACKFILL_START,
     overlap_hours: int = 7,
 ) -> None:
     """Query DB max updated_at, then run the backfill pipeline to completion.
