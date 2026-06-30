@@ -1,30 +1,44 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Optional
 
 import dlt
+import requests
 
 from .resources import TABLE_SPECS, build_conversations_and_messages, build_table_resource
 
 DEFAULT_PANCAKE_BASE_URL = "https://pages.fm/api"
 DEFAULT_START_DATE = "2026-06-28T00:00:00+00:00"
 
-_PAT_ENV_PREFIX = "SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__"
+_PAT_CONFIG_PREFIX = "PANCAKE_PATS_CONFIG_"
 
 
 def _load_page_access_tokens() -> dict:
-    """Read page access tokens from env vars.
+    """Fetch Pancake page access tokens from Infisical.
 
-    Scans for ``SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__<page_id>`` and returns a
-    mapping of page_id to token. PATs do not expire; only update when adding a
-    new page.
+    Reads all ``PANCAKE_PATS_CONFIG_*`` secrets from Infisical, parses each
+    as a JSON mapping of ``{page_id: token}``, and merges them into one dict.
+    Connection params are read from ``INFISICAL_*`` env vars.
     """
-    return {
-        key[len(_PAT_ENV_PREFIX):]: value
-        for key, value in os.environ.items()
-        if key.startswith(_PAT_ENV_PREFIX) and value
-    }
+    response = requests.get(
+        f"{os.environ['INFISICAL_HOST']}/api/v3/secrets/raw",
+        headers={"Authorization": f"Bearer {os.environ['PUBLIC_INFISICAL_TOKEN']}"},
+        params={
+            "workspaceId": os.environ["INFISICAL_WORKSPACE_ID"],
+            "environment": os.environ.get("INFISICAL_ENVIRONMENT", "prod"),
+            "secretPath": os.environ.get("INFISICAL_SECRET_PATH", "/commons/public"),
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+
+    tokens: dict = {}
+    for secret in response.json()["secrets"]:
+        if secret["secretKey"].startswith(_PAT_CONFIG_PREFIX) and secret["secretValue"]:
+            tokens.update(json.loads(secret["secretValue"]))
+    return tokens
 
 
 @dlt.source(name="pancake")
