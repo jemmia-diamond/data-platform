@@ -121,6 +121,7 @@ cd transformation && export $(cat ../.env | xargs) && ../.venv/bin/dbt build --s
 - Pipeline dataset naming: `raw_<connector_name>`
 - **dlt `@dlt.source` config override trap:** dlt auto-resolves function parameters from env vars by matching parameter name → config key (e.g. `spreadsheet_url_or_id` → `SOURCES__GOOGLE_SHEETS__SPREADSHEET_URL_OR_ID`). This overrides Python defaults. **Fix:** do NOT expose IDs/URLs as `@dlt.source` function parameters. Hardcode them inside the function body or in a dataclass spec instead.
 - **Google Sheets pattern:** Each sheet is a `SheetSpec(resource_name, range_name, spreadsheet_id, ...)`. The `spreadsheet_id` is hardcoded per-spec (not in env vars). Column names mapped from Vietnamese → English via `column_mapping`. Credentials (GCP service account) come from env vars `SOURCES__GOOGLE_SHEETS__CREDENTIALS__*`.
+- **Historical backfill pattern:** separate partitioned `@dlt_assets` (monthly, window from partition) — see "Historical Backfill via Partitioned dlt Assets" below. NEVER add window fields to the scheduled assets.
 
 ### Adding a New Ingestion Connector — Checklist
 
@@ -165,6 +166,7 @@ Jobs and schedules auto-generated from `ExecutionUnitSpec` in `orchestration/cat
 
 - Ingestion (dlt): `["ingestion", <source_name>, <resource_name>]`
 - Frappe special: `["ingestion", "frappe", "erpnext", <resource_name>]`
+- Pancake backfill special: `["ingestion", "pancake", "backfill", <resource_name>]`
 - Transformation (dbt): `["transformation", <schema>, ...folders, <model_name>]`
 
 ### dlt Resource Pattern
@@ -175,6 +177,23 @@ Every `build_*_resource()` returns `DltResource` with:
 - `write_disposition` — "merge" (incremental) or "replace" (full load)
 - `_db_updated_at` — tracking column
 - `max_table_nesting = 0` — flatten nested JSON
+
+### Historical Backfill via Partitioned dlt Assets
+
+For a manual historical backfill of a connector whose scheduled incremental cursor starts at a recent date, add a **separate partitioned `@dlt_assets`** alongside the scheduled one — do NOT extend the scheduled assets with run-config window fields.
+
+- **Reference implementation:** `pancake_backfill_assets` in `orchestration/assets/ingestion/pancake.py`; manual job in `orchestration/jobs/backfill.py`.
+- **Partitioning:** `MonthlyPartitionsDefinition(start_date="2020-01-01", end_offset=1)`. `end_offset=1` so the current in-progress month is backfillable — it is a real gap because scheduled ingestion only covers `updated_at >= DEFAULT_START_DATE`.
+- **Window comes from the partition, NOT config:** `start, end = context.partition_time_window` → passed as `start_date`/`end_date` to the source builder. Never expose the window as a `Config` field — Dagster's run-config scaffolder **omits fields whose default is `None`**, so an `end_date: Optional[str] = None` field is invisible in the UI. Deriving from the partition avoids this trap entirely.
+- **Isolate dlt state per partition:** `pipeline_name = f"pancake_backfill_{base}_{partition_key}"`. dlt keys incremental state by pipeline name on disk (`.dlt/pipelines/<name>/`), so per-partition names keep each month's `initial_value` honored and never touch the scheduled pipelines.
+- **`refresh=None` always** — never `drop_data` in a backfill, it would wipe scheduled data.
+- **Distinct asset keys** (`.../backfill/<resource>` via a dedicated `DagsterDltTranslator`) keep the partitioned backfill subgraph separate from the non-partitioned production assets, while both merge into the same physical `raw_<connector>.*` tables.
+- **Transformer coupling:** when a resource is a `@dlt.transformer(data_from=<parent>)` (e.g. `messages` from `conversations`) and both are selected, run them together under one pipeline name and skip the standalone iteration.
+- **Manual job only, no schedule:** `build_schedule_definition` only consumes catalog specs, so backfill jobs get no schedule automatically. Launch from the asset-graph backfill modal (pick month range) or Launchpad (single partition).
+- **New partitioned asset → hard restart `dagster dev`** (Ctrl+C + rerun), not "Reload code location": the partition timeline is not recomputed on a soft reload.
+- **`MonthlyPartitionsDefinition` is dynamic:** the month list auto-extends as months pass from `now` — no code/restart needed once the asset exists.
+- **Re-running a completed partition** is a near no-op (merge on the existing `updated_at` cursor); force a clean re-run by deleting that partition's state dir: `rm -rf .dlt/pipelines/pancake_backfill_{base}_{key}/`.
+- **Versions:** Dagster 1.13.5, dagster_dlt 0.29.5 (supports `partitions_def` + per-asset translator), pydantic 2.13.1.
 
 ### ERPNext Ingestion
 
