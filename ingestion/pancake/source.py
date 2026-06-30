@@ -7,7 +7,7 @@ import dlt
 from ._env_utils import load_page_access_tokens_from_env
 from .resources import build_all_resources
 
-DEFAULT_START_DATE = "2024-01-01T00:00:00+00:00"
+DEFAULT_START_DATE = "2026-06-22T00:00:00+00:00"
 
 
 @dlt.source(name="pancake")
