@@ -45,4 +45,32 @@ class FrappeDagsterDltTranslator(DagsterDltTranslator):
         )
 
 
-__all__ = ["FrappeDagsterDltTranslator", "IngestionDagsterDltTranslator"]
+class PancakeBackfillDagsterDltTranslator(DagsterDltTranslator):
+    """Place Pancake BACKFILL assets under ingestion/pancake/backfill/<resource>.
+
+    Distinct keys keep the partitioned backfill subgraph separate from the
+    non-partitioned production ``pancake_assets`` while both write the same
+    physical ``raw_pancake.*`` tables via merge.
+    """
+
+    def get_asset_spec(self, data: DltResourceTranslatorData):
+        spec = super().get_asset_spec(data)
+        deps = []
+        if data.resource.is_transformer:
+            pipe = data.resource._pipe  # noqa: SLF001
+            while pipe.has_parent:
+                pipe = pipe.parent
+            deps = [AssetKey(["ingestion", "pancake", "backfill", pipe.name])]
+
+        return spec.replace_attributes(
+            key=AssetKey(["ingestion", "pancake", "backfill", data.resource.name]),
+            deps=deps,
+            group_name="ingestion",
+        )
+
+
+__all__ = [
+    "FrappeDagsterDltTranslator",
+    "IngestionDagsterDltTranslator",
+    "PancakeBackfillDagsterDltTranslator",
+]
