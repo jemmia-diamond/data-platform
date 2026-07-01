@@ -1,6 +1,7 @@
 from .frappe_erpnext import FRAPPE_ERPNEXT_EXECUTION_UNITS
 from .google_sheets import GOOGLE_SHEETS_EXECUTION_UNITS
 from .haravan import HARAVAN_EXECUTION_UNITS
+from .lark import LARK_EXECUTION_UNITS
 from .nocodb import NOCODB_EXECUTION_UNITS
 from .pancake import PANCAKE_EXECUTION_UNITS
 
@@ -10,12 +11,14 @@ all_execution_units = (
     + NOCODB_EXECUTION_UNITS
     + GOOGLE_SHEETS_EXECUTION_UNITS
     + PANCAKE_EXECUTION_UNITS
+    + LARK_EXECUTION_UNITS
 )
 
 __all__ = [
     "FRAPPE_ERPNEXT_EXECUTION_UNITS",
     "GOOGLE_SHEETS_EXECUTION_UNITS",
     "HARAVAN_EXECUTION_UNITS",
+    "LARK_EXECUTION_UNITS",
     "NOCODB_EXECUTION_UNITS",
     "PANCAKE_EXECUTION_UNITS",
     "all_execution_units",
