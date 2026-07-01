@@ -52,7 +52,7 @@ sales as (
 		-- allocated amount này là hoa hồng
 		sa.allocated_amount,
 		-- chia allocated kpi như allocated total price vì bị dup như trên
-		sa.allocated_amount / count(*) over (partition by o.order_id) as allocated_amount_by_order_id,
+		sa.allocated_amount / count(*) over (partition by o.order_id, sa.sales_person_key) as allocated_amount_by_order_id,
 		-- chia product quantity và total price theo order_id và product_id
 		oi.quantity as product_quantity,
 		oi.quantity / count(*) over (partition by o.order_id, oi.product_key) as allocated_product_quantity_by_order_id,
