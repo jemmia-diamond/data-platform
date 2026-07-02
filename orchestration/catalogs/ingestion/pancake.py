@@ -14,12 +14,25 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             tool="dlt",
             system="pancake",
             unit="conversations_customers_batch",
-            asset_paths=_asset_paths("conversations", "messages", "page_customers"),
-            description="Refresh Pancake conversations, messages, and page customers (incremental by updated_at)",
+            asset_paths=_asset_paths("conversations", "page_customers"),
+            description="Refresh Pancake conversations and page customers (incremental by updated_at)",
             cadence="hourly",
             cron_schedule="5 * * * *",
             schedule_token="hourly",
-            schedule_description="Run Pancake conversations, messages, and page customers hourly at minute 5",
+            schedule_description="Run Pancake conversations and page customers hourly at minute 5",
+            max_runtime_seconds=3600,
+        ),
+        ExecutionUnitSpec(
+            layer="ingestion",
+            tool="dlt",
+            system="pancake",
+            unit="conversations_messages_batch",
+            asset_paths=_asset_paths("messages"),
+            description=(
+                "Refresh Pancake conversation messages; conversations is pulled in "
+                "as the upstream parent required to feed the messages transformer"
+            ),
+            cadence="manual",
             max_runtime_seconds=3600,
         ),
         ExecutionUnitSpec(
