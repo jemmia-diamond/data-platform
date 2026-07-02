@@ -20,13 +20,7 @@ _WIKI_NODE_ENDPOINT = "wiki/v2/spaces/get_node"
 
 
 class WikiNode(NamedTuple):
-    """A resolved Lark Wiki node.
-
-    Attributes:
-        obj_token: Token of the embedded object (Bitable ``app_token``,
-            spreadsheet token, or Docx ``document_id`` depending on ``obj_type``).
-        obj_type: Lark object type of the node (e.g. ``bitable``, ``sheet``, ``docx``).
-    """
+    """A Wiki node resolved to its embedded object token and Lark object type."""
 
     obj_token: str
     obj_type: str
@@ -34,55 +28,24 @@ class WikiNode(NamedTuple):
 
 @dataclass(frozen=True)
 class ApiDef:
-    """Reusable, config-driven definition of one Lark API (shared by all resources).
-
-    Loaded from the ``apis`` section of the YAML catalog so endpoint shapes live
-    in config, not code.
-
-    Attributes:
-        reader: Which builder to use — ``cursor`` (page_token REST list) or
-            ``sheet_values`` (single-sheet values dump).
-        obj_types: Wiki node ``obj_type`` values compatible with this api.
-        token_field: The ``ResourceSpec`` field holding a direct object token.
-        primary_key: Default merge key for resources of this api.
-        base_path: ``cursor``: client base path template (``{...}`` placeholders).
-        path: ``cursor``: endpoint path template relative to ``base_path``.
-        params: ``cursor``: query parameters sent on every request.
-        data_selector: ``cursor``: JSONPath to the record list in the response.
-        token_column: ``cursor``: optional constant column stamped with obj_token.
-        values_path: ``sheet_values``: path template reading one sheet's values.
-        row_column: ``sheet_values``: column name holding each raw row array.
-    """
+    """Config-driven definition of one Lark API, loaded from the catalog ``apis`` section."""
 
     reader: str
     obj_types: list[str]
     token_field: str
     primary_key: Union[str, list[str]]
-    base_path: Optional[str] = None
-    path: Optional[str] = None
-    params: dict[str, Any] = field(default_factory=dict)
-    data_selector: str = "data.items"
-    token_column: Optional[str] = None
-    values_path: Optional[str] = None
-    row_column: str = "data"
+    cursor_base_path: Optional[str] = None
+    cursor_endpoint_path: Optional[str] = None
+    cursor_query_params: dict[str, Any] = field(default_factory=dict)
+    cursor_data_selector: str = "data.items"
+    cursor_obj_token_column: Optional[str] = None
+    sheet_values_path: Optional[str] = None
+    sheet_row_json_column: str = "data"
 
 
 @dataclass(frozen=True)
 class ResourceSpec:
-    """Declarative specification for one Lark object to ingest.
-
-    Attributes:
-        api: Key into the ``apis`` catalog section (e.g. ``bitable`` / ``sheet`` / ``doc``).
-        resource_name: Destination table name (``raw_lark.<resource_name>``).
-        wiki_token: Wiki node token embedding the object; resolved to a token.
-        app_token: Direct Bitable app token (alternative to ``wiki_token``).
-        table_id: Bitable table id.
-        spreadsheet_token: Direct spreadsheet token (alternative to ``wiki_token``).
-        document_id: Direct Docx document id (alternative to ``wiki_token``).
-        sheet_id: The single sheet to ingest within a spreadsheet; required for the
-            ``sheet`` api.
-        primary_key: Optional merge key override (else the api default applies).
-    """
+    """One Lark object to ingest, declared in the catalog ``resources`` section."""
 
     api: str
     resource_name: str
@@ -96,19 +59,7 @@ class ResourceSpec:
 
 
 def get_tenant_access_token(base_url: str, app_id: str, app_secret: str) -> str:
-    """Exchange Lark application credentials for a tenant access token.
-
-    Args:
-        base_url: Lark open-apis base URL.
-        app_id: Lark custom app identifier.
-        app_secret: Lark custom app secret.
-
-    Returns:
-        A short-lived tenant access token used as the bearer credential.
-
-    Raises:
-        RuntimeError: If the Lark API responds with a non-zero status code.
-    """
+    """Exchange Lark application credentials for a short-lived tenant access token."""
     response = requests.post(
         f"{base_url}/{_TENANT_TOKEN_ENDPOINT}",
         json={"app_id": app_id, "app_secret": app_secret},
@@ -135,20 +86,8 @@ def resolve_wiki_node(base_url: str, access_token: str, wiki_token: str) -> Wiki
     return WikiNode(obj_token=node["obj_token"], obj_type=node["obj_type"])
 
 
-def _render(template: str, spec: ResourceSpec, obj_token: str) -> str:
-    """Render a path template from a spec's token fields.
-
-    Args:
-        template: A ``str.format`` template (e.g. ``tables/{table_id}/records``).
-        spec: The resource specification providing placeholder values.
-        obj_token: The resolved object token available as ``{obj_token}``.
-
-    Returns:
-        The rendered path.
-
-    Raises:
-        ValueError: If the template references a field that the spec leaves unset.
-    """
+def _render_path_template(template: str, spec: ResourceSpec, obj_token: str) -> str:
+    """Fill a ``str.format`` path template from the spec's token fields, raising if any is unset."""
     context = {
         "obj_token": obj_token,
         "table_id": spec.table_id,
@@ -171,10 +110,12 @@ def _build_cursor_resource(
     """Build a merge resource for any ``page_token``-paginated list endpoint."""
     
     run_timestamp = sync_timestamp()
-    extra_columns = {api_def.token_column: obj_token} if api_def.token_column else {}
+    extra_columns = (
+        {api_def.cursor_obj_token_column: obj_token} if api_def.cursor_obj_token_column else {}
+    )
     config: RESTAPIConfig = {
         "client": {
-            "base_url": f"{base_url}/{_render(api_def.base_path, spec, obj_token)}/",
+            "base_url": f"{base_url}/{_render_path_template(api_def.cursor_base_path, spec, obj_token)}/",
             "headers": {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json",
@@ -186,9 +127,9 @@ def _build_cursor_resource(
                 "primary_key": spec.primary_key or api_def.primary_key,
                 "write_disposition": "merge",
                 "endpoint": {
-                    "path": _render(api_def.path, spec, obj_token),
-                    "params": dict(api_def.params),
-                    "data_selector": api_def.data_selector,
+                    "path": _render_path_template(api_def.cursor_endpoint_path, spec, obj_token),
+                    "params": dict(api_def.cursor_query_params),
+                    "data_selector": api_def.cursor_data_selector,
                     "paginator": JSONResponseCursorPaginator(
                         cursor_path="data.page_token", cursor_param="page_token"
                     ),
@@ -210,7 +151,7 @@ def _build_sheet_resource(
     headers = {"Authorization": f"Bearer {access_token}"}
     primary_key = spec.primary_key or api_def.primary_key
     values_url = (
-        f"{base_url}/{api_def.values_path.format(obj_token=obj_token, sheet_id=spec.sheet_id)}"
+        f"{base_url}/{api_def.sheet_values_path.format(obj_token=obj_token, sheet_id=spec.sheet_id)}"
     )
 
     @dlt.resource(name=spec.resource_name, primary_key=primary_key, write_disposition="merge")
@@ -232,7 +173,7 @@ def _build_sheet_resource(
                 "spreadsheet_token": obj_token,
                 "sheet_id": spec.sheet_id,
                 "row_number": row_number,
-                api_def.row_column: dict(zip(header, row)),
+                api_def.sheet_row_json_column: dict(zip(header, row)),
                 RAW_UPDATED_AT_COLUMN: run_timestamp,
             }
 
@@ -285,20 +226,7 @@ _SPEC_BY_RESOURCE_NAME = {spec.resource_name: spec for spec in RESOURCE_SPECS}
 
 
 def lark_resource_asset_path(resource_name: str) -> tuple[str, ...]:
-    """Return the object-type-grouped Dagster asset key path for a Lark resource.
-
-    Groups resources under a segment derived from their catalog ``api`` so the
-    Dagster asset tree reads ``ingestion / lark / <base|sheets|document> / <resource>``.
-
-    Args:
-        resource_name: The dlt resource (and destination table) name.
-
-    Returns:
-        The asset key path ``("ingestion", "lark", <segment>, resource_name)``.
-
-    Raises:
-        KeyError: If the resource name is not declared in the catalog.
-    """
+    """Return the api-grouped Dagster asset key path ``(ingestion, lark, <segment>, resource_name)``."""
     spec = _SPEC_BY_RESOURCE_NAME[resource_name]
     segment = _API_TREE_SEGMENTS.get(spec.api, spec.api)
     return ("ingestion", "lark", segment, resource_name)

@@ -12,31 +12,31 @@ apis:
   bitable:
     reader: cursor
     obj_types: [bitable]
-    token_field: app_token            # direct-token field (else use wiki_token)
-    token_column: app_token           # stamped onto every record
-    base_path: bitable/v1/apps/{obj_token}
-    path: tables/{table_id}/records
-    params: {page_size: 500, automatic_fields: "true"}
-    data_selector: data.items
+    token_field: app_token                 # direct-token field (else use wiki_token)
+    cursor_obj_token_column: app_token      # stamped onto every record
+    cursor_base_path: bitable/v1/apps/{obj_token}
+    cursor_endpoint_path: tables/{table_id}/records
+    cursor_query_params: {page_size: 500, automatic_fields: "true"}
+    cursor_data_selector: data.items
     primary_key: record_id
 
   doc:
     reader: cursor
     obj_types: [docx, doc]
     token_field: document_id
-    token_column: document_id
-    base_path: docx/v1/documents/{obj_token}
-    path: blocks
-    params: {page_size: 500}
-    data_selector: data.items
+    cursor_obj_token_column: document_id
+    cursor_base_path: docx/v1/documents/{obj_token}
+    cursor_endpoint_path: blocks
+    cursor_query_params: {page_size: 500}
+    cursor_data_selector: data.items
     primary_key: block_id
 
   sheet:
     reader: sheet_values
     obj_types: [sheet]
     token_field: spreadsheet_token
-    values_path: sheets/v2/spreadsheets/{obj_token}/values/{sheet_id}
-    row_column: data                  # each raw row array stored under this column
+    sheet_values_path: sheets/v2/spreadsheets/{obj_token}/values/{sheet_id}
+    sheet_row_json_column: data             # header-keyed JSON object per data row
     primary_key: [spreadsheet_token, sheet_id, row_number]
 
 resources:
