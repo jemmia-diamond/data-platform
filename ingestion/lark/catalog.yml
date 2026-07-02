@@ -1,0 +1,51 @@
+# Lark ingestion catalog.
+#
+# `apis`      — reusable, config-driven API definitions (endpoints live here, not
+#               in Python). Add a new page_token-paginated Lark API by adding an
+#               entry with reader: cursor — no code change needed.
+# `resources` — what to ingest; each maps 1:1 to a dlt resource, dispatched by `api`.
+#
+# Template placeholders ({obj_token}, {table_id}, {document_id}, {sheet_id}, ...)
+# are filled from the resolved object token and the resource's own fields.
+
+apis:
+  bitable:
+    reader: cursor
+    obj_types: [bitable]
+    token_field: app_token            # direct-token field (else use wiki_token)
+    token_column: app_token           # stamped onto every record
+    base_path: bitable/v1/apps/{obj_token}
+    path: tables/{table_id}/records
+    params: {page_size: 500, automatic_fields: "true"}
+    data_selector: data.items
+    primary_key: record_id
+
+  doc:
+    reader: cursor
+    obj_types: [docx, doc]
+    token_field: document_id
+    token_column: document_id
+    base_path: docx/v1/documents/{obj_token}
+    path: blocks
+    params: {page_size: 500}
+    data_selector: data.items
+    primary_key: block_id
+
+  sheet:
+    reader: sheet_values
+    obj_types: [sheet]
+    token_field: spreadsheet_token
+    meta_path: sheets/v3/spreadsheets/{obj_token}/sheets/query
+    values_path: sheets/v2/spreadsheets/{obj_token}/values/{sheet_id}
+    row_column: data                  # each raw row array stored under this column
+    primary_key: [spreadsheet_token, sheet_id, row_number]
+
+resources:
+  - api: bitable
+    resource_name: crm_customers
+    wiki_token: UsizwSlx3iwoURkmTEHlv5vJgtd
+    table_id: tbl5OhHSxcMbqe3m
+
+  - api: sheet
+    resource_name: tin_test_spreadsheet
+    wiki_token: LaGnwNoJBilB6rk0hWQlx1TGgMe

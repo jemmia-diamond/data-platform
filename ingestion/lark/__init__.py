@@ -1,7 +1,8 @@
-"""Lark Bitable dlt source package."""
+"""Lark dlt source package (Bitable, Sheets and Docx via a single YAML catalog)."""
 
 from ingestion.pipelines import build_dlt_pipeline
 
+from .catalog import lark_resource_asset_path
 from .source import (
     DEFAULT_LARK_BASE_URL,
     build_lark_source,
@@ -32,4 +33,5 @@ __all__ = [
     "LARK_PIPELINE_NAME",
     "build_lark_pipeline",
     "build_lark_source",
+    "lark_resource_asset_path",
 ]

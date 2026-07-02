@@ -7,7 +7,7 @@ from ingestion.lark import (
     build_lark_source,
 )
 
-from .translator import IngestionDagsterDltTranslator
+from .translator import LarkDagsterDltTranslator
 
 
 class LarkIngestionConfig(Config):
@@ -20,9 +20,9 @@ def _selected_lark_resources(context: AssetExecutionContext) -> list[str]:
     """Helper to extract selected Lark resource names from context."""
     return sorted(
         {
-            key.path[2]
+            key.path[3]
             for key in context.selected_asset_keys
-            if len(key.path) >= 3 and key.path[0] == "ingestion" and key.path[1] == "lark"
+            if len(key.path) >= 4 and key.path[0] == "ingestion" and key.path[1] == "lark"
         }
     )
 
@@ -39,14 +39,14 @@ def _selected_lark_resources(context: AssetExecutionContext) -> list[str]:
     ),
     dlt_pipeline=build_lark_pipeline(),
     name="lark_dlt_assets",
-    dagster_dlt_translator=IngestionDagsterDltTranslator(),
+    dagster_dlt_translator=LarkDagsterDltTranslator(),
 )
 def lark_assets(
     context: AssetExecutionContext,
     dlt: DagsterDltResource,
     config: LarkIngestionConfig,
 ):
-    """Run Lark Bitable ingestion through dagster-dlt."""
+    """Run Lark ingestion (Base, Sheets, Document) through dagster-dlt."""
     refresh = "drop_data" if config.full_refresh else None
     selected_resources = _selected_lark_resources(context)
 
