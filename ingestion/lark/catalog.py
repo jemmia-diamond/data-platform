@@ -6,7 +6,6 @@ from typing import Any, Iterator, NamedTuple, Optional, Union
 
 import dlt
 import yaml
-from dlt.common import logger
 from dlt.extract.resource import DltResource
 from dlt.sources.helpers import requests
 from dlt.sources.helpers.rest_client.paginators import JSONResponseCursorPaginator
@@ -42,7 +41,7 @@ class ApiDef:
 
     Attributes:
         reader: Which builder to use — ``cursor`` (page_token REST list) or
-            ``sheet_values`` (whole-spreadsheet dump).
+            ``sheet_values`` (single-sheet values dump).
         obj_types: Wiki node ``obj_type`` values compatible with this api.
         token_field: The ``ResourceSpec`` field holding a direct object token.
         primary_key: Default merge key for resources of this api.
@@ -51,7 +50,6 @@ class ApiDef:
         params: ``cursor``: query parameters sent on every request.
         data_selector: ``cursor``: JSONPath to the record list in the response.
         token_column: ``cursor``: optional constant column stamped with obj_token.
-        meta_path: ``sheet_values``: path template listing the sheets.
         values_path: ``sheet_values``: path template reading one sheet's values.
         row_column: ``sheet_values``: column name holding each raw row array.
     """
@@ -65,7 +63,6 @@ class ApiDef:
     params: dict[str, Any] = field(default_factory=dict)
     data_selector: str = "data.items"
     token_column: Optional[str] = None
-    meta_path: Optional[str] = None
     values_path: Optional[str] = None
     row_column: str = "data"
 
@@ -82,6 +79,8 @@ class ResourceSpec:
         table_id: Bitable table id.
         spreadsheet_token: Direct spreadsheet token (alternative to ``wiki_token``).
         document_id: Direct Docx document id (alternative to ``wiki_token``).
+        sheet_id: The single sheet to ingest within a spreadsheet; required for the
+            ``sheet`` api.
         primary_key: Optional merge key override (else the api default applies).
     """
 
@@ -92,6 +91,7 @@ class ResourceSpec:
     table_id: Optional[str] = None
     spreadsheet_token: Optional[str] = None
     document_id: Optional[str] = None
+    sheet_id: Optional[str] = None
     primary_key: Optional[Union[str, list[str]]] = None
 
 
@@ -204,46 +204,39 @@ def _build_cursor_resource(
 def _build_sheet_resource(
     spec: ResourceSpec, api_def: ApiDef, base_url: str, access_token: str, obj_token: str
 ) -> DltResource:
-    """Build a resource dumping every row of every sheet in a spreadsheet."""
+    """Build a resource yielding one record per data row of a single sheet."""
 
     run_timestamp = sync_timestamp()
     headers = {"Authorization": f"Bearer {access_token}"}
     primary_key = spec.primary_key or api_def.primary_key
-    meta_url = f"{base_url}/{api_def.meta_path.format(obj_token=obj_token)}"
+    values_url = (
+        f"{base_url}/{api_def.values_path.format(obj_token=obj_token, sheet_id=spec.sheet_id)}"
+    )
 
     @dlt.resource(name=spec.resource_name, primary_key=primary_key, write_disposition="merge")
-    def _spreadsheet() -> Iterator[dict]:
-        """Yield every row across all sheets of the spreadsheet."""
-        meta = requests.get(meta_url, headers=headers).json()
-        if meta.get("code") != 0:
-            raise RuntimeError(f"Lark sheets query failed: {meta}")
+    def _sheet() -> Iterator[dict]:
+        """Yield each data row of the configured sheet as a header-keyed JSON record."""
+        values = requests.get(values_url, headers=headers).json()
+        if values.get("code") != 0:
+            raise RuntimeError(
+                f"Lark values_get failed for sheet {spec.sheet_id!r} in {obj_token!r}: {values}"
+            )
 
-        for sheet in meta["data"]["sheets"]:
-            sheet_id = sheet["sheet_id"]
-            values_url = f"{base_url}/{api_def.values_path.format(obj_token=obj_token, sheet_id=sheet_id)}"
-            values = requests.get(values_url, headers=headers).json()
-            if values.get("code") != 0:
-                logger.warning(
-                    "Skipping sheet %r (%r) in spreadsheet %r: values_get returned %s",
-                    sheet_id,
-                    sheet.get("title"),
-                    obj_token,
-                    values,
-                )
-                continue
+        rows = values["data"]["valueRange"].get("values") or []
+        if not rows:
+            return
 
-            rows = values["data"]["valueRange"].get("values") or []
-            for row_number, row in enumerate(rows, start=1):
-                yield {
-                    "spreadsheet_token": obj_token,
-                    "sheet_id": sheet_id,
-                    "sheet_title": sheet.get("title"),
-                    "row_number": row_number,
-                    api_def.row_column: row,
-                    RAW_UPDATED_AT_COLUMN: run_timestamp,
-                }
+        header = [str(cell) for cell in rows[0]]
+        for row_number, row in enumerate(rows[1:], start=1):
+            yield {
+                "spreadsheet_token": obj_token,
+                "sheet_id": spec.sheet_id,
+                "row_number": row_number,
+                api_def.row_column: dict(zip(header, row)),
+                RAW_UPDATED_AT_COLUMN: run_timestamp,
+            }
 
-    return apply_raw_hints(_spreadsheet)
+    return apply_raw_hints(_sheet)
 
 
 _READERS = {
@@ -277,6 +270,10 @@ def load_catalog(
             raise ValueError(
                 f"Resource {spec.resource_name!r} needs either {api_def.token_field!r} "
                 f"or wiki_token"
+            )
+        if api_def.reader == "sheet_values" and not spec.sheet_id:
+            raise ValueError(
+                f"Resource {spec.resource_name!r} (api {spec.api!r}) requires a sheet_id"
             )
     return api_defs, specs
 

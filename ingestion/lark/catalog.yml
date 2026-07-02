@@ -35,7 +35,6 @@ apis:
     reader: sheet_values
     obj_types: [sheet]
     token_field: spreadsheet_token
-    meta_path: sheets/v3/spreadsheets/{obj_token}/sheets/query
     values_path: sheets/v2/spreadsheets/{obj_token}/values/{sheet_id}
     row_column: data                  # each raw row array stored under this column
     primary_key: [spreadsheet_token, sheet_id, row_number]
@@ -47,5 +46,11 @@ resources:
     table_id: tbl5OhHSxcMbqe3m
 
   - api: sheet
-    resource_name: tin_test_spreadsheet
+    resource_name: dump_1
     wiki_token: LaGnwNoJBilB6rk0hWQlx1TGgMe
+    sheet_id: befa0a  
+
+  - api: sheet
+    resource_name: dump_2
+    wiki_token: LaGnwNoJBilB6rk0hWQlx1TGgMe
+    sheet_id: NtMZYy                 # single tab from the spreadsheet URL
