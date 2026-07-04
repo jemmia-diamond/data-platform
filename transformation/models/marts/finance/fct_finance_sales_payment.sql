@@ -25,7 +25,7 @@ group_total AS (
 ),
 erp_order_payment_entry as (
 	select *
-	from {{ ref('stg_erpnext__sales_payment_entries')}}
+	from {{ ref('int_erpnext__sales_payment_entries')}}
 ),
 get_sales_info as (
 	select
