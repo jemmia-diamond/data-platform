@@ -30,10 +30,9 @@ erp_order_payment_entry as (
 get_sales_info as (
 	select
 		distinct
-			sa.order_id,
+			ds.sales_person_id,
 			ds.city_name
-	from {{ ref('fct_sales_attributions')}} sa
-	left join {{ ref('dim_sales_persons')}} ds on ds.sales_person_id = sa.sales_person_key
+	from {{ ref('dim_sales_persons')}} ds
 )
 select
 	 -- ===== order identifiers =====
@@ -100,7 +99,7 @@ select
 from int_order a
 left join group_total g on COALESCE(a.split_order_group, a.unified_sales_order_id) = g.split_key
 left join erp_order_payment_entry e on a.haravan_order_id::text = e.haravan_order_id
-left join get_sales_info gs on gs.order_id = a.unified_sales_order_id
+left join get_sales_info gs on gs.sales_person_id  = a.primary_sales_person
 
 
 
