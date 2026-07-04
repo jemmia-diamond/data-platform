@@ -6,6 +6,7 @@ from .frappe import frappe_assets
 from .google_sheets import google_sheets_assets
 from .haravan import haravan_assets
 from .nocodb import nocodb_assets
+from .openfacet import openfacet_assets
 from .pancake import pancake_assets, pancake_backfill_assets
 
 all_assets = [
@@ -13,6 +14,7 @@ all_assets = [
     frappe_assets,
     nocodb_assets,
     google_sheets_assets,
+    openfacet_assets,
     pancake_assets,
     pancake_backfill_assets,
 ]
@@ -23,6 +25,7 @@ __all__ = [
     "google_sheets_assets",
     "haravan_assets",
     "nocodb_assets",
+    "openfacet_assets",
     "pancake_assets",
     "pancake_backfill_assets",
 ]
