@@ -6,7 +6,7 @@ from dagster import AssetKey
 from dagster_dlt import DagsterDltTranslator
 from dagster_dlt.translator import DltResourceTranslatorData
 
-from ingestion.lark import lark_resource_asset_path
+from ingestion.larksuite import larksuite_resource_asset_path
 
 
 class IngestionDagsterDltTranslator(DagsterDltTranslator):
@@ -47,8 +47,8 @@ class FrappeDagsterDltTranslator(DagsterDltTranslator):
         )
 
 
-class LarkDagsterDltTranslator(DagsterDltTranslator):
-    """Group Lark assets by object type under ingestion/lark/<base|sheets|document>/<resource>."""
+class LarksuiteDagsterDltTranslator(DagsterDltTranslator):
+    """Group Larksuite assets by object type under ingestion/larksuite/<base|sheets|document>/<resource>."""
 
     def get_asset_spec(self, data: DltResourceTranslatorData):
         spec = super().get_asset_spec(data)
@@ -57,10 +57,10 @@ class LarkDagsterDltTranslator(DagsterDltTranslator):
             pipe = data.resource._pipe  # noqa: SLF001
             while pipe.has_parent:
                 pipe = pipe.parent
-            deps = [AssetKey(list(lark_resource_asset_path(pipe.name)))]
+            deps = [AssetKey(list(larksuite_resource_asset_path(pipe.name)))]
 
         return spec.replace_attributes(
-            key=AssetKey(list(lark_resource_asset_path(data.resource.name))),
+            key=AssetKey(list(larksuite_resource_asset_path(data.resource.name))),
             deps=deps,
             group_name="ingestion",
         )
@@ -93,6 +93,6 @@ class PancakeBackfillDagsterDltTranslator(DagsterDltTranslator):
 __all__ = [
     "FrappeDagsterDltTranslator",
     "IngestionDagsterDltTranslator",
-    "LarkDagsterDltTranslator",
+    "LarksuiteDagsterDltTranslator",
     "PancakeBackfillDagsterDltTranslator",
 ]

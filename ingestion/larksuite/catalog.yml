@@ -1,7 +1,7 @@
-# Lark ingestion catalog.
+# Larksuite ingestion catalog.
 #
 # `apis`      — reusable, config-driven API definitions (endpoints live here, not
-#               in Python). Add a new page_token-paginated Lark API by adding an
+#               in Python). Add a new page_token-paginated Larksuite API by adding an
 #               entry with reader: cursor — no code change needed.
 # `resources` — what to ingest; each maps 1:1 to a dlt resource, dispatched by `api`.
 #

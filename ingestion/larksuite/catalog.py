@@ -20,7 +20,7 @@ _WIKI_NODE_ENDPOINT = "wiki/v2/spaces/get_node"
 
 
 class WikiNode(NamedTuple):
-    """A Wiki node resolved to its embedded object token and Lark object type."""
+    """A Wiki node resolved to its embedded object token and Larksuite object type."""
 
     obj_token: str
     obj_type: str
@@ -28,7 +28,7 @@ class WikiNode(NamedTuple):
 
 @dataclass(frozen=True)
 class ApiDef:
-    """Config-driven definition of one Lark API, loaded from the catalog ``apis`` section."""
+    """Config-driven definition of one Larksuite API, loaded from the catalog ``apis`` section."""
 
     reader: str
     obj_types: list[str]
@@ -45,7 +45,7 @@ class ApiDef:
 
 @dataclass(frozen=True)
 class ResourceSpec:
-    """One Lark object to ingest, declared in the catalog ``resources`` section."""
+    """One Larksuite object to ingest, declared in the catalog ``resources`` section."""
 
     api: str
     resource_name: str
@@ -59,7 +59,7 @@ class ResourceSpec:
 
 
 def get_tenant_access_token(base_url: str, app_id: str, app_secret: str) -> str:
-    """Exchange Lark application credentials for a short-lived tenant access token."""
+    """Exchange Larksuite application credentials for a short-lived tenant access token."""
     response = requests.post(
         f"{base_url}/{_TENANT_TOKEN_ENDPOINT}",
         json={"app_id": app_id, "app_secret": app_secret},
@@ -67,12 +67,12 @@ def get_tenant_access_token(base_url: str, app_id: str, app_secret: str) -> str:
     response.raise_for_status()
     payload = response.json()
     if payload.get("code") != 0:
-        raise RuntimeError(f"Lark tenant_access_token request failed: {payload}")
+        raise RuntimeError(f"Larksuite tenant_access_token request failed: {payload}")
     return payload["tenant_access_token"]
 
 
 def resolve_wiki_node(base_url: str, access_token: str, wiki_token: str) -> WikiNode:
-    """Resolve a Lark Wiki node to its embedded object token and type."""
+    """Resolve a Larksuite Wiki node to its embedded object token and type."""
     response = requests.get(
         f"{base_url}/{_WIKI_NODE_ENDPOINT}",
         headers={"Authorization": f"Bearer {access_token}"},
@@ -81,7 +81,7 @@ def resolve_wiki_node(base_url: str, access_token: str, wiki_token: str) -> Wiki
     response.raise_for_status()
     payload = response.json()
     if payload.get("code") != 0:
-        raise RuntimeError(f"Lark wiki get_node request failed: {payload}")
+        raise RuntimeError(f"Larksuite wiki get_node request failed: {payload}")
     node = payload["data"]["node"]
     return WikiNode(obj_token=node["obj_token"], obj_type=node["obj_type"])
 
@@ -160,7 +160,7 @@ def _build_sheet_resource(
         values = requests.get(values_url, headers=headers).json()
         if values.get("code") != 0:
             raise RuntimeError(
-                f"Lark values_get failed for sheet {spec.sheet_id!r} in {obj_token!r}: {values}"
+                f"Larksuite values_get failed for sheet {spec.sheet_id!r} in {obj_token!r}: {values}"
             )
 
         rows = values["data"]["valueRange"].get("values") or []
@@ -225,11 +225,11 @@ _API_TREE_SEGMENTS = {"bitable": "base", "sheet": "sheets", "doc": "document"}
 _SPEC_BY_RESOURCE_NAME = {spec.resource_name: spec for spec in RESOURCE_SPECS}
 
 
-def lark_resource_asset_path(resource_name: str) -> tuple[str, ...]:
-    """Return the api-grouped Dagster asset key path ``(ingestion, lark, <segment>, resource_name)``."""
+def larksuite_resource_asset_path(resource_name: str) -> tuple[str, ...]:
+    """Return the api-grouped Dagster asset key path ``(ingestion, larksuite, <segment>, resource_name)``."""
     spec = _SPEC_BY_RESOURCE_NAME[resource_name]
     segment = _API_TREE_SEGMENTS.get(spec.api, spec.api)
-    return ("ingestion", "lark", segment, resource_name)
+    return ("ingestion", "larksuite", segment, resource_name)
 
 
 def _resolve_obj_token(
@@ -283,7 +283,7 @@ __all__ = [
     "WikiNode",
     "build_catalog_resources",
     "get_tenant_access_token",
-    "lark_resource_asset_path",
+    "larksuite_resource_asset_path",
     "load_catalog",
     "resolve_wiki_node",
 ]
