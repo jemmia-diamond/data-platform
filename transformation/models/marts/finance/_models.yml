@@ -1,0 +1,328 @@
+version: 2
+
+models:
+  - name: fct_finance_sales_payment
+    description: >
+      Grain: 1 row = 1 sales order joined to 1 payment entry (from
+      stg_erpnext__sales_payment_entries). An order with multiple
+      payment entries will appear as multiple rows. Combines order info from
+      `int_sales__orders`, group-level total price (for split orders),
+      payment entry detail, and derived deposit/payment status. Used by the
+      finance/accounting team for payment reconciliation.
+    columns:
+      # ===== order identifiers =====
+      - name: order_id
+        description: Unified sales order ID (from Haravan/ERP full join). Not unique on its own since one order can have multiple payment entry rows.
+
+      - name: haravan_order_id
+        description: Order ID as recorded in Haravan.
+
+      - name: order_number
+        description: Human-readable order number shown to customers/staff.
+
+      - name: erp_sales_order_id
+        description: Sales Order ID as recorded in ERP (ERPNext).
+
+      - name: split_order_group
+        description: Group key used when one logical purchase is split into multiple sales orders (e.g. multi-item checkout split by warehouse/branch). Null if the order was not split.
+
+      - name: split_order_group_name
+        description: Display name for the split order group.
+
+      - name: ref_order_id
+        description: Reference to a related Haravan order, used for cases such as an order being cancelled and re-created as a new order.
+
+      # ===== order info / dates =====
+      - name: order_date
+        description: Real order creation date (business date, may differ from the raw Haravan creation timestamp).
+
+      - name: first_order_at
+        description: Timestamp of the customer's first-ever order, used to flag new vs returning customers.
+
+      - name: haravan_created_date
+        description: Date portion of the Haravan record creation timestamp.
+
+      - name: haravan_total_price
+        description: Total price of this individual order as recorded in Haravan.
+
+      - name: group_total_price
+        description: >
+          Sum of haravan_total_price across all orders sharing the same
+          split_order_group (or the order itself if not split), excluding
+          cancelled orders. Used as the deposit basis in deposit_status.
+
+      - name: haravan_customer_id
+        description: Customer ID as recorded in Haravan.
+
+      - name: order_customer_type
+        description: Customer type/segment for the order (e.g. new, returning).
+
+      - name: cancelled_status
+        description: Haravan cancellation status of the order (e.g. cancelled, uncancelled).
+
+      # ===== sales channel / branch =====
+      - name: main_branch
+        description: City/branch name of the sales person attributed to this order, from dim_sales_persons.
+
+      - name: sales_channel_raw
+        description: Raw sales_channel value as recorded in the source system, before mapping to a display label.
+
+      - name: sales_channel
+        description: Human-readable sales channel label, mapped from sales_channel_raw (e.g. POS - Hà Nội, Kênh online).
+
+      # ===== payment entry detail =====
+      - name: payment_date
+        description: Date the payment entry was recorded.
+
+      - name: allocated_amount
+        description: Amount allocated from this payment entry to this order.
+
+      - name: paid_amount
+        description: Total amount paid on the underlying Payment Entry document (before allocation across orders).
+
+      - name: payment_order_status
+        description: Status of the payment entry (e.g. Success, Pending).
+
+      - name: parentfield
+        description: >
+          Source field name from the raw ERP payment_entries jsonb array,
+          indicating whether the entry is an individual order-level entry
+          ('payment_entries') or a grouped/aggregated entry
+          ('group_payment_entries'). Only 'payment_entries' rows with
+          payment_order_status = 'Success' should be counted as confirmed
+          payment toward an order to avoid double-counting.
+
+      - name: raw_payment_mode
+        description: Raw payment method as recorded in ERP (e.g. bank transfer, cash, QR).
+
+      - name: payment_ref
+        description: Reference code of the Payment Entry document (e.g. ACC-PAY-...).
+
+      - name: total_paid_amount
+        description: >
+          allocated_amount when the entry is a valid, confirmed individual
+          payment (parentfield = 'payment_entries' and payment_order_status =
+          'Success'); null otherwise. Use this column, not allocated_amount,
+          when summing confirmed payments to avoid picking up grouped or
+          non-successful entries.
+
+      # ===== derived status =====
+      - name: deposit_status
+        description: >
+          Deposit sufficiency flag derived by comparing allocated_amount
+          against 30% of group_total_price: 'Đã cọc đủ' (deposit met),
+          'Chưa cọc đủ' (deposit not met), or 'Không xác định' (undetermined,
+          when group_total_price <= 0).
+
+      # ===== bank info =====
+      - name: bank
+        description: Bank name used for the payment.
+
+      - name: bank_account
+        description: Bank account name/label used for the payment.
+
+      - name: bank_account_no
+        description: Bank account number used for the payment.
+
+      - name: bank_account_branch
+        description: Branch of the bank account used for the payment.
+
+      # ===== reference order info =====
+      - name: ref_order_number
+        description: Order number of a related/reference order (used for cancel-and-recreate cases).
+
+      - name: ref_order_date
+        description: Order date of a related/reference order (used for cancel-and-recreate cases).
+
+  - name: fct_finance_sales_payment_aggregation
+    description: >
+      Grain: 1 row = 1 split_order_group (a group of sales orders created
+      from a single logical checkout that got split into multiple orders,
+      e.g. by branch/warehouse). Aggregates order and payment data from
+      fct_finance__sales_payment') up to the group level: total
+      price, total confirmed revenue, order count, cancellation status, and
+      deposit sufficiency. Only groups with at least one uncancelled order
+      are included (fully cancelled groups are filtered out via the HAVING
+      clause). Used by finance/accounting for group-level payment
+      reconciliation, since deposit and payment terms are typically applied
+      per checkout group rather than per individual split order.
+    columns:
+      - name: split_order_group
+        description: Group key shared by all sales orders originating from the same split checkout. This is the grain of the table.
+        tests:
+          - not_null
+          - unique
+
+      - name: split_order_group_name
+        description: Display name for the split order group.
+
+      - name: order_date
+        description: Earliest order_date among the orders in the group (min), used as the group's representative order date.
+
+      - name: haravan_created_date
+        description: Latest Haravan creation date (max) among the orders in the group.
+
+      - name: branch_name
+        description: >
+          Branch name for the group, mapped from the raw branch_code of one
+          of the orders in the group (max, so the mapping is not guaranteed
+          stable if orders in the group have different branch codes):
+          72NCT -> Hồ Chí Minh, 63KM -> Hà Nội, 209Đ30T4 -> Cần Thơ; any
+          other value passes through unchanged.
+
+      - name: order_customer_type
+        description: Customer type/segment (max across orders in the group).
+
+      - name: haravan_customer_id
+        description: Haravan customer ID (max across orders in the group).
+
+      - name: ref_order_id
+        description: Reference order ID, if any order in the group is linked to a related/reference order (e.g. cancel-and-recreate case).
+
+      - name: split_order_count
+        description: Total number of sales orders in this split_order_group, regardless of cancellation status.
+
+      - name: group_cancelled_status
+        description: >
+          Cancellation status of the group as a whole: 'uncancelled' when
+          every order in the group is uncancelled, 'all_cancelled' when
+          every order is cancelled, or 'partial_cancelled' when the group has
+          a mix of both. Groups that are fully cancelled are already
+          excluded from this table by the underlying HAVING filter, so this
+          value should not appear as 'all_cancelled' here in practice.accep
+
+      - name: deposit_status
+        description: >
+          Deposit sufficiency flag for the group, derived by comparing
+          total_group_revenue against 30% of total_group_price:
+          'Đã cọc đủ' (deposit met), 'Chưa cọc đủ' (deposit not met), or
+          'Không xác định' (undetermined, when total_group_price <= 0).
+
+      - name: source
+        description: Raw sales channel of one of the orders in the group (max across orders in the group).
+
+      - name: total_group_price
+        description: Total price across all uncancelled orders in the group (from group_total_price in the source model, deduplicated via max).
+
+      - name: total_group_revenue
+        description: Sum of total_paid_amount (confirmed successful payments only) across all payment entries for orders in the group.
+
+      - name: total_group_balance
+        description: Remaining balance owed for the group, calculated as total_group_price - total_group_revenue.
+
+  - name: fct_finance_sales_payment_reconciliation
+    description: >
+      Grain: 1 row = 1 confirmed payment entry allocated to 1 sales order.
+      Selects from  'fct_finance__sales_payment', filtered to
+      parentfield = 'payment_entries' and allocated_amount > 0 — i.e. only
+      individual (non-grouped), non-zero payment allocations. Grouped
+      entries (parentfield = 'group_payment_entries') and zero-amount rows
+      are excluded here to avoid double-counting revenue; use
+      fct_sales_order_groups for group-level totals. Used by
+      finance/accounting for order-level payment reconciliation.
+    columns:
+      # ===== order identifiers =====
+      - name: order_id
+        description: Unified sales order ID. Not unique on its own since one order can have multiple payment entry rows.
+        tests:
+          - not_null
+
+      - name: haravan_order_id
+        description: Order ID as recorded in Haravan.
+
+      - name: order_number
+        description: Human-readable order number shown to customers/staff.
+
+      - name: erp_sales_order_id
+        description: Sales Order ID as recorded in ERP (ERPNext).
+
+      - name: split_order_group
+        description: Group key used when one logical checkout is split into multiple sales orders. Null if the order was not split.
+
+      - name: split_order_group_name
+        description: Display name for the split order group.
+
+      # ===== order info / dates =====
+      - name: first_order_at
+        description: Timestamp of the customer's first-ever order, used to flag new vs returning customers.
+
+      - name: order_date
+        description: Real order creation date (business date).
+
+      - name: haravan_total_price
+        description: Total price of this individual order as recorded in Haravan.
+
+      - name: group_total_price
+        description: Sum of haravan_total_price across all uncancelled orders sharing the same split_order_group (or the order itself if not split).
+
+      - name: cancelled_status
+        description: Haravan cancellation status of the order (e.g. cancelled, uncancelled).
+
+      # ===== sales channel / branch =====
+      - name: main_branch
+        description: City/branch name of the sales person attributed to this order.
+
+      - name: sales_channel
+        description: Human-readable sales channel label (e.g. POS - Hà Nội, Kênh online).
+
+      # ===== payment entry detail =====
+      - name: payment_date
+        description: Date the payment entry was recorded.
+
+      - name: allocated_amount
+        description: Amount allocated from this payment entry to this order. Always > 0 in this table due to the WHERE filter.
+        tests:
+          - not_null
+
+      - name: paid_amount
+        description: Total amount paid on the underlying Payment Entry document (before allocation across orders).
+
+      - name: payment_order_status
+        description: Status of the payment entry (e.g. Success, Pending).
+
+      - name: parentfield
+        description: >
+          Source field name from the raw ERP payment_entries jsonb array.
+          Always 'payment_entries' in this table due to the WHERE filter
+          (grouped entries under 'group_payment_entries' are excluded).
+
+      - name: raw_payment_mode
+        description: Raw payment method as recorded in ERP (e.g. bank transfer, cash, QR).
+
+      - name: payment_ref
+        description: Reference code of the Payment Entry document (e.g. ACC-PAY-...).
+
+      # ===== derived status =====
+      - name: deposit_status
+        description: >
+          Deposit sufficiency flag: 'Đã cọc đủ' (deposit met), 'Chưa cọc đủ'
+          (deposit not met), or 'Không xác định' (undetermined, when
+          group_total_price <= 0).
+
+      # ===== bank info =====
+      - name: bank
+        description: Bank name used for the payment.
+
+      - name: bank_account
+        description: Bank account name/label used for the payment.
+
+      - name: bank_account_no
+        description: Bank account number used for the payment.
+
+      - name: bank_account_branch
+        description: Branch of the bank account used for the payment.
+
+      # ===== reference order info =====
+      - name: ref_order_number
+        description: Order number of a related/reference order (e.g. cancel-and-recreate case).
+
+      - name: ref_order_date
+        description: Order date of a related/reference order (e.g. cancel-and-recreate case).
+
+      # ===== derived: payment timing check =====
+      - name: payment_period_type
+        description: >
+          Flags payment timing relative to order_date: 'Đơn trong ngày' when
+          payment_date = order_date, 'Chưa xác định đơn' when payment_date <
+          order_date, otherwise 'Đơn khác ngày'.
+
