@@ -326,3 +326,57 @@ models:
           payment_date = order_date, 'Chưa xác định đơn' when payment_date <
           order_date, otherwise 'Đơn khác ngày'.
 
+  - name: fct_finance_sales_pending_order
+    description: >
+        Intermediate model that computes item-level readiness (is_item_ready) and
+        overall order fulfillment status (order_fulfillment_status), based on sales
+        order receivable data, stock by location, and RFID-scanned serial number
+        information. Also computes the outstanding balance (congno) =
+        total_price - paid_amount.
+    columns:
+      - name: variant_id
+        description: Product variant ID (SKU/variant).
+      - name: split_order_group
+        description: Split order group identifier, used to join with serial number data.
+      - name: haravan_line_item_id
+        description: Haravan line item ID, used to join with serial number data.
+      - name: variant_title
+        description: >
+          Product variant title, used to check the 'GIA' pattern (custom/processed
+          goods that skip the serial-scan requirement).
+      - name: serial_numbers
+        description: Raw serial numbers (text, newline-separated) before processing.
+      - name: serial_scan_details
+        description: >
+          Details of each serial number along with its last RFID scan time
+          (Vietnam time, UTC+7), formatted as "serial : DD/MM/YYYY HH24:MI",
+          or "Chưa scan" (Not scanned) if it has never been scanned.
+      - name: serial_with_time
+        description: >
+          Same as serial_scan_details, but defaults to
+          'Trống hoặc chưa có serial' (Empty or no serial) when the order item
+          has no serial numbers.
+      - name: stock_summary
+        description: >
+          Aggregated stock on hand per location for the variant_id, formatted as
+          "location name : quantity on hand", defaulting to
+          'Không có khả dụng hiện tại' (No stock currently available) when there
+          is no available stock.
+      - name: is_item_ready
+        description: >
+          Flag (0/1) indicating whether the item is ready to be fulfilled. For a
+          variant_title containing 'GIA', having stock on hand alone is enough;
+          otherwise, the item needs both a scanned serial number and available
+          stock.
+      - name: order_fulfillment_status
+        description: >
+          Overall status of the order (order_number), computed using
+          MIN(is_item_ready) OVER (PARTITION BY order_number):
+            - 'Đã giao hàng' (Delivered) if the original fulfillment_status is
+              'Đã giao hàng'
+            - 'Đơn hàng đã về đủ' (Order fully in stock) if all items in the
+              order have is_item_ready = 1
+            - 'Đơn hàng chờ hàng/Serial' (Order waiting for stock/serial) for
+              all other cases
+      - name: congno
+        description: Outstanding balance of the order, calculated as total_price - paid_amount.
