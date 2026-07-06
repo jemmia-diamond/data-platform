@@ -41,7 +41,7 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="*/5 * * * *",
             schedule_token="5min",
             schedule_description="Drain Pancake message jobs every 5 minutes",
-            max_runtime_seconds=240,
+            max_runtime_seconds=270,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
