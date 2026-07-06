@@ -7,7 +7,7 @@ select
     be.name,
     be.instance_type,
     be.status,
-    be.submitted_date + INTERVAL '7 hours' AS submitted_date,
+    (be.submitted_date + INTERVAL '7 hours')::date AS submitted_date,
     be.customer_name,
     be.phone_number,
     be.national_id,
@@ -27,8 +27,8 @@ select
         else 'Vỏ trang sức'
     end as categories,
     CASE
-        WHEN EXTRACT(HOUR FROM submitted_date) < 12 THEN 'Trước 12h'
-        WHEN EXTRACT(HOUR FROM submitted_date) < 18 THEN 'Trước 18h'
+        WHEN EXTRACT(HOUR FROM submitted_date + INTERVAL '7 hours') < 12 THEN 'Trước 12h'
+        WHEN EXTRACT(HOUR FROM submitted_date + INTERVAL '7 hours') < 18 THEN 'Trước 18h'
         ELSE 'Sau 18h'
     END AS submitted_hour
 from {{ ref('stg_erpnext__buyback_exchanges')}} as be left join
