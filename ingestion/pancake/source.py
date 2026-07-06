@@ -10,18 +10,25 @@ import requests
 from .resources import TABLE_SPECS, build_conversations, build_table_resource
 
 DEFAULT_PANCAKE_BASE_URL = "https://pages.fm/api"
-DEFAULT_START_DATE = "2026-06-28T00:00:00+00:00"
+DEFAULT_START_DATE = "2026-07-01T00:00:00+00:00"
 
 _PAT_CONFIG_PREFIX = "PANCAKE_PATS_CONFIG_"
+_PAT_ENV_PREFIX = "SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__"
 
 
 def load_page_access_tokens() -> dict:
-    """Fetch Pancake page access tokens from Infisical.
+    """Resolve Pancake page access tokens: env vars first, Infisical fallback. """
+    tokens = {
+        key[len(_PAT_ENV_PREFIX):]: value
+        for key, value in os.environ.items()
+        if key.startswith(_PAT_ENV_PREFIX) and value
+    }
+    if tokens:
+        return tokens
+    return _load_page_access_tokens_from_infisical()
 
-    Reads every ``PANCAKE_PATS_CONFIG_*`` secret, parses each as a JSON mapping
-    of ``{page_id: token}``, and merges them into one dict. Infisical connection
-    params come from the ``INFISICAL_*`` env vars.
-    """
+
+def _load_page_access_tokens_from_infisical() -> dict:
     response = requests.get(
         f"{os.environ['INFISICAL_HOST']}/api/v3/secrets/raw",
         headers={"Authorization": f"Bearer {os.environ['PUBLIC_INFISICAL_TOKEN']}"},

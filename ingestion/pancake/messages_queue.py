@@ -47,17 +47,32 @@ PAGE_HEALTH_TABLE = f"{QUEUE_SCHEMA}.page_health"
 # --------------------------------------------------------------------------- #
 # Worker / drain tuning
 # --------------------------------------------------------------------------- #
-MAX_WORKERS = 8              # concurrent conversations per drain tick
+MAX_WORKERS = 16             # concurrent conversations per drain tick (was 8)
 PER_PAGE_CONCURRENCY = 2     # max in-flight requests per page_access_token
 MSG_PAGE_SIZE = 30           # Pancake messages page size
 LOAD_BATCH = 500             # flush buffer to dlt at this many rows
 MAX_ATTEMPTS = 5             # retryable attempts before a job is promoted to dead
-DRAIN_BUDGET_SECONDS = 240   # wall-clock budget per drain tick
+DRAIN_BUDGET_SECONDS = 240   # wall-clock budget per drain tick (≤ 5min cron ⇒ no overlap)
 STUCK_THRESHOLD_MIN = 10     # "running" jobs older than this are swept to pending
 CLAIM_BATCH_SIZE = MAX_WORKERS
 MAX_JOB_SECONDS = 180        # per-job wall-clock guard
 MAX_JOB_ITERATIONS = 2000    # per-job pagination guard
 PAGE_COOLDOWN_MAX_MIN = 60   # circuit-breaker backoff cap (minutes)
+# Edit/removal refresh: how many "done" jobs whose conversation changed since
+# last pull are re-queued per daily tick. Bounds API cost of catching edits.
+EDIT_REFRESH_LIMIT = 2000
+
+# --------------------------------------------------------------------------- #
+# New-message strategy: SAFE full re-pull (branch "B3")
+# --------------------------------------------------------------------------- #
+# On message_count growth a done job resets current_count=0, so the worker
+# re-fetches the WHOLE conversation (merge dedup on PK updates existing rows).
+# Correct regardless of the messages-API ordering — no probe needed.
+#
+# Optimize later ONLY after running the API probe (plan Task #0): if the
+# messages endpoint supports `since` ⇒ switch to timestamp-watermark (cheap);
+# elif it is append-only ⇒ resume-from-offset (cheap). Both are future changes
+# localized to `_ENQUEUE_SQL` (current_count handling) + the worker fetch loop.
 
 # --------------------------------------------------------------------------- #
 # Pancake messages API
@@ -161,9 +176,15 @@ CREATE TABLE IF NOT EXISTS {QUEUE_QUALIFIED} (
     started_at      timestamptz,
     finished_at     timestamptz,
     updated_at      timestamptz NOT NULL DEFAULT now(),
+    conv_updated_at timestamptz,                 -- conversation updated_at at last full pull (edit detection)
     PRIMARY KEY (page_id, conversation_id)
 );
 """
+
+# Additive migration for existing tables (idempotent — runs on every bootstrap).
+_ADD_CONV_UPDATED_AT_SQL = (
+    f"ALTER TABLE {QUEUE_QUALIFIED} ADD COLUMN IF NOT EXISTS conv_updated_at timestamptz;"
+)
 
 _CREATE_PAGE_HEALTH_SQL = f"""
 CREATE TABLE IF NOT EXISTS {PAGE_HEALTH_TABLE} (
@@ -181,6 +202,8 @@ _CREATE_INDEXES_SQL = (
     f"ON {QUEUE_QUALIFIED} (page_id, updated_at) WHERE status = 'pending';",
     f"CREATE INDEX IF NOT EXISTS ix_message_jobs_stuck "
     f"ON {QUEUE_QUALIFIED} (started_at) WHERE status = 'running';",
+    f"CREATE INDEX IF NOT EXISTS ix_message_jobs_refresh "
+    f"ON {QUEUE_QUALIFIED} (conv_updated_at) WHERE status = 'done';",
 )
 
 
@@ -188,8 +211,9 @@ _CREATE_INDEXES_SQL = (
 # SQL — queue operations
 # --------------------------------------------------------------------------- #
 # Upsert message jobs from raw_pancake.conversations. New conversations become
-# pending (current_count=0); existing "done" jobs whose message_count grew drop
-# back to pending while keeping current_count (resume from offset).
+# pending (current_count=0). Existing "done" jobs whose message_count grew drop
+# back to pending AND reset current_count=0 (SAFE full re-pull — see "New-message
+# strategy" above); merge dedup on PK updates existing rows so re-pull is safe.
 _ENQUEUE_SQL = f"""
 WITH affected AS (
     INSERT INTO {QUEUE_QUALIFIED} (page_id, conversation_id, message_count)
@@ -203,6 +227,12 @@ WITH affected AS (
              AND EXCLUDED.message_count > {QUEUE_QUALIFIED}.message_count
                 THEN 'pending'
             ELSE {QUEUE_QUALIFIED}.status
+        END,
+        current_count = CASE
+            WHEN {QUEUE_QUALIFIED}.status = 'done'
+             AND EXCLUDED.message_count > {QUEUE_QUALIFIED}.message_count
+                THEN 0
+            ELSE {QUEUE_QUALIFIED}.current_count
         END,
         updated_at = now()
     WHERE {QUEUE_QUALIFIED}.message_count <> EXCLUDED.message_count
@@ -253,6 +283,12 @@ WHERE page_id = %s AND conversation_id = %s AND status = 'running';
 _FINALIZE_DONE_SQL = f"""
 UPDATE {QUEUE_QUALIFIED}
 SET status = 'done', current_count = COALESCE(%s, current_count),
+    conv_updated_at = COALESCE(
+        (SELECT updated_at FROM {PANCAKE_DATASET_NAME}.conversations
+         WHERE page_id = {QUEUE_QUALIFIED}.page_id
+           AND id = {QUEUE_QUALIFIED}.conversation_id),
+        conv_updated_at
+    ),
     finished_at = now(), updated_at = now()
 WHERE page_id = %s AND conversation_id = %s AND status = 'running'
 RETURNING status;
@@ -356,6 +392,32 @@ GROUP BY j.page_id, h.healthy
 ORDER BY j.page_id;
 """
 
+# --------------------------------------------------------------------------- #
+# SQL — edit/removal refresh
+# --------------------------------------------------------------------------- #
+# Re-queue up to `limit` "done" jobs whose conversation changed since the last
+# full pull (conversations.updated_at > conv_updated_at) OR whose snapshot was
+# never taken (NULL — self-heals rows predating the column). Edits/removals can
+# land on any offset, so current_count resets to 0 (full re-pull). Oldest-stale
+# first so the stalest conversations are caught up earliest.
+_REFRESH_EDITS_SQL = f"""
+WITH candidates AS (
+    SELECT j.page_id, j.conversation_id
+    FROM {QUEUE_QUALIFIED} j
+    JOIN {PANCAKE_DATASET_NAME}.conversations c
+      ON c.page_id = j.page_id AND c.id = j.conversation_id
+    WHERE j.status = 'done'
+      AND (c.updated_at > j.conv_updated_at OR j.conv_updated_at IS NULL)
+    ORDER BY j.conv_updated_at ASC NULLS FIRST
+    LIMIT %s
+)
+UPDATE {QUEUE_QUALIFIED}
+SET status = 'pending', current_count = 0, updated_at = now()
+FROM candidates
+WHERE {QUEUE_QUALIFIED}.page_id = candidates.page_id
+  AND {QUEUE_QUALIFIED}.conversation_id = candidates.conversation_id;
+"""
+
 
 # --------------------------------------------------------------------------- #
 # Schema bootstrap
@@ -365,6 +427,7 @@ def ensure_queue_schema(conn) -> None:
     with conn.cursor() as cur:
         cur.execute(_CREATE_SCHEMA_SQL)
         cur.execute(_CREATE_TABLE_SQL)
+        cur.execute(_ADD_CONV_UPDATED_AT_SQL)
         cur.execute(_CREATE_PAGE_HEALTH_SQL)
         for stmt in _CREATE_INDEXES_SQL:
             cur.execute(stmt)
@@ -491,6 +554,22 @@ def page_progress(conn) -> list[dict]:
             }
             for page_id, healthy, done, pending, target, loaded in cur.fetchall()
         ]
+
+
+def refresh_edit_jobs(conn, limit: int = EDIT_REFRESH_LIMIT) -> dict[str, int]:
+    """Re-queue up to ``limit`` done jobs whose conversation changed since last pull.
+
+    Catches edits/removals the new-message path misses (those bump
+    ``conversations.updated_at`` without changing ``message_count``). Jobs reset
+    to ``pending`` with ``current_count=0`` (full re-pull — edits can be on any
+    offset). Also self-heals done rows whose ``conv_updated_at`` is NULL.
+    """
+    ensure_queue_schema(conn)
+    with conn.cursor() as cur:
+        cur.execute(_REFRESH_EDITS_SQL, (limit,))
+        refreshed = cur.rowcount
+    conn.commit()
+    return {"refreshed": refreshed}
 
 
 # --------------------------------------------------------------------------- #
@@ -749,4 +828,5 @@ __all__ = [
     "ensure_queue_schema",
     "fetch_messages_worker",
     "page_progress",
+    "refresh_edit_jobs",
 ]

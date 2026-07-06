@@ -2,7 +2,13 @@
 
 from typing import Optional
 
-from dagster import AssetExecutionContext, AssetKey, Config, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    Config,
+    MonthlyPartitionsDefinition,
+    asset,
+)
 from dagster_dlt import DagsterDltResource, dlt_assets
 
 from ingestion.pancake import (
@@ -16,9 +22,10 @@ from ingestion.pancake.messages_queue import (
     build_messages_pipeline,
     drain_message_jobs,
     enqueue_message_jobs,
+    refresh_edit_jobs,
 )
 
-from .translator import IngestionDagsterDltTranslator
+from .translator import IngestionDagsterDltTranslator, PancakeBackfillDagsterDltTranslator
 
 # The @dlt_assets decorator instantiates the source once at import time, purely
 # to derive asset keys — the translator reads only resource names, nothing is
@@ -141,9 +148,73 @@ def message_jobs_drain(context: AssetExecutionContext) -> dict:
     return result
 
 
+@asset(
+    key=AssetKey(["ingestion", "pancake", "message_jobs_refresh_edits"]),
+    group_name="ingestion",
+    required_resource_keys={"pancake_queue"},
+    description=(
+        "Daily: re-queue done jobs whose conversation changed since the last full "
+        "pull (conversations.updated_at > conv_updated_at), catching edits/removals "
+        "the new-message path misses. Throttled; current_count resets to 0 (full "
+        "re-pull)."
+    ),
+)
+def message_jobs_refresh_edits(context: AssetExecutionContext) -> dict:
+    """Catch up edits/removals on already-synced conversations."""
+    with context.resources.pancake_queue.get_connection() as conn:
+        result = refresh_edit_jobs(conn)
+    context.log.info(f"Message jobs edit-refresh: refreshed={result['refreshed']}")
+    return result
+
+
+# --------------------------------------------------------------------------- #
+# Historical backfill — conversations only, monthly partitions.
+# Each partition uses its own dlt pipeline name (state isolation) so it never
+# touches production cursors. Writes to the same raw_pancake.conversations table
+# (merge on PK `id`). Materialize partitions 2024-01 … 2026-06 only; 2026-07+
+# is the ongoing flow's job. After backfill, enqueue picks these conversations
+# up and the message queue drains them — no separate messages backfill asset.
+# --------------------------------------------------------------------------- #
+BACKFILL_PARTITIONS = MonthlyPartitionsDefinition(start_date="2024-01-01")
+
+
+@dlt_assets(
+    dlt_source=build_pancake_source(
+        base_url=DEFAULT_PANCAKE_BASE_URL,
+        page_access_tokens=_PLACEHOLDER_TOKENS,
+    ).with_resources("conversations"),
+    dlt_pipeline=build_pancake_pipeline(),
+    name="pancake_conversations_backfill",
+    dagster_dlt_translator=PancakeBackfillDagsterDltTranslator(),
+    partitions_def=BACKFILL_PARTITIONS,
+)
+def pancake_conversations_backfill(
+    context: AssetExecutionContext,
+    dlt: DagsterDltResource,
+):
+    """Backfill one month of conversations into raw_pancake.conversations."""
+    start, end = context.partition_time_window
+    context.log.info(
+        f"Backfill conversations partition={context.partition_key} "
+        f"window=[{start.isoformat()}, {end.isoformat()})"
+    )
+    yield from dlt.run(
+        context=context,
+        dlt_source=build_pancake_source(
+            start_date=start.isoformat(),
+            end_date=end.isoformat(),
+        ).with_resources("conversations"),
+        dlt_pipeline=build_pancake_pipeline(
+            pipeline_name=f"pancake_conv_backfill_{context.partition_key}"
+        ),
+    )
+
+
 __all__ = [
     "PancakeIngestionConfig",
     "message_jobs_drain",
     "message_jobs_enqueue",
+    "message_jobs_refresh_edits",
     "pancake_assets",
+    "pancake_conversations_backfill",
 ]
