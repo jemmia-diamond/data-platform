@@ -83,3 +83,13 @@ sources:
         meta:
           dagster:
             asset_key: [ "frappe_erpnext", "promotions" ]
+
+      - name: buyback_exchanges
+        meta:
+          dagster:
+            asset_key: [ "frappe_erpnext", "buyback_exchanges" ]
+
+      - name: buyback_exchange_items
+        meta:
+          dagster:
+            asset_key: [ "frappe_erpnext", "buyback_exchange_items" ]

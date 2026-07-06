@@ -85,6 +85,7 @@ RESOURCE_SPECS = (
     ResourceSpec("promotions", "Promotion"),
     ResourceSpec("sales_partner_types", "Sales Partner Type"),
     ResourceSpec("buyback_exchanges", "Buyback Exchange"),
+    ResourceSpec("buyback_exchange_items", "Buyback Exchange Item"),
     ResourceSpec("promotion_groups", "Promotion Group"),
     ResourceSpec("sales_persons", "Sales Person"),
     ResourceSpec("uom_conversion_factors", "UOM Conversion Factor"),
