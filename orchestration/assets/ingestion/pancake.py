@@ -171,11 +171,11 @@ def message_jobs_refresh_edits(context: AssetExecutionContext) -> dict:
 # Historical backfill — conversations only, monthly partitions.
 # Each partition uses its own dlt pipeline name (state isolation) so it never
 # touches production cursors. Writes to the same raw_pancake.conversations table
-# (merge on PK `id`). Materialize partitions 2024-01 … 2026-06 only; 2026-07+
+# (merge on PK `id`). Materialize partitions 2020-01 … 2026-06 only; 2026-07+
 # is the ongoing flow's job. After backfill, enqueue picks these conversations
 # up and the message queue drains them — no separate messages backfill asset.
 # --------------------------------------------------------------------------- #
-BACKFILL_PARTITIONS = MonthlyPartitionsDefinition(start_date="2024-01-01")
+BACKFILL_PARTITIONS = MonthlyPartitionsDefinition(start_date="2020-01-01")
 
 
 @dlt_assets(
