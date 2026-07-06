@@ -7,6 +7,10 @@ def _asset_paths(*resource_names: str) -> tuple[tuple[str, ...], ...]:
     return tuple(("ingestion", "pancake", resource_name) for resource_name in resource_names)
 
 
+def _backfill_asset_paths(*resource_names: str) -> tuple[tuple[str, ...], ...]:
+    return tuple(("ingestion", "pancake", "backfill", resource_name) for resource_name in resource_names)
+
+
 PANCAKE_EXECUTION_UNITS = validate_execution_units(
     (
         ExecutionUnitSpec(
@@ -26,14 +30,34 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             layer="ingestion",
             tool="dlt",
             system="pancake",
-            unit="conversations_messages_batch",
-            asset_paths=_asset_paths("messages"),
+            unit="message_jobs_drain",
+            asset_paths=_asset_paths("message_jobs_drain"),
             description=(
-                "Refresh Pancake conversation messages; conversations is pulled in "
-                "as the upstream parent required to feed the messages transformer"
+                "Drain the pancake_sync.message_jobs queue: claim (SKIP LOCKED), "
+                "fetch messages concurrently, batch-load via dlt, checkpoint "
+                "current_count. Selection auto-includes the upstream enqueue asset."
             ),
-            cadence="manual",
-            max_runtime_seconds=3600,
+            cadence="5min",
+            cron_schedule="*/5 * * * *",
+            schedule_token="5min",
+            schedule_description="Drain Pancake message jobs every 5 minutes",
+            max_runtime_seconds=240,
+        ),
+        ExecutionUnitSpec(
+            layer="ingestion",
+            tool="dlt",
+            system="pancake",
+            unit="message_jobs_refresh_edits",
+            asset_paths=_asset_paths("message_jobs_refresh_edits"),
+            description=(
+                "Re-queue done message jobs whose conversation changed since last "
+                "pull (edits/removals). Throttled; full re-pull per job."
+            ),
+            cadence="daily",
+            cron_schedule="30 18 * * *",
+            schedule_token="daily_18utc",
+            schedule_description="Refresh Pancake message edits daily at 01:30 ICT (18:30 UTC)",
+            max_runtime_seconds=600,
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -47,6 +71,20 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             schedule_token="daily_18utc",
             schedule_description="Run Pancake pages, users, and tags daily at 01:00 ICT (18:00 UTC)",
             max_runtime_seconds=3600,
+        ),
+        ExecutionUnitSpec(
+            layer="ingestion",
+            tool="dlt",
+            system="pancake",
+            unit="conversations_backfill",
+            asset_paths=_backfill_asset_paths("conversations"),
+            description=(
+                "Manual monthly backfill of historical conversations (partitioned). "
+                "Materialize partitions 2024-01 … 2026-06 only; 2026-07+ is the "
+                "ongoing flow. Per-partition pipeline-name isolation."
+            ),
+            cadence="manual",
+            max_runtime_seconds=7200,
         ),
     )
 )

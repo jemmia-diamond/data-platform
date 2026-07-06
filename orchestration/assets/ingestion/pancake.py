@@ -1,6 +1,14 @@
+"""Dagster assets for Pancake ingestion."""
+
 from typing import Optional
 
-from dagster import AssetExecutionContext, Config, MonthlyPartitionsDefinition
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    Config,
+    MonthlyPartitionsDefinition,
+    asset,
+)
 from dagster_dlt import DagsterDltResource, dlt_assets
 
 from ingestion.pancake import (
@@ -8,9 +16,22 @@ from ingestion.pancake import (
     DEFAULT_START_DATE,
     build_pancake_pipeline,
     build_pancake_source,
+    load_page_access_tokens,
+)
+from ingestion.pancake.messages_queue import (
+    build_messages_pipeline,
+    drain_message_jobs,
+    enqueue_message_jobs,
+    refresh_edit_jobs,
 )
 
 from .translator import IngestionDagsterDltTranslator, PancakeBackfillDagsterDltTranslator
+
+# The @dlt_assets decorator instantiates the source once at import time, purely
+# to derive asset keys — the translator reads only resource names, nothing is
+# fetched. Tokens resolve lazily inside pancake_source at runtime, so a non-None
+# placeholder keeps code-location load off the network (Infisical).
+_PLACEHOLDER_TOKENS = {"_": "resolved-at-runtime"}
 
 
 class PancakeIngestionConfig(Config):
@@ -22,6 +43,7 @@ class PancakeIngestionConfig(Config):
 
 
 def _selected_pancake_resources(context: AssetExecutionContext) -> list[str]:
+    """Resource names selected for this run (from Dagster's asset selection)."""
     return sorted(
         {
             key.path[2]
@@ -34,7 +56,7 @@ def _selected_pancake_resources(context: AssetExecutionContext) -> list[str]:
 @dlt_assets(
     dlt_source=build_pancake_source(
         base_url=DEFAULT_PANCAKE_BASE_URL,
-        page_access_tokens={"0": "[ENCRYPTION_KEY]"},  # resolved at runtime from env vars
+        page_access_tokens=_PLACEHOLDER_TOKENS,
     ),
     dlt_pipeline=build_pancake_pipeline(),
     name="pancake_dlt_assets",
@@ -45,139 +67,154 @@ def pancake_assets(
     dlt: DagsterDltResource,
     config: PancakeIngestionConfig,
 ):
+    """Run selected Pancake dlt resources (conversations + table resources)."""
     refresh = "drop_data" if config.full_refresh else None
     start = DEFAULT_START_DATE if config.full_refresh else config.start_date
-    selected_resources = _selected_pancake_resources(context)
+    selected = _selected_pancake_resources(context)
 
-    if not selected_resources:
-        context.log.warning("No selected Pancake resources; running full pipeline.")
+    if not selected:
+        context.log.warning("No Pancake resources selected; running the full pipeline.")
         yield from dlt.run(
             context=context,
-            dlt_source=build_pancake_source(
-                start_date=start,
-                end_date=config.end_date,
-            ),
+            dlt_source=build_pancake_source(start_date=start, end_date=config.end_date),
             dlt_pipeline=build_pancake_pipeline(),
             refresh=refresh,
         )
         return
 
-    # messages is a transformer that depends on conversations — always run together.
-    resources_to_skip = set()
-    if "conversations" in selected_resources and "messages" in selected_resources:
-        resources_to_skip.add("messages")
-
-    for resource_name in selected_resources:
-        if resource_name in resources_to_skip:
-            continue
-
-        if resource_name == "conversations" and "messages" in selected_resources:
-            run_resources = ["conversations", "messages"]
-            pipeline_name = "pancake_conversations_messages"
-        else:
-            run_resources = [resource_name]
-            pipeline_name = f"pancake_{resource_name}"
-
+    for resource_name in selected:
         context.log.info(
-            f"Running Pancake resources={run_resources} "
-            f"start_date={start} end_date={config.end_date} "
-            f"full_refresh={config.full_refresh} pipeline_name={pipeline_name}"
+            f"Pancake resource={resource_name} start_date={start} "
+            f"end_date={config.end_date} full_refresh={config.full_refresh}"
         )
         yield from dlt.run(
             context=context,
             dlt_source=build_pancake_source(
-                start_date=start,
-                end_date=config.end_date,
-            ).with_resources(*run_resources),
-            dlt_pipeline=build_pancake_pipeline(pipeline_name=pipeline_name),
+                start_date=start, end_date=config.end_date
+            ).with_resources(resource_name),
+            dlt_pipeline=build_pancake_pipeline(pipeline_name=f"pancake_{resource_name}"),
             refresh=refresh,
         )
 
 
-__all__ = ["PancakeIngestionConfig", "pancake_assets", "pancake_backfill_assets"]
-
-
-# end_offset=1 includes the current (in-progress) month so the most recent
-# period can be backfilled — scheduled ingestion only covers updated_at >= the
-# DEFAULT_START_DATE, so the rest of the current month is a real backfill gap.
-BACKFILL_PARTITION = MonthlyPartitionsDefinition(start_date="2020-01-01", end_offset=1)
-
-_BACKFILL_RESOURCES = ("conversations", "messages", "page_customers")
-
-
-def _selected_backfill_resources(context: AssetExecutionContext) -> list[str]:
-    return sorted(
-        {
-            key.path[3]
-            for key in context.selected_asset_keys
-            if (
-                len(key.path) >= 4
-                and key.path[0] == "ingestion"
-                and key.path[1] == "pancake"
-                and key.path[2] == "backfill"
-            )
-        }
+@asset(
+    key=AssetKey(["ingestion", "pancake", "message_jobs_enqueue"]),
+    group_name="ingestion",
+    required_resource_keys={"pancake_queue"},
+    description=(
+        "Upsert pending message jobs from raw_pancake.conversations "
+        "(message_count > 0). No Dagster dependency on the conversations asset: "
+        "lineage is table-based — conversations loads hourly, enqueue reads the table."
+    ),
+)
+def message_jobs_enqueue(context: AssetExecutionContext) -> dict:
+    """Top up the message queue from newly discovered conversations."""
+    with context.resources.pancake_queue.get_connection() as conn:
+        result = enqueue_message_jobs(conn)
+    note = f" ({result['note']})" if result["note"] else ""
+    context.log.info(
+        f"Message jobs enqueue: enqueued={result['enqueued']} "
+        f"pending={result['pending']} total={result['total']}{note}"
     )
+    return result
+
+
+@asset(
+    key=AssetKey(["ingestion", "pancake", "message_jobs_drain"]),
+    deps=[AssetKey(["ingestion", "pancake", "message_jobs_enqueue"])],
+    group_name="ingestion",
+    required_resource_keys={"pancake_queue"},
+    description=(
+        "Drain the pancake_sync.message_jobs queue: claim (SKIP LOCKED), fetch "
+        "messages concurrently via a worker pool, batch-load via dlt, and "
+        "checkpoint current_count per chunk for crash-safe resume."
+    ),
+)
+def message_jobs_drain(context: AssetExecutionContext) -> dict:
+    """Claim and process message jobs until the drain budget elapses."""
+    tokens = load_page_access_tokens()
+    pipeline = build_messages_pipeline()
+    with context.resources.pancake_queue.get_connection() as conn:
+        result = drain_message_jobs(
+            context.log, conn, pipeline, tokens, DEFAULT_PANCAKE_BASE_URL
+        )
+    context.log.info(
+        f"Message jobs drain: claimed={result['claimed']} done={result['done']} "
+        f"retried={result['retried']} dead={result['dead']} "
+        f"rows_loaded={result['rows_loaded']} batches={result['batches']} "
+        f"pages_blocked={result.get('pages_blocked', 0)} "
+        f"pending_remaining={result['pending_remaining']}"
+    )
+    return result
+
+
+@asset(
+    key=AssetKey(["ingestion", "pancake", "message_jobs_refresh_edits"]),
+    group_name="ingestion",
+    required_resource_keys={"pancake_queue"},
+    description=(
+        "Daily: re-queue done jobs whose conversation changed since the last full "
+        "pull (conversations.updated_at > conv_updated_at), catching edits/removals "
+        "the new-message path misses. Throttled; current_count resets to 0 (full "
+        "re-pull)."
+    ),
+)
+def message_jobs_refresh_edits(context: AssetExecutionContext) -> dict:
+    """Catch up edits/removals on already-synced conversations."""
+    with context.resources.pancake_queue.get_connection() as conn:
+        result = refresh_edit_jobs(conn)
+    context.log.info(f"Message jobs edit-refresh: refreshed={result['refreshed']}")
+    return result
+
+
+# --------------------------------------------------------------------------- #
+# Historical backfill — conversations only, monthly partitions.
+# Each partition uses its own dlt pipeline name (state isolation) so it never
+# touches production cursors. Writes to the same raw_pancake.conversations table
+# (merge on PK `id`). Materialize partitions 2024-01 … 2026-06 only; 2026-07+
+# is the ongoing flow's job. After backfill, enqueue picks these conversations
+# up and the message queue drains them — no separate messages backfill asset.
+# --------------------------------------------------------------------------- #
+BACKFILL_PARTITIONS = MonthlyPartitionsDefinition(start_date="2024-01-01")
 
 
 @dlt_assets(
     dlt_source=build_pancake_source(
         base_url=DEFAULT_PANCAKE_BASE_URL,
-        page_access_tokens={"0": "[ENCRYPTION_KEY]"},  # resolved at runtime from env vars
-    ).with_resources(*_BACKFILL_RESOURCES),
+        page_access_tokens=_PLACEHOLDER_TOKENS,
+    ).with_resources("conversations"),
     dlt_pipeline=build_pancake_pipeline(),
-    name="pancake_backfill_dlt_assets",
-    partitions_def=BACKFILL_PARTITION,
+    name="pancake_conversations_backfill",
     dagster_dlt_translator=PancakeBackfillDagsterDltTranslator(),
+    partitions_def=BACKFILL_PARTITIONS,
 )
-def pancake_backfill_assets(
+def pancake_conversations_backfill(
     context: AssetExecutionContext,
     dlt: DagsterDltResource,
 ):
-    """Historical Pancake backfill driven by monthly partitions (``updated_at`` window).
+    """Backfill one month of conversations into raw_pancake.conversations."""
+    start, end = context.partition_time_window
+    context.log.info(
+        f"Backfill conversations partition={context.partition_key} "
+        f"window=[{start.isoformat()}, {end.isoformat()})"
+    )
+    yield from dlt.run(
+        context=context,
+        dlt_source=build_pancake_source(
+            start_date=start.isoformat(),
+            end_date=end.isoformat(),
+        ).with_resources("conversations"),
+        dlt_pipeline=build_pancake_pipeline(
+            pipeline_name=f"pancake_conv_backfill_{context.partition_key}"
+        ),
+    )
 
-    No ``op_config``: the window comes from the partition, so there is no
-    None-default field to be hidden by Dagster's run-config scaffolder. Each
-    partition gets an isolated dlt pipeline name so ``initial_value`` is
-    honored and the scheduled incremental pipelines are never touched.
-    """
-    start_dt, end_dt = context.partition_time_window
-    start = start_dt.isoformat()
-    end = end_dt.isoformat()
-    partition_key = context.partition_key
-    selected_resources = _selected_backfill_resources(context)
 
-    if not selected_resources:
-        context.log.warning("No selected backfill resources; running all 3.")
-        selected_resources = list(_BACKFILL_RESOURCES)
-
-    # messages is a transformer that depends on conversations — always run together.
-    resources_to_skip = set()
-    if "conversations" in selected_resources and "messages" in selected_resources:
-        resources_to_skip.add("messages")
-
-    for resource_name in selected_resources:
-        if resource_name in resources_to_skip:
-            continue
-
-        if resource_name == "conversations" and "messages" in selected_resources:
-            run_resources = ["conversations", "messages"]
-            base = "conversations_messages"
-        else:
-            run_resources = [resource_name]
-            base = resource_name
-
-        pipeline_name = f"pancake_backfill_{base}_{partition_key}"
-        context.log.info(
-            f"Backfill Pancake resources={run_resources} partition={partition_key} "
-            f"start={start} end={end} pipeline_name={pipeline_name}"
-        )
-        yield from dlt.run(
-            context=context,
-            dlt_source=build_pancake_source(
-                start_date=start,
-                end_date=end,
-            ).with_resources(*run_resources),
-            dlt_pipeline=build_pancake_pipeline(pipeline_name=pipeline_name),
-            refresh=None,  # never drop_data — would wipe scheduled data
-        )
+__all__ = [
+    "PancakeIngestionConfig",
+    "message_jobs_drain",
+    "message_jobs_enqueue",
+    "message_jobs_refresh_edits",
+    "pancake_assets",
+    "pancake_conversations_backfill",
+]
