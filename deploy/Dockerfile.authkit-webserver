@@ -3,10 +3,13 @@ FROM python:3.10-slim
 ENV DAGSTER_HOME=/opt/dagster/dagster_home
 
 RUN pip install --no-cache-dir \
-    dagster \
-    dagster-webserver \
-    dagster-postgres \
-    dagster-docker \
+    dagster==1.13.5 \
+    dagster-webserver==1.13.5 \
+    dagster-postgres==0.29.5 \
+    dagster-docker==1.13.5 \
+    protobuf==6.33.6 \
+    grpcio==1.80.0 \
+    grpcio-health-checking==1.80.0 \
     "dagster-authkit[postgresql]==0.3.0"
 
 RUN mkdir -p "$DAGSTER_HOME"
