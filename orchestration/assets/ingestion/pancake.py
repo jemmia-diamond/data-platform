@@ -69,7 +69,7 @@ def pancake_assets(
 ):
     """Run selected Pancake dlt resources (conversations + table resources)."""
     refresh = "drop_data" if config.full_refresh else None
-    start = DEFAULT_START_DATE if config.full_refresh else config.start_date
+    start = config.start_date
     selected = _selected_pancake_resources(context)
 
     if not selected:
