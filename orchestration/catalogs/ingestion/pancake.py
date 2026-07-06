@@ -26,14 +26,18 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             layer="ingestion",
             tool="dlt",
             system="pancake",
-            unit="conversations_messages_batch",
-            asset_paths=_asset_paths("messages"),
+            unit="message_jobs_drain",
+            asset_paths=_asset_paths("message_jobs_drain"),
             description=(
-                "Refresh Pancake conversation messages; conversations is pulled in "
-                "as the upstream parent required to feed the messages transformer"
+                "Drain the pancake_sync.message_jobs queue: claim (SKIP LOCKED), "
+                "fetch messages concurrently, batch-load via dlt, checkpoint "
+                "current_count. Selection auto-includes the upstream enqueue asset."
             ),
-            cadence="manual",
-            max_runtime_seconds=3600,
+            cadence="5min",
+            cron_schedule="*/5 * * * *",
+            schedule_token="5min",
+            schedule_description="Drain Pancake message jobs every 5 minutes",
+            max_runtime_seconds=240,
         ),
         ExecutionUnitSpec(
             layer="ingestion",

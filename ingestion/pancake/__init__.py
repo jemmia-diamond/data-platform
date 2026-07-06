@@ -6,6 +6,7 @@ from .source import (
     DEFAULT_PANCAKE_BASE_URL,
     DEFAULT_START_DATE,
     build_pancake_source,
+    load_page_access_tokens,
 )
 
 PANCAKE_PIPELINE_NAME = "pancake"
@@ -27,4 +28,5 @@ __all__ = [
     "PANCAKE_PIPELINE_NAME",
     "build_pancake_pipeline",
     "build_pancake_source",
+    "load_page_access_tokens",
 ]
