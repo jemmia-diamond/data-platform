@@ -7,6 +7,9 @@ RUN pip install --no-cache-dir \
     dagster-webserver \
     dagster-postgres \
     dagster-docker \
+    protobuf==6.33.6 \
+    grpcio==1.80.0 \
+    grpcio-health-checking==1.80.0 \
     "dagster-authkit[postgresql]==0.3.0"
 
 RUN mkdir -p "$DAGSTER_HOME"
