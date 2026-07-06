@@ -78,11 +78,7 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             system="pancake",
             unit="conversations_backfill",
             asset_paths=_backfill_asset_paths("conversations"),
-            description=(
-                "Manual monthly backfill of historical conversations (partitioned). "
-                "Materialize partitions 2024-01 … 2026-06 only; 2026-07+ is the "
-                "ongoing flow. Per-partition pipeline-name isolation."
-            ),
+            description="Manual monthly backfill of historical conversations (partitioned). Materialize partitions 2020-01 to 2026-06. Per-partition pipeline-name isolation.",
             cadence="manual",
             max_runtime_seconds=7200,
         ),
