@@ -54,6 +54,13 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         incremental_field="database_updated_at",
         fields="id,design_id,material_color,retouch,tick_sync_to_haravan,note,database_created_at,database_updated_at",
     ),
+    TableSpec(
+        resource_name="wedding_rings",
+        table_id="msvuv0u239vbjk0",
+        primary_key="id",
+        incremental_field=None,
+        fields="id,description,ecom_title",
+    ),
     # === Supply ===
     TableSpec(
         resource_name="diamonds",
@@ -99,6 +106,13 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         primary_key="id",
         incremental_field="database_updated_at",
         fields="id,serial_number,printing_batch,encode_barcode,final_encoded_barcode,gold_weight,diamond_weight,quantity,supplier,cogs,price,barcode,sku,variant_id,order_id,stock_id,order_on,order_reference,product_name,displayed_title,fulfillment_status_value,last_rfid_scan_time,arrival_date,actual_gold_price,actual_melee_price,actual_labor_cost,is_have_invoice,supplier_invoice,address_invoice,policy,haravan_product_type,design_code,ma_thiet_ke_cu,ma_erp,stock_at,database_created_at,database_updated_at",
+    ),
+    TableSpec(
+        resource_name="variant_serials_diamonds",
+        table_id="mw50xuq1hl3fvls",
+        primary_key=["diamonds_id", "variant_serials_id"],
+        incremental_field=None,
+        fields="diamonds_id,variant_serials_id",
     ),
     TableSpec(
         resource_name="temporary_products",
