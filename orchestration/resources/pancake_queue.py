@@ -39,13 +39,16 @@ class PancakeQueueResource(ConfigurableResource):
                 f"DESTINATION__POSTGRES__CREDENTIALS__{'/'.join(missing)} "
                 "(set it in .env and mirror it in docker-compose `dagster_code`)."
             )
+        # Inherit SSL mode from dlt's DESTINATION__POSTGRES__CREDENTIALS__SSLMODE
+        # if present, otherwise fall back to the resource default (disable).
+        sslmode = os.environ.get(_DSN_PREFIX + "SSLMODE") or self.sslmode
         return {
             "host": creds["HOST"],
             "port": int(creds["PORT"]),
             "dbname": creds["DATABASE"],
             "user": creds["USERNAME"],
             "password": creds["PASSWORD"],
-            "sslmode": self.sslmode,
+            "sslmode": sslmode,
         }
 
 
