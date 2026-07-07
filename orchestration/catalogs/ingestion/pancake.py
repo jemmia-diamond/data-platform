@@ -76,6 +76,19 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
             layer="ingestion",
             tool="dlt",
             system="pancake",
+            unit="pages_adhoc",
+            asset_paths=_asset_paths("page"),
+            description=(
+                "Ad-hoc full sync of the Pancake page catalog via GET /v1/pages "
+                "using the user access token. No schedule; run manually on demand."
+            ),
+            cadence="manual",
+            max_runtime_seconds=600,
+        ),
+        ExecutionUnitSpec(
+            layer="ingestion",
+            tool="dlt",
+            system="pancake",
             unit="conversations_backfill",
             asset_paths=_backfill_asset_paths("conversations"),
             description="Manual monthly backfill of historical conversations (partitioned). Materialize partitions 2020-01 to 2026-06. Per-partition pipeline-name isolation.",

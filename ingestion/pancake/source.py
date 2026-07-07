@@ -7,7 +7,7 @@ from typing import Optional
 import dlt
 import requests
 
-from .resources import TABLE_SPECS, build_conversations, build_table_resource
+from .resources import TABLE_SPECS, build_conversations, build_pages, build_table_resource
 
 DEFAULT_PANCAKE_BASE_URL = "https://pages.fm/api"
 DEFAULT_START_DATE = "2026-07-01T00:00:00+00:00"
@@ -69,6 +69,7 @@ def pancake_source(
         for spec in TABLE_SPECS
     ]
     resources.append(build_conversations(base_url, page_access_tokens, start_date, end_date))
+    resources.append(build_pages(base_url))
     return tuple(resources)
 
 
