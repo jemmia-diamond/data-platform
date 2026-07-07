@@ -5,6 +5,7 @@
 
 SELECT
     id::bigint AS design_id,
+    wedding_ring_id::bigint,
     code AS design_code_legacy,
     erp_code,
     backup_code,

@@ -32,7 +32,7 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="ma0vp8g1sv25mua",
         primary_key="id",
         incremental_field="database_updated_at",
-        fields="id,code,erp_code,backup_code,design_type,gender,design_year,design_seq,usage_status,shape_of_main_stone,product_line,source,variant_number,gold_weight,main_stone,stone_quantity,stone_weight,diamond_holder,design_code,new_code,design_status,published_scope,jewelry_rd_style,ring_band_type,ring_band_style,ring_head_style,ecom_showed,social_post,website,RENDER,RETOUCH,tag,created_date,database_created_at,database_updated_at",
+        fields="id,code,erp_code,backup_code,design_type,gender,design_year,design_seq,usage_status,shape_of_main_stone,product_line,source,variant_number,gold_weight,main_stone,stone_quantity,stone_weight,diamond_holder,design_code,new_code,design_status,published_scope,jewelry_rd_style,ring_band_type,ring_band_style,ring_head_style,ecom_showed,social_post,website,RENDER,RETOUCH,tag,wedding_ring_id,created_date,database_created_at,database_updated_at",
     ),
     TableSpec(
         resource_name="design_details",

@@ -77,6 +77,19 @@ models:
       - name: has_360
         description: "Whether the product has 360-degree images (from NocoDB)."
 
+  - name: int_catalog__wedding_rings
+    description: "Wedding ring pairs (male + female) with a composed display title. A ring qualifies only when it has both a 'Nam' and a 'Nữ' design of type 'Nhẫn Cưới' that are linked to a Haravan-published product."
+    columns:
+      - name: wedding_ring_id
+        description: "Primary key for the wedding ring pair (from NocoDB)."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Display title composed as 'Nhẫn Cưới ' followed by the paired design codes joined with ' / '."
+        tests:
+          - not_null
+
   - name: int_catalog__variants
     description: "Variant-level sellable items — Haravan variants enriched with NocoDB jewelry/diamond/moissanite details."
     columns:

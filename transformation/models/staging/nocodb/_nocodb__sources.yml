@@ -14,6 +14,11 @@ sources:
           dagster:
             asset_key: ["nocodb", "design_details"]
 
+      - name: wedding_rings
+        meta:
+          dagster:
+            asset_key: ["nocodb", "wedding_rings"]
+
       - name: design_design_images
         meta:
           dagster:
