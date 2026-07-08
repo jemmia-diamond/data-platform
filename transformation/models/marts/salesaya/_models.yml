@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: dim_salesaya_warehouses
+    description: "Salesaya warehouse feed — core Haravan location attributes (warehouse) exposed for the Salesaya system. Grain is one row per Haravan location."
+    columns:
+      - name: warehouse_id
+        description: "Primary key for the warehouse (Haravan location ID)."
+        tests:
+          - unique
+          - not_null
+      - name: warehouse_name
+        description: "Warehouse display name."
+        tests:
+          - not_null
+      - name: warehouse_type
+        description: "Location type of the warehouse (e.g. warehouse, store)."
+      - name: is_primary_warehouse
+        description: "True if this is the primary warehouse location."
+      - name: warehouse_status
+        description: "Operational status of the warehouse."
+
+  - name: fct_salesaya_temporary_products
+    description: "Salesaya temporary-product feed — GIA report numbers of temporary products that have been sold on Haravan (matched to order lines by product and variant). Grain is one row per matched Haravan order line; not deduplicated, mirroring the legacy source view."
+    columns:
+      - name: gia_report_number
+        description: "GIA report number of the sold temporary product."
+        tests:
+          - not_null
