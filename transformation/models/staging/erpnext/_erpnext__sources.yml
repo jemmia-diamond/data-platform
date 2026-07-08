@@ -33,6 +33,11 @@ sources:
         meta:
           dagster:
             asset_key: ["frappe_erpnext", "contacts"]
+
+      - name: users
+        meta:
+          dagster:
+            asset_key: ["frappe_erpnext", "users"]
             
       - name: addresses
         meta:

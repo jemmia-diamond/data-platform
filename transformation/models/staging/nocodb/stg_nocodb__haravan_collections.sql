@@ -10,7 +10,7 @@ SELECT
     products_count::int,
     haravan_id::bigint,
     {{ safe_cast_boolean('auto_create') }} AS auto_create,
-    handle,
+    -- handle,
     {{ safe_cast_boolean('is_excluded') }} AS is_excluded,
     {{ safe_cast_boolean('is_exclusive') }} AS is_exclusive,
     discount_type,

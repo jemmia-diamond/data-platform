@@ -20,6 +20,139 @@ models:
       - name: warehouse_status
         description: "Operational status of the warehouse."
 
+  - name: dim_salesaya_lead_qualification
+    description: "Salesaya lead-qualification feed (legacy lead_isqualified) — one row per ERPNext contact link to a lead, exposing the lead's qualification flag, status, budget, pre-sales owner and the owner's Pancake ID, plus the contact's Pancake conversation. Sales / sales_pancake_id are intentionally empty placeholders mirroring the legacy view."
+    columns:
+      - name: id
+        description: "Lead identifier (ERPNext lead document name)."
+        tests:
+          - not_null
+      - name: qualified
+        description: "True when the lead's qualification_status is 'Qualified'."
+      - name: pancake_conversation_id
+        description: "Pancake conversation ID from the linked contact."
+      - name: pre_sales
+        description: "Lead owner (pre-sales) email."
+      - name: pre_sales_pancake_id
+        description: "Pancake ID of the lead owner, resolved from ERPNext users."
+
+  - name: fct_salesaya_lead_conversations
+    description: "Salesaya lead-conversation feed (legacy find_lead_conversation) — record counts per lead, Pancake page, Pancake conversation and source, derived from ERPNext contacts. Grain is one row per (lead_id, pancake_page_id, pancake_conversation_id, source_name)."
+    columns:
+      - name: lead_id
+        description: "Lead identifier taken from the first entry of the contact's dynamic links."
+      - name: pancake_page_id
+        description: "Pancake page ID of the conversation."
+      - name: pancake_conversation_id
+        description: "Pancake conversation ID."
+      - name: source_name
+        description: "Marketing source name of the contact."
+      - name: total_records
+        description: "Number of contact records in the group."
+        tests:
+          - not_null
+
+  - name: dim_salesaya_customers
+    description: "Salesaya customer-lookup feed (legacy find_customer) — ERPNext customers passed through with profile, contact, identity, tax, loyalty, revenue and settings attributes. Grain is one row per ERPNext customer. Note: child-table fields (account, portal_users, companies, sales_team, coupon_table, credit_limits), uuid, and database_created_at/updated_at are disabled because they are not produced by the Frappe ingestion."
+    columns:
+      - name: name
+        description: "Primary key for the customer (ERPNext document name)."
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: "Display name of the customer."
+      - name: customer_type
+        description: "Customer type (e.g. Individual, Company)."
+      - name: email_id
+        description: "Primary email of the customer."
+      - name: phone
+        description: "Primary phone number of the customer."
+      - name: haravan_id
+        description: "Linked Haravan customer ID."
+
+  - name: fct_salesaya_jewelries
+    description: "Salesaya jewelry feed (legacy jewelry_query) — Haravan products that have a design with a non-empty retouch, enriched with NocoDB design attributes and a JSON array of variants (best active/scheduled collection deal per variant, price, primary stock location, ring size, material, serial number). Includes product-level aggregates (min sale price, total quantity, ring sizes). Grain is one row per Haravan product. Note: design media (images/videos/render_images/4view) and storage sizes are disabled pending ingestion of those source fields."
+    columns:
+      - name: id
+        description: "Primary key for the jewelry product (Haravan product ID)."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Haravan product title."
+      - name: product_type
+        description: "Haravan product type."
+      - name: variants
+        description: "JSON array of variants with per-variant price, best collection deal, primary stock location, ring size, material, and serial number."
+      - name: min_sale_price
+        description: "Minimum sale price across the product's qualifying variants."
+      - name: total_product_qty
+        description: "Total available quantity across the product's variants and warehouses."
+      - name: all_ring_sizes
+        description: "Array of all non-null ring sizes offered by the product's variants."
+
+  - name: fct_salesaya_products
+    description: "Salesaya product feed — Haravan products (excluding loose 'Round'/'Pear' stones) enriched with NocoDB design attributes, best available collection deal, and a JSON array of in-stock variants (per-warehouse price, discount, quantity, serial numbers, and sold flag). Only products that have at least one in-stock variant are included. Grain is one row per Haravan product."
+    columns:
+      - name: id
+        description: "Primary key for the product (Haravan product ID)."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Haravan product title."
+      - name: product_type
+        description: "Haravan product type (loose 'Round'/'Pear' stones are excluded)."
+      - name: discount_type
+        description: "Discount type of the product's best available collection deal ('percent' or 'amount')."
+      - name: discount_value
+        description: "Discount value of the product's best available collection deal."
+      - name: totalQuantity
+        description: "Total available quantity across all warehouses and in-stock variants."
+      - name: variants
+        description: "JSON array of in-stock variants with per-warehouse pricing, discount, quantity, ring size, material, serial numbers, and a flag indicating whether the variant has ever been sold."
+
+  - name: dim_salesaya_wedding_rings
+    description: "Salesaya wedding-ring feed — wedding rings that have a complete pair (both a male 'Nam' and female 'Nữ' 'Nhẫn Cưới' design mapped to a live Haravan product), with a generated display title. Grain is one row per wedding ring."
+    columns:
+      - name: id
+        description: "Primary key for the wedding ring (NocoDB wedding_rings ID)."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Generated display title: 'Nhẫn Cưới ' followed by the distinct design codes joined with ' / '."
+        tests:
+          - not_null
+
+  - name: fct_salesaya_diamonds
+    description: "Salesaya diamond feed — per-diamond attributes enriched with Haravan variant stock, per-warehouse availability, Haravan collection membership, best available deal, and flags indicating whether the diamond has ever been sold. Grain is one row per diamond. Note: gia_pdf_url, encrypted_report_no, expected_arrival_date and image_urls are temporarily disabled pending the gia/supplychain schemas and additional staging columns."
+    columns:
+      - name: id
+        description: "Primary key for the diamond (NocoDB diamond ID)."
+        tests:
+          - unique
+          - not_null
+      - name: variant_id
+        description: "Associated Haravan variant ID."
+      - name: product_id
+        description: "Associated Haravan product ID."
+      - name: base_price
+        description: "List price of the diamond before any collection discount."
+      - name: sale_price
+        description: "Price after applying the best available collection discount (percent or amount)."
+      - name: discount_type
+        description: "Discount type of the best available deal ('percent' or 'amount')."
+      - name: warehouses
+        description: "JSON array of warehouses (id, name, qty_available) where the variant has available stock."
+      - name: collections
+        description: "JSON array of Haravan collections the diamond belongs to."
+      - name: exist_in_line_items
+        description: "True if the diamond's variant/product pair appears in any Haravan order line."
+      - name: is_temp_product_and_exist_in_line_items
+        description: "True if the diamond's report number matches a temporary product that has been sold on Haravan."
+
   - name: fct_salesaya_temporary_products
     description: "Salesaya temporary-product feed — GIA report numbers of temporary products that have been sold on Haravan (matched to order lines by product and variant). Grain is one row per matched Haravan order line; not deduplicated, mirroring the legacy source view."
     columns:
