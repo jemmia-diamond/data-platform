@@ -48,11 +48,11 @@ PAGE_HEALTH_TABLE = f"{QUEUE_SCHEMA}.page_health"
 # Worker / drain tuning
 # --------------------------------------------------------------------------- #
 MAX_WORKERS = 16             # concurrent conversations per drain tick (was 8)
-PER_PAGE_CONCURRENCY = 2     # max in-flight requests per page_access_token
+PER_PAGE_CONCURRENCY = 8     # max in-flight requests per page_access_token
 MSG_PAGE_SIZE = 30           # Pancake messages page size
 LOAD_BATCH = 500             # flush buffer to dlt at this many rows
 MAX_ATTEMPTS = 5             # retryable attempts before a job is promoted to dead
-DRAIN_BUDGET_SECONDS = 200   # wall-clock budget per drain tick (≤ 5min cron ⇒ no overlap)
+DRAIN_BUDGET_SECONDS = 1500  # wall-clock budget per drain tick (≤ 30 min cron ⇒ no overlap)
 STUCK_THRESHOLD_MIN = 10     # "running" jobs older than this are swept to pending
 CLAIM_BATCH_SIZE = MAX_WORKERS
 MAX_JOB_SECONDS = 180        # per-job wall-clock guard
@@ -206,6 +206,14 @@ _CREATE_INDEXES_SQL = (
     f"ON {QUEUE_QUALIFIED} (conv_updated_at) WHERE status = 'done';",
 )
 
+# Merge-key index on the target table. dlt merge does DELETE+INSERT by
+# (id, conversation_id, page_id); without this index every pipeline.run() flush
+# seq-scans the growing raw_pancake.messages table — catastrophic at 1M+ rows.
+_CREATE_MESSAGES_MERGE_INDEX_SQL = (
+    f"CREATE INDEX IF NOT EXISTS ix_messages_merge_key "
+    f"ON {PANCAKE_DATASET_NAME}.messages (id, conversation_id, page_id);"
+)
+
 
 # --------------------------------------------------------------------------- #
 # SQL — queue operations
@@ -251,15 +259,15 @@ WHERE status = 'running'
   AND started_at < now() - (%s || ' minutes')::interval;
 """
 
-# Claim a batch of due, non-cooldown-blocked jobs. The per-page NOT IN exclusion
-# keeps the circuit breaker; FOR UPDATE SKIP LOCKED prevents double-claims across
-# concurrent drains. (SKIP LOCKED cannot sit on the nullable side of a JOIN in
-# Postgres, hence the NOT IN subquery form.)
+# Claim a batch of due, non-cooldown-blocked jobs — ONE job per page (round-robin)
+# so the per-page semaphore spreads load across many pages instead of serializing
+# within a single page. DISTINCT ON (page_id) picks the earliest-eligible job per
+# page; LIMIT caps the batch at the worker-pool size. The outer UPDATE re-checks
+# status='pending' to prevent double-claims under concurrent drains (FOR UPDATE
+# SKIP LOCKED cannot coexist with DISTINCT ON, so the status guard replaces it).
 _CLAIM_SQL = f"""
-UPDATE {QUEUE_QUALIFIED}
-SET status = 'running', started_at = now(), updated_at = now()
-WHERE (page_id, conversation_id) IN (
-    SELECT page_id, conversation_id
+WITH one_per_page AS (
+    SELECT DISTINCT ON (page_id) ctid
     FROM {QUEUE_QUALIFIED}
     WHERE status = 'pending'
       AND updated_at + (POWER(2.0, LEAST(attempts, 8)) * interval '1 second') <= now()
@@ -269,9 +277,13 @@ WHERE (page_id, conversation_id) IN (
       )
     ORDER BY page_id, enqueued_at
     LIMIT %s
-    FOR UPDATE SKIP LOCKED
 )
-RETURNING page_id, conversation_id, message_count, current_count;
+UPDATE {QUEUE_QUALIFIED} AS j
+SET status = 'running', started_at = now(), updated_at = now()
+FROM one_per_page
+WHERE j.ctid = one_per_page.ctid
+  AND j.status = 'pending'
+RETURNING j.page_id, j.conversation_id, j.message_count, j.current_count;
 """
 
 _CHECKPOINT_SQL = f"""
@@ -423,7 +435,11 @@ WHERE {QUEUE_QUALIFIED}.page_id = candidates.page_id
 # Schema bootstrap
 # --------------------------------------------------------------------------- #
 def ensure_queue_schema(conn) -> None:
-    """Create the pancake_sync schema, queue table, page_health, and indexes."""
+    """Create the pancake_sync schema, queue table, page_health, and indexes.
+
+    Also ensures the merge-key index on raw_pancake.messages exists (guarded
+    against the table not being loaded yet on a fresh deployment).
+    """
     with conn.cursor() as cur:
         cur.execute(_CREATE_SCHEMA_SQL)
         cur.execute(_CREATE_TABLE_SQL)
@@ -431,6 +447,16 @@ def ensure_queue_schema(conn) -> None:
         cur.execute(_CREATE_PAGE_HEALTH_SQL)
         for stmt in _CREATE_INDEXES_SQL:
             cur.execute(stmt)
+    conn.commit()
+    _ensure_messages_merge_index(conn)
+
+
+def _ensure_messages_merge_index(conn) -> None:
+    """Idempotently create the merge-key index on raw_pancake.messages."""
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT to_regclass('{PANCAKE_DATASET_NAME}.messages')")
+        if cur.fetchone()[0] is not None:
+            cur.execute(_CREATE_MESSAGES_MERGE_INDEX_SQL)
     conn.commit()
 
 
