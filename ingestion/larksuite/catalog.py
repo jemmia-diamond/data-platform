@@ -8,6 +8,7 @@ import dlt
 import yaml
 from dlt.extract.resource import DltResource
 from dlt.sources.helpers import requests
+from requests.exceptions import HTTPError
 from dlt.sources.helpers.rest_client.paginators import JSONResponseCursorPaginator
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 
@@ -73,17 +74,33 @@ def get_tenant_access_token(base_url: str, app_id: str, app_secret: str) -> str:
 
 def resolve_wiki_node(base_url: str, access_token: str, wiki_token: str) -> WikiNode:
     """Resolve a Larksuite Wiki node to its embedded object token and type."""
-    response = requests.get(
-        f"{base_url}/{_WIKI_NODE_ENDPOINT}",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"token": wiki_token, "obj_type": "wiki"},
-    )
-    response.raise_for_status()
+    try:
+        response = requests.get(
+            f"{base_url}/{_WIKI_NODE_ENDPOINT}",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"token": wiki_token, "obj_type": "wiki"},
+        )
+    except HTTPError as error:
+        raise RuntimeError(_wiki_node_error_message(wiki_token, error.response)) from error
     payload = response.json()
     if payload.get("code") != 0:
-        raise RuntimeError(f"Larksuite wiki get_node request failed: {payload}")
+        raise RuntimeError(_wiki_node_error_message(wiki_token, response))
     node = payload["data"]["node"]
     return WikiNode(obj_token=node["obj_token"], obj_type=node["obj_type"])
+
+
+def _wiki_node_error_message(wiki_token: str, response: Any) -> str:
+    """Build an actionable error message from a failed Larksuite get_node response."""
+    try:
+        payload = response.json()
+        code, msg = payload.get("code"), payload.get("msg")
+    except ValueError:
+        code, msg = None, response.text
+    return (
+        f"Larksuite wiki get_node failed for token {wiki_token!r} "
+        f"(HTTP {response.status_code}, code {code}): {msg}. Ensure the Larksuite "
+        f"app has read permission on this Wiki node/space."
+    )
 
 
 def _render_path_template(template: str, spec: ResourceSpec, obj_token: str) -> str:
