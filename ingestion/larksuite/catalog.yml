@@ -41,16 +41,6 @@ apis:
 
 resources:
   - api: bitable
-    resource_name: crm_customers
-    wiki_token: UsizwSlx3iwoURkmTEHlv5vJgtd
-    table_id: tbl5OhHSxcMbqe3m
-
-  - api: sheet
-    resource_name: dump_1
-    wiki_token: LaGnwNoJBilB6rk0hWQlx1TGgMe
-    sheet_id: befa0a  
-
-  - api: sheet
-    resource_name: dump_2
-    wiki_token: LaGnwNoJBilB6rk0hWQlx1TGgMe
-    sheet_id: NtMZYy                 # single tab from the spreadsheet URL
+    resource_name: ticket_tech_helpdesk
+    wiki_token: GmhlwQYH0i6sF4kLYOIlu2bpgNb
+    table_id: tblfEv32pnjHMDTF
