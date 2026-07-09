@@ -83,3 +83,8 @@ sources:
         meta:
           dagster:
             asset_key: ["nocodb", "haravan_collections"]
+
+      - name: wedding_rings
+        meta:
+          dagster:
+            asset_key: ["nocodb", "wedding_rings"]

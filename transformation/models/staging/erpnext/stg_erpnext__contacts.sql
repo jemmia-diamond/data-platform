@@ -50,10 +50,10 @@ SELECT
     
     -- Call Center (Stringee)
     stringee_id,
-    stringee_from_number,
-    stringee_to_number,
-    stringee_start_time::timestamp AS stringee_start_time,
-    stringee_end_time::timestamp AS stringee_end_time,
+    -- stringee_from_number,  
+    -- stringee_to_number,  
+    -- stringee_start_time::timestamp AS stringee_start_time,
+    -- stringee_end_time::timestamp AS stringee_end_time,
     stringee_from_internal::int::boolean AS stringee_from_internal,
     stringee_to_internal::int::boolean AS stringee_to_internal,
     stringee_recorded::int::boolean AS stringee_recorded,
@@ -74,7 +74,7 @@ SELECT
     utm_campaign,
     utm_term,
     utm_content,
-    CASE 
+    CASE
         WHEN ad_ids IS NOT NULL AND ad_ids::text IS JSON THEN ad_ids::jsonb
         ELSE NULL
     END AS ad_ids,
@@ -83,7 +83,7 @@ SELECT
     gad_campaignid,
     gbraid,
     fbclid,
-    ttclid,
+    -- ttclid,
     gcl_au_id,
     ga_client_id,
     fb_client_id,
@@ -92,14 +92,14 @@ SELECT
     last_ad_param,
     
     -- Marketing Forms & Web Tracking
-    form_id,
-    form_name,
+    -- form_id,         
+    -- form_name,
     ladi_form_id,
-    form_inserted_at::timestamp AS form_inserted_at,
-    form_updated_at::timestamp AS form_updated_at,
+    -- form_inserted_at::timestamp AS form_inserted_at,  
+    -- form_updated_at::timestamp AS form_updated_at,
     origin_url_page,
     url_page,
-    page_url,
+    -- page_url,
     conversion_url,
     variant_url,
     variant_content,
@@ -107,7 +107,7 @@ SELECT
     gtm_link,
     gtm_location,
     ip,
-    remote_ip,
+    -- remote_ip,
     user_agent,
     unsubscribed::int::boolean AS is_unsubscribed,
     
