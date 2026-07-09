@@ -5,6 +5,7 @@ Ingestion layer Dagster asset wrappers.
 from .frappe import frappe_assets
 from .google_sheets import google_sheets_assets
 from .haravan import haravan_assets
+from .larksuite import larksuite_assets
 from .nocodb import nocodb_assets
 from .openfacet import openfacet_assets
 from .pancake import (
@@ -22,6 +23,7 @@ all_assets = [
     google_sheets_assets,
     openfacet_assets,
     pancake_assets,
+    larksuite_assets,
     message_jobs_enqueue,
     message_jobs_drain,
     message_jobs_refresh_edits,
@@ -33,6 +35,7 @@ __all__ = [
     "frappe_assets",
     "google_sheets_assets",
     "haravan_assets",
+    "larksuite_assets",
     "message_jobs_drain",
     "message_jobs_enqueue",
     "message_jobs_refresh_edits",
