@@ -91,8 +91,6 @@ LEFT JOIN LATERAL (
     LEFT JOIN {{ ref('stg_nocodb__variants') }} AS nocodb_variants
         ON nocodb_variants.product_id = nocodb_products.product_id
        AND nocodb_variants.sku = haravan_variants.sku::text
-    -- One variant has many serials; pick the latest one so the join stays 1:1
-    -- and does not fan out the per-location rows aggregated below.
     LEFT JOIN LATERAL (
         SELECT
             variant_serials_latest.storage_size_1,
