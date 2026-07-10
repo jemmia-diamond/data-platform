@@ -31,6 +31,8 @@ SELECT
     ring_band_type,
     ring_band_style,
     ring_head_style,
+    collections_id::bigint,
+    _4view,
     {{ safe_cast_boolean('ecom_showed') }}              AS ecom_showed,
     {{ safe_cast_boolean('social_post') }}               AS social_post,
     {{ safe_cast_boolean('website') }}                   AS website,

@@ -49,6 +49,16 @@ sources:
           dagster:
             asset_key: ["nocodb", "variant_serials"]
 
+      - name: variant_serials_diamonds
+        meta:
+          dagster:
+            asset_key: ["nocodb", "variant_serials_diamonds"]
+
+      - name: wedding_rings
+        meta:
+          dagster:
+            asset_key: ["nocodb", "wedding_rings"]
+
       - name: temporary_products
         meta:
           dagster:
@@ -83,8 +93,3 @@ sources:
         meta:
           dagster:
             asset_key: ["nocodb", "haravan_collections"]
-
-      - name: wedding_rings
-        meta:
-          dagster:
-            asset_key: ["nocodb", "wedding_rings"]
