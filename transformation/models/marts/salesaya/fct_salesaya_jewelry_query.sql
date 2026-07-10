@@ -71,9 +71,8 @@ LEFT JOIN LATERAL (
                 END,
             'quantity', inventory_locations.qty_available,
             'ringSize', nocodb_variants.ring_size,
-            -- storageSize1 / storageSize2 are not ingested (not in the NocoDB variant_serials field list).
-            -- 'storageSize1', variant_serials_agg.storage_size_1,
-            -- 'storageSize2', variant_serials_agg.storage_size_2,
+            'storageSize1', variant_serials_agg.storage_size_1,
+            'storageSize2', variant_serials_agg.storage_size_2,
             'fineness', nocodb_variants.fineness,
             'materialColor', nocodb_variants.material_color,
             'serialNumbers', COALESCE(serials.list, '[]'::jsonb),
@@ -92,8 +91,17 @@ LEFT JOIN LATERAL (
     LEFT JOIN {{ ref('stg_nocodb__variants') }} AS nocodb_variants
         ON nocodb_variants.product_id = nocodb_products.product_id
        AND nocodb_variants.sku = haravan_variants.sku::text
-    -- LEFT JOIN {{ ref('stg_nocodb__variant_serials') }} AS variant_serials_agg
-    --     ON variant_serials_agg.variant_id = nocodb_variants.variant_id
+    -- One variant has many serials; pick the latest one so the join stays 1:1
+    -- and does not fan out the per-location rows aggregated below.
+    LEFT JOIN LATERAL (
+        SELECT
+            variant_serials_latest.storage_size_1,
+            variant_serials_latest.storage_size_2
+        FROM {{ ref('stg_nocodb__variant_serials') }} AS variant_serials_latest
+        WHERE variant_serials_latest.variant_id = nocodb_variants.variant_id
+        ORDER BY variant_serials_latest.serial_id DESC
+        LIMIT 1
+    ) AS variant_serials_agg ON true
     LEFT JOIN LATERAL (
         SELECT jsonb_agg(variant_serials.serial_number) AS list
         FROM {{ ref('stg_nocodb__variant_serials') }} AS variant_serials

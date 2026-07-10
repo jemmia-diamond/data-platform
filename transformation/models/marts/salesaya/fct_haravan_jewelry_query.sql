@@ -32,9 +32,8 @@ variant_calc AS (
             ELSE haravan_variants.price
         END                                                                 AS sale_price,
         nocodb_variants.ring_size,
-        -- storage_size_1 / storage_size_2 are not present in raw variant_serials.
-        -- variant_serials.storage_size_1,
-        -- variant_serials.storage_size_2,
+        variant_serials.storage_size_1,
+        variant_serials.storage_size_2,
         nocodb_variants.fineness,
         nocodb_variants.material_color,
         variant_serials.serial_number,
@@ -80,8 +79,8 @@ product_variants_agg AS (
             'salePrice', variant_calc.sale_price,
             'stockAt', variant_calc.primary_stock_at,
             'ringSize', variant_calc.ring_size,
-            -- 'storageSize1', variant_calc.storage_size_1,
-            -- 'storageSize2', variant_calc.storage_size_2,
+            'storageSize1', variant_calc.storage_size_1,
+            'storageSize2', variant_calc.storage_size_2,
             'fineness', variant_calc.fineness,
             'quantityAvailable', COALESCE(inventory_agg.total_qty, 0),
             'materialColor', variant_calc.material_color,
@@ -89,10 +88,9 @@ product_variants_agg AS (
             'discountType', variant_calc.discount_type,
             'discountValue', variant_calc.discount_value
         )) AS variants_json,
-        array_agg(variant_calc.ring_size) FILTER (WHERE variant_calc.ring_size IS NOT NULL) AS all_ring_sizes
-        -- all_storage_size_1 / all_storage_size_2 disabled: storage_size_1/2 not present in raw variant_serials.
-        -- , array_agg(variant_calc.storage_size_1) FILTER (WHERE variant_calc.storage_size_1 IS NOT NULL) AS all_storage_size_1
-        -- , array_agg(variant_calc.storage_size_2) FILTER (WHERE variant_calc.storage_size_2 IS NOT NULL) AS all_storage_size_2
+        array_agg(variant_calc.ring_size) FILTER (WHERE variant_calc.ring_size IS NOT NULL) AS all_ring_sizes,
+        array_agg(variant_calc.storage_size_1) FILTER (WHERE variant_calc.storage_size_1 IS NOT NULL) AS all_storage_size_1,
+        array_agg(variant_calc.storage_size_2) FILTER (WHERE variant_calc.storage_size_2 IS NOT NULL) AS all_storage_size_2
     FROM variant_calc
     LEFT JOIN inventory_agg
         ON inventory_agg.variant_id = variant_calc.variant_id
@@ -135,10 +133,9 @@ SELECT
     product_variants_agg.min_sale_price,
     product_variants_agg.total_product_qty,
     haravan_products.published_scope,
-    product_variants_agg.all_ring_sizes
-    -- all_storage_size_1 / all_storage_size_2 disabled: storage_size_1/2 not present in raw variant_serials.
-    -- , product_variants_agg.all_storage_size_1
-    -- , product_variants_agg.all_storage_size_2
+    product_variants_agg.all_ring_sizes,
+    product_variants_agg.all_storage_size_1,
+    product_variants_agg.all_storage_size_2
 
 FROM {{ ref('stg_haravan__products') }} AS haravan_products
 JOIN product_variants_agg
