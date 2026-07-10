@@ -1,6 +1,6 @@
 from typing import Optional
 
-from dagster import AssetExecutionContext, Config
+from dagster import AssetExecutionContext, AssetKey, Config, asset
 from dagster_dlt import DagsterDltResource, dlt_assets
 
 from ingestion.haravan import (
@@ -9,6 +9,7 @@ from ingestion.haravan import (
     build_haravan_pipeline,
     build_haravan_source,
 )
+from ingestion.haravan.snapshot import snapshot_table
 
 from .translator import IngestionDagsterDltTranslator
 
@@ -80,4 +81,35 @@ def haravan_assets(
         )
 
 
-__all__ = ["HaravanIngestionConfig", "haravan_assets"]
+@asset(
+    key=AssetKey(["ingestion", "haravan", "inventory_locations_snapshot"]),
+    deps=[AssetKey(["ingestion", "haravan", "inventory_locations"])],
+    group_name="ingestion",
+    required_resource_keys={"haravan_snapshot"},
+    description=(
+        "Daily end-of-day snapshot of raw_haravan.inventory_locations into "
+        "inventory_locations_snapshot (adds snapshot_date). The source table is "
+        "a merge-on-latest dlt resource with no history, so this asset copies it "
+        "once a day to preserve inventory history."
+    ),
+)
+def inventory_locations_snapshot(context: AssetExecutionContext) -> dict:
+    """Snapshot raw_haravan.inventory_locations, stamped with today's date.
+
+    To add a snapshot for another Haravan table, add a sibling @asset that
+    calls `snapshot_table(conn, source_table=..., key_columns=...)` — the
+    table DDL, upsert SQL, and resource connection are all reused as-is.
+    """
+    with context.resources.haravan_snapshot.get_connection() as conn:
+        result = snapshot_table(
+            conn,
+            source_table="inventory_locations",
+            key_columns=("loc_id", "variant_id"),
+        )
+    context.log.info(
+        f"Inventory snapshot: rows={result['rows']} snapshot_date={result['snapshot_date']}"
+    )
+    return result
+
+
+__all__ = ["HaravanIngestionConfig", "haravan_assets", "inventory_locations_snapshot"]
