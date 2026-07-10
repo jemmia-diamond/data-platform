@@ -7,6 +7,9 @@ from typing import Any, Optional
 from dlt.extract.resource import DltResource
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 
+DEFAULT_PAGE_LIMIT = 200
+LARGE_TABLE_PAGE_LIMIT = 50
+
 
 PAGE_SIZE = 200
 
@@ -21,6 +24,7 @@ class TableSpec:
     view_id: Optional[str] = None
     fields: Optional[str] = None
     column_hints: dict[str, dict[str, str]] = field(default_factory=dict)
+    page_limit: int = DEFAULT_PAGE_LIMIT
 
 
 # --- R&D ------------------------------------------------------------------
@@ -41,7 +45,7 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="mxhzqdiwzvkxdf0",
         primary_key="id",
         incremental_field="database_updated_at",
-        fields="id,gold_weight,labour_cost,shape_of_main_stone,main_stone_length,main_stone_width,melee_total_price,design_melee_details,database_created_at,database_updated_at",
+        fields="id,gold_weight,labour_cost,shape_of_main_stone,main_stone_length,main_stone_width,melee_total_price,database_created_at,database_updated_at",
         column_hints={
             "database_created_at": {"data_type": "timestamp"},
             "shape_of_main_stone": {"data_type": "text"},
@@ -107,7 +111,7 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="mm80xzmei7q85k7",
         primary_key="id",
         incremental_field="database_updated_at",
-        fields="id,serial_number,printing_batch,encode_barcode,final_encoded_barcode,gold_weight,diamond_weight,quantity,supplier,cogs,price,barcode,sku,variant_id,order_id,stock_id,order_on,order_reference,product_name,displayed_title,fulfillment_status_value,last_rfid_scan_time,arrival_date,actual_gold_price,actual_melee_price,actual_labor_cost,is_have_invoice,supplier_invoice,address_invoice,policy,haravan_product_type,design_code,ma_thiet_ke_cu,ma_erp,stock_at,storage_size_1,storage_size_2,database_created_at,database_updated_at",
+        page_limit=LARGE_TABLE_PAGE_LIMIT,
     ),
     TableSpec(
         resource_name="variant_serials_diamonds",
@@ -182,7 +186,7 @@ def build_table_resource(
     """Create a DltResource for a specific NocoDB table."""
     sync_timestamp = datetime.now(timezone.utc).isoformat()
     endpoint_params: dict[str, Any] = {
-        "limit": PAGE_SIZE,
+        "limit": spec.page_limit,
     }
     if spec.view_id:
         endpoint_params["viewId"] = spec.view_id
@@ -215,7 +219,7 @@ def build_table_resource(
             "data_selector": "list",
             "paginator": {
                 "type": "offset",
-                "limit": PAGE_SIZE,
+                "limit": spec.page_limit,
                 "total_path": "pageInfo.totalRows",
             },
             "incremental": incremental_config,
