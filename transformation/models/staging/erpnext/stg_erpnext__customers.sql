@@ -31,7 +31,7 @@ SELECT
     
     -- External System IDs
     haravan_id,
-    bizfly_customer_number,
+    -- bizfly_customer_number, 
     
     -- Identity & Documents
     personal_document_type,
@@ -56,7 +56,7 @@ SELECT
     lead_name,
     first_source,
     customer_journey,
-    opportunity_name,
+    -- opportunity_name, 
     partner_role,
     
     -- Ranking & Scoring
@@ -105,15 +105,55 @@ SELECT
     modified_by,
     creation::timestamp AS created_at,
     modified::timestamp AS updated_at,
-    
+
     -- Frappe Internal
     _comments,
     _assign,
-    
+
     -- DLT Metadata
     _db_updated_at::timestamp AS _db_updated_at,
     _dlt_load_id,
-    _dlt_id
+    _dlt_id,
+
+       -- customer_group,
+    -- territory,
+    -- prospect_name,
+    -- company_name,
+    -- no_of_employees,
+    -- industry,
+    -- market_segment,
+    -- ceo_name,
+    -- represents_company,
+    -- account_manager,
+
+    -- Web, Media & Notes
+    -- website,
+    -- customer_website,
+    -- customer_details,
+    -- image,
+
+    -- Tax & Banking
+    -- tax_number,
+    -- tax_id,
+    -- tax_category,
+    -- tax_withholding_category,
+    -- bank_account,
+    -- default_bank_account,
+    priority_bank_account
+    -- default_currency,
+    -- default_price_list,
+    -- payment_terms,
+    -- default_sales_partner,
+
+    -- Loyalty, POS & Priority
+    -- loyalty_program,
+    -- loyalty_program_tier,
+    -- customer_pos_id,
+    -- rank_expired_date,
+    -- priority_login_date,
+
+    -- External System IDs (extended)
+    -- bizfly_id
 
 FROM {{ source('erpnext', 'customers') }}
 WHERE NOT EXISTS (

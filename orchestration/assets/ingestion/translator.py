@@ -6,6 +6,8 @@ from dagster import AssetKey
 from dagster_dlt import DagsterDltTranslator
 from dagster_dlt.translator import DltResourceTranslatorData
 
+from ingestion.larksuite import larksuite_resource_asset_path
+
 
 class IngestionDagsterDltTranslator(DagsterDltTranslator):
     """Keep dlt asset keys predictable across connectors."""
@@ -45,6 +47,25 @@ class FrappeDagsterDltTranslator(DagsterDltTranslator):
         )
 
 
+class LarksuiteDagsterDltTranslator(DagsterDltTranslator):
+    """Group Larksuite assets by object type under ingestion/larksuite/<base|sheets|document>/<resource>."""
+
+    def get_asset_spec(self, data: DltResourceTranslatorData):
+        spec = super().get_asset_spec(data)
+        deps = []
+        if data.resource.is_transformer:
+            pipe = data.resource._pipe  # noqa: SLF001
+            while pipe.has_parent:
+                pipe = pipe.parent
+            deps = [AssetKey(list(larksuite_resource_asset_path(pipe.name)))]
+
+        return spec.replace_attributes(
+            key=AssetKey(list(larksuite_resource_asset_path(data.resource.name))),
+            deps=deps,
+            group_name="ingestion",
+        )
+
+
 class PancakeBackfillDagsterDltTranslator(DagsterDltTranslator):
     """Place Pancake conversations-backfill assets under ingestion/pancake/backfill.
 
@@ -64,5 +85,6 @@ class PancakeBackfillDagsterDltTranslator(DagsterDltTranslator):
 __all__ = [
     "FrappeDagsterDltTranslator",
     "IngestionDagsterDltTranslator",
+    "LarksuiteDagsterDltTranslator",
     "PancakeBackfillDagsterDltTranslator",
 ]

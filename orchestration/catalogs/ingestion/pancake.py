@@ -37,11 +37,11 @@ PANCAKE_EXECUTION_UNITS = validate_execution_units(
                 "fetch messages concurrently, batch-load via dlt, checkpoint "
                 "current_count. Selection auto-includes the upstream enqueue asset."
             ),
-            cadence="5min",
-            cron_schedule="*/5 * * * *",
-            schedule_token="5min",
-            schedule_description="Drain Pancake message jobs every 5 minutes",
-            max_runtime_seconds=270,
+            cadence="30min",
+            cron_schedule="*/30 * * * *",
+            schedule_token="30min",
+            schedule_description="Drain Pancake message jobs every 30 minutes",
+            max_runtime_seconds=1620,
         ),
         ExecutionUnitSpec(
             layer="ingestion",

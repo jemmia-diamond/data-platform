@@ -1,5 +1,11 @@
 FROM python:3.10-slim
 
+# Install Infisical CLI for runtime secret injection
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
+    && apt-get install -y --no-install-recommends infisical \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /opt/dagster/app
 
 # Install dependencies

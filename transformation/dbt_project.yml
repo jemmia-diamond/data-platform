@@ -49,6 +49,9 @@ models:
       finance:
         +schema: marts_finance
         +materialized: materialized_view
+      salesaya:
+        +schema: marts_salesaya
+        +materialized: materialized_view
       core:
         +schema: marts_core
         +materialized: table
