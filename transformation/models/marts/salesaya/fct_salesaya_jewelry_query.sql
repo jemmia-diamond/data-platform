@@ -24,17 +24,17 @@ SELECT DISTINCT ON (haravan_products.product_id)
     designs.backup_code,
     designs.design_code,
     haravan_products.images                                             AS p_images,
-
-    -- design_images.images / render_images / videos are not ingested
-    -- (design_design_images only exposes id, design_id, material_color, retouch, ...).
-    -- design_images.images,
-    -- design_images.render_images,
-    -- design_images.videos,
-
-    -- designs."4view" is not ingested (not in the NocoDB designs field list).
-    -- designs."4view",
-
+    design_images.images,
+    design_images.render_images,
+    design_images.videos,
+    designs._4view                                                      AS "4view",
     designs.diamond_holder,
+    designs.gender,
+    collections.collection_name,
+    designs.ring_band_type,
+    designs.ring_band_style,
+    designs.ring_head_style,
+    haravan_products.published_scope,
     best_deal.discount_type,
     best_deal.discount_value,
     nocodb_products.product_id                                          AS "wpId",
@@ -48,6 +48,8 @@ LEFT JOIN {{ ref('stg_nocodb__design_design_images') }} AS design_images
     ON design_images.design_id = nocodb_products.design_id
 LEFT JOIN {{ ref('stg_nocodb__designs') }} AS designs
     ON designs.design_id = nocodb_products.design_id
+LEFT JOIN {{ ref('stg_nocodb__collections') }} AS collections
+    ON collections.collection_id = designs.collections_id
 LEFT JOIN best_deal
     ON best_deal.product_id = nocodb_products.product_id
 LEFT JOIN LATERAL (

@@ -121,17 +121,20 @@ SELECT
     design_data.backup_code,
     design_data.design_code,
     design_data.diamond_holder,
-    -- design_data."4view" is not ingested (not in the NocoDB designs field list).
-    -- design_data."4view",
+    design_data.gender,
+    design_data.collection_name,
+    design_data.ring_band_type,
+    design_data.ring_band_style,
+    design_data.ring_head_style,
+    design_data._4view                                                      AS "4view",
     haravan_products.images                                                 AS p_images,
-    -- w_images / w_videos / render_images are not ingested
-    -- (design_design_images only exposes id, design_id, material_color, retouch, ...).
-    -- design_data.images AS w_images,
-    -- design_data.videos AS w_videos,
-    -- design_data.render_images,
+    design_data.images                                                      AS w_images,
+    design_data.videos                                                      AS w_videos,
+    design_data.render_images,
     COALESCE(product_variants_agg.variants_json, '[]'::jsonb)               AS variants,
     product_variants_agg.min_sale_price,
     product_variants_agg.total_product_qty,
+    haravan_products.published_scope,
     product_variants_agg.all_ring_sizes
     -- all_storage_size_1 / all_storage_size_2 disabled: storage_size_1/2 not present in raw variant_serials.
     -- , product_variants_agg.all_storage_size_1
@@ -143,20 +146,27 @@ JOIN product_variants_agg
 LEFT JOIN LATERAL (
     SELECT
         design_images.retouch,
-        -- design_images.images,
-        -- design_images.videos,
-        -- design_images.render_images,
-        -- designs."4view",
+        design_images.images,
+        design_images.videos,
+        design_images.render_images,
+        designs._4view,
         designs.design_code_legacy                                          AS code,
         designs.erp_code,
         designs.backup_code,
         designs.design_code,
-        designs.diamond_holder
+        designs.diamond_holder,
+        designs.gender,
+        designs.ring_band_type,
+        designs.ring_band_style,
+        designs.ring_head_style,
+        collections.collection_name
     FROM {{ ref('stg_nocodb__products') }} AS nocodb_products
     JOIN {{ ref('stg_nocodb__design_design_images') }} AS design_images
         ON design_images.design_id = nocodb_products.design_id
     JOIN {{ ref('stg_nocodb__designs') }} AS designs
         ON designs.design_id = nocodb_products.design_id
+    LEFT JOIN {{ ref('stg_nocodb__collections') }} AS collections
+        ON collections.collection_id = designs.collections_id
     WHERE nocodb_products.haravan_product_id = haravan_products.product_id
       AND design_images.retouch IS NOT NULL
       AND design_images.retouch <> '[]'

@@ -17,3 +17,4 @@ FROM temporary_products
 JOIN sold_order_lines
     ON sold_order_lines.variant_id = temporary_products.haravan_variant_id
    AND sold_order_lines.product_id = temporary_products.haravan_product_id
+WHERE temporary_products.gia_report_no IS NOT NULL

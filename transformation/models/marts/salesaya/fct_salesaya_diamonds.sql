@@ -108,8 +108,7 @@ SELECT
         ELSE diamonds.price
     END                                                                  AS sale_price,
 
-    -- expected_arrival_date and image_urls are not exposed by stg_nocodb__diamonds yet;
-    -- add them to that staging model to re-enable these columns.
+    -- expected_arrival_date is unavailable: the NocoDB diamonds table has no such field.
     -- diamonds.expected_arrival_date,
 
     haravan_variants.qty_available,
@@ -119,7 +118,7 @@ SELECT
     best_deal.discount_type,
     best_deal.discount_value,
     diamonds.report_no,
-    -- diamonds.image_urls,
+    diamonds.image_urls,
     warehouse_json.warehouses,
     collection_json.collections,
     line_item_exists.variant_id IS NOT NULL                              AS exist_in_line_items,
