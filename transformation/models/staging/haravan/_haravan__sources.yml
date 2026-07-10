@@ -53,3 +53,8 @@ sources:
         meta:
           dagster:
             asset_key: ["haravan", "users"]
+
+      - name: inventory_locations_balance_daily_snapshot
+        meta:
+          dagster:
+            asset_key: [ "haravan", "inventory_locations_balance_daily_snapshot" ]
