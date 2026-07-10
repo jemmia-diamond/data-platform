@@ -34,6 +34,7 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="ma0vp8g1sv25mua",
         primary_key="id",
         incremental_field="database_updated_at",
+        fields="id,code,erp_code,backup_code,design_type,gender,design_year,design_seq,usage_status,shape_of_main_stone,product_line,source,variant_number,gold_weight,main_stone,stone_quantity,stone_weight,diamond_holder,design_code,new_code,design_status,published_scope,jewelry_rd_style,ring_band_type,ring_band_style,ring_head_style,wedding_ring_id,collections_id,4view,ecom_showed,social_post,website,RENDER,RETOUCH,tag,created_date,database_created_at,database_updated_at",
     ),
     TableSpec(
         resource_name="design_details",
@@ -53,12 +54,14 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="mj4ak6p2fh804wj",
         primary_key="id",
         incremental_field="database_updated_at",
+        fields="id,design_id,material_color,retouch,images,videos,render_images,try_on_images,4view,tick_sync_to_haravan,note,database_created_at,database_updated_at",
     ),
     TableSpec(
         resource_name="wedding_rings",
         table_id="msvuv0u239vbjk0",
         primary_key="id",
         incremental_field=None,
+        fields="id,description,ecom_title",
     ),
     # === Supply ===
     TableSpec(
@@ -66,6 +69,7 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="m4qggn3vyz5qyqi",
         primary_key="id",
         incremental_field="database_updated_at",
+        fields="id,barcode,report_lab,report_no,price,cogs,product_group,shape,cut,color,clarity,fluorescence,edge_size_1,edge_size_2,carat,original_code,SKU,product_id,variant_id,product_name,image_urls,qty_onhand,qty_available,qty_commited,qty_incoming,vendor,published_scope,is_incoming,is_have_invoice,country_of_origin,database_created_at,database_updated_at",
     ),
     TableSpec(
         resource_name="moissanite",
@@ -103,12 +107,14 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="mm80xzmei7q85k7",
         primary_key="id",
         incremental_field="database_updated_at",
+        fields="id,serial_number,printing_batch,encode_barcode,final_encoded_barcode,gold_weight,diamond_weight,quantity,supplier,cogs,price,barcode,sku,variant_id,order_id,stock_id,order_on,order_reference,product_name,displayed_title,fulfillment_status_value,last_rfid_scan_time,arrival_date,actual_gold_price,actual_melee_price,actual_labor_cost,is_have_invoice,supplier_invoice,address_invoice,policy,haravan_product_type,design_code,ma_thiet_ke_cu,ma_erp,stock_at,storage_size_1,storage_size_2,database_created_at,database_updated_at",
     ),
     TableSpec(
         resource_name="variant_serials_diamonds",
         table_id="mw50xuq1hl3fvls",
         primary_key=["diamonds_id", "variant_serials_id"],
         incremental_field=None,
+        fields="diamonds_id,variant_serials_id",
     ),
     TableSpec(
         resource_name="temporary_products",
