@@ -10,9 +10,6 @@ from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 DEFAULT_PAGE_LIMIT = 200
 LARGE_TABLE_PAGE_LIMIT = 50
 
-
-PAGE_SIZE = 200
-
 @dataclass(frozen=True)
 class TableSpec:
     """Specification for a NocoDB table to ingest."""
