@@ -38,7 +38,8 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="ma0vp8g1sv25mua",
         primary_key="id",
         incremental_field="database_updated_at",
-        fields="id,code,erp_code,backup_code,design_type,gender,design_year,design_seq,usage_status,shape_of_main_stone,product_line,source,variant_number,gold_weight,main_stone,stone_quantity,stone_weight,diamond_holder,design_code,new_code,design_status,published_scope,jewelry_rd_style,ring_band_type,ring_band_style,ring_head_style,wedding_ring_id,collections_id,4view,ecom_showed,social_post,website,RENDER,RETOUCH,tag,created_date,database_created_at,database_updated_at",
+        page_limit=LARGE_TABLE_PAGE_LIMIT,
+        
     ),
     TableSpec(
         resource_name="design_details",
@@ -160,7 +161,6 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="collections",
         table_id="muqhbu3bfkfhxpk",
         primary_key="id",
-        # Full-load (no incremental): the `design_code` field is a NocoDB Lookup
         incremental_field=None,
         fields="id,collection_name,design_code,database_created_at,database_updated_at",
     ),
