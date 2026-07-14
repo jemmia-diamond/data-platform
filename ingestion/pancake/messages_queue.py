@@ -61,6 +61,10 @@ PAGE_COOLDOWN_MAX_MIN = 60   # circuit-breaker backoff cap (minutes)
 # Edit/removal refresh: how many "done" jobs whose conversation changed since
 # last pull are re-queued per daily tick. Bounds API cost of catching edits.
 EDIT_REFRESH_LIMIT = 2000
+# Abort the drain after this many CONSECUTIVE load failures — likely a DB
+# outage, not a single bad job. Below the threshold, the failing job is
+# isolated (marked pending +1 attempt) and the drain continues with the rest.
+MAX_CONSECUTIVE_FLUSH_FAILURES = 3
 
 # --------------------------------------------------------------------------- #
 # New-message strategy: SAFE full re-pull (branch "B3")
@@ -629,7 +633,18 @@ def _flush_buffer(conn, pipeline, key: JobKey, buf: _Buffer, stats: dict[str, An
     """Load buffered rows via dlt and checkpoint the offset (main thread only)."""
     if not buf.rows:
         return
-    pipeline.run(_messages_dlt_resource(buf.rows))
+    try:
+        pipeline.run(_messages_dlt_resource(buf.rows))
+    except Exception:
+        # Most commonly a corrupt pending load package left by an interrupted
+        # previous run (FileNotFoundError on load/normalized/<id>/new_jobs).
+        # Drop pending packages and retry once. If the retry also fails (e.g. a
+        # real DB error), the exception propagates and aborts the drain — the
+        # job stays 'running' and is swept to 'pending' on the next tick (merge
+        # dedup on PK makes a re-fetch idempotent, so no data loss).
+        stats["flush_failures"] += 1
+        pipeline.drop_pending_packages()
+        pipeline.run(_messages_dlt_resource(buf.rows))
     stats["rows_loaded"] += len(buf.rows)
     _checkpoint(conn, key, buf.offset)
     buf.rows.clear()
@@ -767,6 +782,21 @@ def drain_message_jobs(
     stats = _new_stats(swept)
     deadline = time.monotonic() + DRAIN_BUDGET_SECONDS
 
+    # Drop any pending dlt load packages left by a previous interrupted run.
+    # The pancake_messages pipeline has no incremental cursor (the queue's
+    # current_count tracks progress, not dlt state), so dropping load packages
+    # is always safe. Without this, a single interrupted run poisons every
+    # subsequent run: dlt tries to re-load the corrupt pending package and fails
+    # with FileNotFoundError on load/normalized/<id>/new_jobs.
+    if pipeline.has_pending_data():
+        log.warning(
+            "Dropping pending dlt load packages in pipeline '%s' — a previous "
+            "drain was likely interrupted mid-flight.",
+            pipeline.pipeline_name,
+        )
+        pipeline.drop_pending_packages()
+        stats["pending_packages_dropped"] = 1
+
     while time.monotonic() < deadline:
         claimed = _claim_batch(conn, CLAIM_BATCH_SIZE)
         if not claimed:
@@ -797,6 +827,8 @@ def _new_stats(swept: int = 0) -> dict[str, Any]:
         "batches": 0,
         "swept": swept,
         "pages_blocked": 0,
+        "flush_failures": 0,
+        "pending_packages_dropped": 0,
     }
 
 
@@ -808,7 +840,13 @@ def _process_batch(
     base_url: str,
     stats: dict[str, Any],
 ) -> None:
-    """Drain one claimed batch: fan out workers, load chunks, finalize terminals."""
+    """Drain one claimed batch: fan out workers, load chunks, finalize terminals.
+
+    Load failures are isolated per-job: a single job whose rows dlt cannot load
+    is marked ``pending`` (+1 attempt) and the batch continues with the
+    remaining jobs. Only after ``MAX_CONSECUTIVE_FLUSH_FAILURES`` consecutive
+    failures does the drain abort — that signals a DB outage, not bad data.
+    """
     # One semaphore per page caps PER_PAGE_CONCURRENCY even when many jobs in the
     # batch share the same page_access_token.
     semaphores: dict[str, threading.Semaphore] = {
@@ -816,7 +854,40 @@ def _process_batch(
     }
     results: "queue.Queue" = queue.Queue()
     buffers: dict[JobKey, _Buffer] = {}
+    dead_jobs: set[JobKey] = set()
+    consecutive_failures = 0
     pending = len(jobs)
+
+    def _safe_flush(key: JobKey, buf: _Buffer) -> bool:
+        """Flush via dlt; on persistent failure isolate the job.
+
+        Returns True on success (resets the consecutive-failure counter),
+        False when the job was isolated as ``pending`` (+1 attempt). Re-raises
+        after MAX_CONSECUTIVE_FLUSH_FAILURES to abort the drain — that's a DB
+        outage, and the remaining jobs are swept to pending on the next tick.
+        """
+        nonlocal consecutive_failures
+        try:
+            _flush_buffer(conn, pipeline, key, buf, stats)
+            consecutive_failures = 0
+            return True
+        except Exception as exc:
+            consecutive_failures += 1
+            if consecutive_failures >= MAX_CONSECUTIVE_FLUSH_FAILURES:
+                raise  # DB likely down — abort; jobs stay 'running' → swept to pending
+            _log.warning(
+                "Load failed for job %s after retry — isolating "
+                "(consecutive_failures=%d/%d): %s",
+                key, consecutive_failures, MAX_CONSECUTIVE_FLUSH_FAILURES, exc,
+            )
+            buf.rows.clear()
+            dead_jobs.add(key)
+            _finalize_job(
+                conn,
+                Terminal(key, "pending", retryable=True, error=f"load_failure: {exc!r}"),
+                stats,
+            )
+            return False
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for job in jobs:
@@ -829,17 +900,26 @@ def _process_batch(
                 continue
 
             if isinstance(item, Chunk):
+                if item.job_key in dead_jobs:
+                    continue
                 buf = buffers.setdefault(item.job_key, _Buffer())
                 buf.rows.extend(item.rows)
                 buf.offset = item.offset_after
                 if len(buf.rows) >= LOAD_BATCH:
-                    _flush_buffer(conn, pipeline, item.job_key, buf, stats)
+                    if not _safe_flush(item.job_key, buf):
+                        pending -= 1
                 continue
 
             # Terminal — flush any tail rows for this job, then close it out.
+            if item.job_key in dead_jobs:
+                buffers.pop(item.job_key, None)
+                pending -= 1
+                continue
             tail = buffers.pop(item.job_key, None)
             if tail is not None:
-                _flush_buffer(conn, pipeline, item.job_key, tail, stats)
+                if not _safe_flush(item.job_key, tail):
+                    pending -= 1
+                    continue
             _finalize_job(conn, item, stats)
             pending -= 1
 
