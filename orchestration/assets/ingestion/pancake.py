@@ -143,6 +143,8 @@ def message_jobs_drain(context: AssetExecutionContext) -> dict:
         f"retried={result['retried']} dead={result['dead']} "
         f"rows_loaded={result['rows_loaded']} batches={result['batches']} "
         f"pages_blocked={result.get('pages_blocked', 0)} "
+        f"flush_failures={result.get('flush_failures', 0)} "
+        f"pending_pkgs_dropped={result.get('pending_packages_dropped', 0)} "
         f"pending_remaining={result['pending_remaining']}"
     )
     return result
