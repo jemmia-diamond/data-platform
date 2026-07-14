@@ -788,7 +788,7 @@ def drain_message_jobs(
     # is always safe. Without this, a single interrupted run poisons every
     # subsequent run: dlt tries to re-load the corrupt pending package and fails
     # with FileNotFoundError on load/normalized/<id>/new_jobs.
-    if pipeline.has_pending_data():
+    if pipeline.has_pending_data:
         log.warning(
             "Dropping pending dlt load packages in pipeline '%s' — a previous "
             "drain was likely interrupted mid-flight.",
@@ -910,10 +910,11 @@ def _process_batch(
                         pending -= 1
                 continue
 
-            # Terminal — flush any tail rows for this job, then close it out.
+            # Terminal for a job already isolated by _safe_flush (mid-Chunk flush
+            # failure). pending was already decremented at the isolation point —
+            # do NOT decrement again, or the loop exits early and drops jobs.
             if item.job_key in dead_jobs:
                 buffers.pop(item.job_key, None)
-                pending -= 1
                 continue
             tail = buffers.pop(item.job_key, None)
             if tail is not None:
