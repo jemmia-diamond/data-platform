@@ -32,9 +32,8 @@ variant_calc AS (
             ELSE haravan_variants.price
         END                                                                 AS sale_price,
         nocodb_variants.ring_size,
-        -- storage_size_1 / storage_size_2 are not present in raw variant_serials.
-        -- variant_serials.storage_size_1,
-        -- variant_serials.storage_size_2,
+        variant_serials.storage_size_1,
+        variant_serials.storage_size_2,
         nocodb_variants.fineness,
         nocodb_variants.material_color,
         variant_serials.serial_number,
@@ -80,8 +79,8 @@ product_variants_agg AS (
             'salePrice', variant_calc.sale_price,
             'stockAt', variant_calc.primary_stock_at,
             'ringSize', variant_calc.ring_size,
-            -- 'storageSize1', variant_calc.storage_size_1,
-            -- 'storageSize2', variant_calc.storage_size_2,
+            'storageSize1', variant_calc.storage_size_1,
+            'storageSize2', variant_calc.storage_size_2,
             'fineness', variant_calc.fineness,
             'quantityAvailable', COALESCE(inventory_agg.total_qty, 0),
             'materialColor', variant_calc.material_color,
@@ -89,10 +88,9 @@ product_variants_agg AS (
             'discountType', variant_calc.discount_type,
             'discountValue', variant_calc.discount_value
         )) AS variants_json,
-        array_agg(variant_calc.ring_size) FILTER (WHERE variant_calc.ring_size IS NOT NULL) AS all_ring_sizes
-        -- all_storage_size_1 / all_storage_size_2 disabled: storage_size_1/2 not present in raw variant_serials.
-        -- , array_agg(variant_calc.storage_size_1) FILTER (WHERE variant_calc.storage_size_1 IS NOT NULL) AS all_storage_size_1
-        -- , array_agg(variant_calc.storage_size_2) FILTER (WHERE variant_calc.storage_size_2 IS NOT NULL) AS all_storage_size_2
+        array_agg(variant_calc.ring_size) FILTER (WHERE variant_calc.ring_size IS NOT NULL) AS all_ring_sizes,
+        array_agg(variant_calc.storage_size_1) FILTER (WHERE variant_calc.storage_size_1 IS NOT NULL) AS all_storage_size_1,
+        array_agg(variant_calc.storage_size_2) FILTER (WHERE variant_calc.storage_size_2 IS NOT NULL) AS all_storage_size_2
     FROM variant_calc
     LEFT JOIN inventory_agg
         ON inventory_agg.variant_id = variant_calc.variant_id
@@ -121,21 +119,23 @@ SELECT
     design_data.backup_code,
     design_data.design_code,
     design_data.diamond_holder,
-    -- design_data."4view" is not ingested (not in the NocoDB designs field list).
-    -- design_data."4view",
+    design_data.gender,
+    design_data.collection_name,
+    design_data.ring_band_type,
+    design_data.ring_band_style,
+    design_data.ring_head_style,
+    design_data._4view                                                      AS "4view",
     haravan_products.images                                                 AS p_images,
-    -- w_images / w_videos / render_images are not ingested
-    -- (design_design_images only exposes id, design_id, material_color, retouch, ...).
-    -- design_data.images AS w_images,
-    -- design_data.videos AS w_videos,
-    -- design_data.render_images,
+    design_data.images                                                      AS w_images,
+    design_data.videos                                                      AS w_videos,
+    design_data.render_images,
     COALESCE(product_variants_agg.variants_json, '[]'::jsonb)               AS variants,
     product_variants_agg.min_sale_price,
     product_variants_agg.total_product_qty,
-    product_variants_agg.all_ring_sizes
-    -- all_storage_size_1 / all_storage_size_2 disabled: storage_size_1/2 not present in raw variant_serials.
-    -- , product_variants_agg.all_storage_size_1
-    -- , product_variants_agg.all_storage_size_2
+    haravan_products.published_scope,
+    product_variants_agg.all_ring_sizes,
+    product_variants_agg.all_storage_size_1,
+    product_variants_agg.all_storage_size_2
 
 FROM {{ ref('stg_haravan__products') }} AS haravan_products
 JOIN product_variants_agg
@@ -143,20 +143,27 @@ JOIN product_variants_agg
 LEFT JOIN LATERAL (
     SELECT
         design_images.retouch,
-        -- design_images.images,
-        -- design_images.videos,
-        -- design_images.render_images,
-        -- designs."4view",
+        design_images.images,
+        design_images.videos,
+        design_images.render_images,
+        designs._4view,
         designs.design_code_legacy                                          AS code,
         designs.erp_code,
         designs.backup_code,
         designs.design_code,
-        designs.diamond_holder
+        designs.diamond_holder,
+        designs.gender,
+        designs.ring_band_type,
+        designs.ring_band_style,
+        designs.ring_head_style,
+        collections.collection_name
     FROM {{ ref('stg_nocodb__products') }} AS nocodb_products
     JOIN {{ ref('stg_nocodb__design_design_images') }} AS design_images
         ON design_images.design_id = nocodb_products.design_id
     JOIN {{ ref('stg_nocodb__designs') }} AS designs
         ON designs.design_id = nocodb_products.design_id
+    LEFT JOIN {{ ref('stg_nocodb__collections') }} AS collections
+        ON collections.collection_id = designs.collections_id
     WHERE nocodb_products.haravan_product_id = haravan_products.product_id
       AND design_images.retouch IS NOT NULL
       AND design_images.retouch <> '[]'

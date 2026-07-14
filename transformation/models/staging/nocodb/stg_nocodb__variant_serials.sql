@@ -39,6 +39,8 @@ SELECT
     ma_thiet_ke_cu,
     ma_erp,
     stock_at,
+    {{ safe_cast_numeric('storage_size_1') }} AS storage_size_1,
+    {{ safe_cast_numeric('storage_size_2') }} AS storage_size_2,
     {{ safe_cast_timestamp('database_created_at') }} AS created_at,
     {{ safe_cast_timestamp('database_updated_at') }} AS updated_at,
     _db_updated_at::timestamp,
