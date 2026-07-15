@@ -9,6 +9,14 @@ models:
         tests:
           - unique
           - not_null
+      - name: wedding_ring_id
+        description: "Parent wedding ring pair ID, if this design belongs to one."
+      - name: collections_id
+        description: "NocoDB collection ID this design belongs to."
+      - name: _4view
+        description: "360-degree view asset reference."
+      - name: collection_name
+        description: "Name of the collection this design belongs to (via collections_id)."
       - name: design_code
         description: "Current design code used in production."
       - name: design_status
@@ -40,6 +48,8 @@ models:
         description: "Product category on Haravan (e.g. Nhẫn Nữ, Bông Tai)."
       - name: vendor
         description: "Product vendor / brand."
+      - name: images
+        description: "Raw JSON array of product images from Haravan."
       - name: published_scope
         description: "Scope where the product is published."
       - name: published_at
@@ -171,6 +181,12 @@ models:
         description: "Final discount price (from NocoDB jewelry variant)."
       - name: diamond_id
         description: "NocoDB diamond ID if matched, null otherwise."
+      - name: diamond_barcode
+        description: "Diamond barcode (from NocoDB diamond)."
+      - name: diamond_price
+        description: "Diamond selling price (from NocoDB diamond)."
+      - name: diamond_image_urls
+        description: "Diamond image URLs (from NocoDB diamond)."
       - name: diamond_carat
         description: "Diamond carat weight (from NocoDB diamond)."
       - name: diamond_shape
@@ -263,3 +279,61 @@ models:
         description: "Normalized moissanite polish grade."
       - name: moissanite_symmetry_norm
         description: "Normalized moissanite symmetry grade."
+
+  - name: int_catalog__haravan_collections
+    description: "NocoDB-managed Haravan promotional collections, with their discount configuration."
+    columns:
+      - name: haravan_collection_id
+        description: "Primary key for the collection."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Collection display name."
+      - name: discount_type
+        description: "Discount type, e.g. percent or amount."
+      - name: discount_value
+        description: "Discount value to apply given discount_type."
+      - name: start_date
+        description: "Timestamp the discount becomes active."
+      - name: end_date
+        description: "Timestamp the discount expires."
+
+  - name: int_catalog__diamond_best_deal
+    description: "Best active promotional discount per diamond, and the full list of collections it belongs to."
+    columns:
+      - name: diamond_id
+        description: "NocoDB diamond ID."
+        tests:
+          - unique
+          - not_null
+      - name: collections
+        description: "JSON array of every collection this diamond belongs to."
+      - name: discount_type
+        description: "Discount type of the single best (highest discount_value) collection."
+      - name: discount_value
+        description: "Discount value of the single best collection."
+
+  - name: int_catalog__product_best_deal
+    description: "Best active promotional discount per product (highest discount_value across its linked collections)."
+    columns:
+      - name: product_id
+        description: "NocoDB product ID."
+        tests:
+          - unique
+          - not_null
+      - name: discount_type
+        description: "Discount type of the best collection."
+      - name: discount_value
+        description: "Discount value of the best collection."
+
+  - name: int_catalog__wedding_rings
+    description: "Valid wedding ring pairs — a wedding_ring_id qualifies only when it links both a male and a female 'Nhẫn Cưới' design that is published on Haravan."
+    columns:
+      - name: wedding_ring_id
+        description: "Primary key for the wedding ring pair."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Display title built from the design codes of its member designs."

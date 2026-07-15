@@ -4,7 +4,7 @@
 ) }}
 
 WITH customers AS (
-    SELECT * FROM {{ ref('stg_erpnext__customers') }}
+    SELECT * FROM {{ ref('int_crm__erpnext_customers') }}
 )
 
 SELECT

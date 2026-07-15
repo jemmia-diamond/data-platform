@@ -3,12 +3,12 @@
     schema='marts_salesaya'
 ) }}
 
-WITH contacts AS (
-    SELECT * FROM {{ ref('stg_erpnext__contacts') }}
+WITH contact_lead_links AS (
+    SELECT * FROM {{ ref('int_crm__contact_lead_links') }}
 ),
 
 leads AS (
-    SELECT * FROM {{ ref('stg_erpnext__leads') }}
+    SELECT * FROM {{ ref('int_crm__leads') }}
 ),
 
 users AS (
@@ -21,7 +21,7 @@ SELECT
         WHEN leads.qualification_status = 'Qualified' THEN true
         ELSE false
     END                                                                 AS qualified,
-    contacts.pancake_conversation_id,
+    contact_lead_links.pancake_conversation_id,
     leads.lead_owner                                                    AS pre_sales,
     leads.first_name                                                    AS name,
     leads.status                                                        AS lead_status,
@@ -30,10 +30,8 @@ SELECT
     users.pancake_id                                                    AS pre_sales_pancake_id,
     ''::text                                                            AS sales,
     ''::text                                                            AS sales_pancake_id
-FROM contacts
-CROSS JOIN LATERAL jsonb_to_recordset(contacts.dynamic_links)
-    AS contact_links(link_name text, link_doctype text)
+FROM contact_lead_links
 JOIN leads
-    ON contact_links.link_name = leads.lead_id
+    ON contact_lead_links.lead_id = leads.lead_id
 LEFT JOIN users
     ON users.email = leads.lead_owner

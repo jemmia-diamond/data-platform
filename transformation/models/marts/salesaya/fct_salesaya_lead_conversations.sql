@@ -4,18 +4,18 @@
 ) }}
 
 WITH contacts AS (
-    SELECT * FROM {{ ref('stg_erpnext__contacts') }}
+    SELECT * FROM {{ ref('int_crm__contact_conversations') }}
 )
 
 SELECT
-    (contacts.dynamic_links -> 0) ->> 'link_name'                       AS lead_id,
+    contacts.lead_id,
     contacts.pancake_page_id,
     contacts.pancake_conversation_id,
     contacts.source_name,
     COUNT(*)                                                            AS total_records
 FROM contacts
 GROUP BY
-    (contacts.dynamic_links -> 0) ->> 'link_name',
+    contacts.lead_id,
     contacts.pancake_page_id,
     contacts.pancake_conversation_id,
     contacts.source_name

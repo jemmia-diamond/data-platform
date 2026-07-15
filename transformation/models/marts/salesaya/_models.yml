@@ -179,3 +179,379 @@ models:
         description: "GIA report number of the sold temporary product."
         tests:
           - not_null
+
+  - name: dim_salesaya_haravan_products
+    description: "Raw Haravan products mirror, exposing only the columns used by Salesaya. Grain is one row per Haravan product."
+    columns:
+      - name: id
+        description: "Primary key (Haravan product ID)."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Product title."
+      - name: product_type
+        description: "Product type."
+      - name: images
+        description: "Raw JSON array of product images."
+      - name: published_scope
+        description: "Scope where the product is published."
+
+  - name: fct_salesaya_haravan_line_items
+    description: "Raw Haravan order line items mirror, exposing only the columns used by Salesaya. Grain is one row per order line item."
+    columns:
+      - name: id
+        description: "Primary key (Haravan line item ID)."
+        tests:
+          - unique
+          - not_null
+      - name: variant_id
+        description: "Haravan variant ID sold on this line."
+      - name: product_id
+        description: "Haravan product ID sold on this line."
+
+  - name: dim_salesaya_haravan_variants
+    description: "Raw Haravan product variants mirror, exposing only the columns used by Salesaya. Grain is one row per Haravan variant."
+    columns:
+      - name: id
+        description: "Primary key (Haravan variant ID)."
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Parent Haravan product ID."
+      - name: price
+        description: "Variant selling price."
+      - name: title
+        description: "Variant title."
+      - name: barcode
+        description: "Variant barcode."
+      - name: sku
+        description: "Variant SKU."
+
+  - name: fct_salesaya_haravan_warehouse_inventories
+    description: "Raw Haravan variant stock-by-location mirror, exposing only the columns used by Salesaya. Grain is one row per (variant, location)."
+    columns:
+      - name: variant_id
+        description: "Haravan variant ID."
+        tests:
+          - not_null
+      - name: qty_available
+        description: "Available quantity at this location."
+      - name: loc_id
+        description: "Haravan location/warehouse ID."
+        tests:
+          - not_null
+
+  - name: dim_salesaya_haravan_orders
+    description: "Raw Haravan orders mirror, exposing only the columns used by Salesaya. Grain is one row per Haravan order."
+    columns:
+      - name: id
+        description: "Primary key (Haravan order ID)."
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: "Haravan order name/number (e.g. ORDER1234)."
+
+  - name: dim_salesaya_erpnext_leads
+    description: "Raw ERPNext leads mirror, exposing only the columns used by Salesaya. Grain is one row per ERPNext lead."
+    columns:
+      - name: name
+        description: "Primary key (ERPNext lead document name)."
+        tests:
+          - unique
+          - not_null
+      - name: qualification_status
+        description: "Raw ERPNext qualification status string."
+      - name: lead_owner
+        description: "Lead owner (pre-sales) email."
+      - name: first_name
+        description: "Lead's first name."
+      - name: status
+        description: "Lead status."
+      - name: budget_lead
+        description: "Lead budget reference."
+      - name: proposed_budget
+        description: "Proposed budget for the lead."
+
+  - name: dim_salesaya_erpnext_contacts
+    description: "Raw ERPNext contacts mirror, exposing only the columns used by Salesaya. Grain is one row per ERPNext contact."
+    columns:
+      - name: name
+        description: "Primary key (ERPNext contact document name)."
+        tests:
+          - unique
+          - not_null
+      - name: pancake_conversation_id
+        description: "Pancake conversation ID."
+      - name: pancake_page_id
+        description: "Pancake page ID."
+      - name: links
+        description: "Raw dynamic_links JSON array linking this contact to other documents (e.g. Lead)."
+      - name: creation
+        description: "Timestamp the contact was created in ERPNext."
+      - name: phone_nos
+        description: "Raw JSON array of the contact's phone numbers."
+      - name: email_ids
+        description: "Raw JSON array of the contact's email addresses."
+      - name: first_name
+        description: "Contact's first name."
+      - name: last_name
+        description: "Contact's last name."
+      - name: source
+        description: "Marketing source of the contact."
+
+  - name: fct_salesaya_erpnext_sales_orders
+    description: "Raw ERPNext sales orders mirror, exposing only the columns used by Salesaya. Grain is one row per ERPNext sales order."
+    columns:
+      - name: id
+        description: "Primary key (ERPNext sales order document name)."
+        tests:
+          - unique
+          - not_null
+      - name: customer
+        description: "ERPNext customer document name."
+      - name: fulfillment_status
+        description: "Fulfillment status of the sales order."
+      - name: modified
+        description: "Timestamp the sales order was last modified."
+
+  - name: dim_salesaya_erpnext_users
+    description: "Raw ERPNext users mirror, exposing only the columns used by Salesaya. Grain is one row per ERPNext user."
+    columns:
+      - name: name
+        description: "Primary key (ERPNext user document name)."
+        tests:
+          - unique
+          - not_null
+      - name: email
+        description: "User email."
+      - name: pancake_id
+        description: "Linked Pancake user ID."
+
+  - name: dim_salesaya_workplace_designs
+    description: "Raw NocoDB designs mirror, exposing only the columns used by Salesaya. Grain is one row per design."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB design ID)."
+        tests:
+          - unique
+          - not_null
+      - name: design_code
+        description: "Current design code."
+      - name: code
+        description: "Legacy design code."
+      - name: erp_code
+        description: "ERP design code."
+      - name: backup_code
+        description: "Backup design code."
+      - name: gender
+        description: "Target gender of the design."
+      - name: design_type
+        description: "Type of jewelry design."
+      - name: wedding_ring_id
+        description: "Parent wedding ring pair ID, if any."
+      - name: collections_id
+        description: "NocoDB collection ID."
+      - name: ring_band_type
+        description: "Ring band type."
+      - name: ring_band_style
+        description: "Ring band style."
+      - name: ring_head_style
+        description: "Ring head style."
+      - name: diamond_holder
+        description: "Diamond holder type."
+      - name: "4view"
+        description: "360-degree view asset reference."
+
+  - name: dim_salesaya_workplace_design_images
+    description: "Raw NocoDB design_design_images mirror, exposing only the columns used by Salesaya. Grain is one row per design image record."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB design image ID)."
+        tests:
+          - unique
+          - not_null
+      - name: design_id
+        description: "Parent design ID."
+      - name: images
+        description: "Raw JSON array of images."
+      - name: videos
+        description: "Raw JSON array of videos."
+      - name: render_images
+        description: "Raw JSON array of render images."
+      - name: retouch
+        description: "Raw JSON array of retouched images."
+      - name: try_on_images
+        description: "Raw JSON array of try-on images."
+      - name: "4view"
+        description: "360-degree view asset reference."
+      - name: database_created_at
+        description: "Timestamp the record was created in NocoDB."
+      - name: database_updated_at
+        description: "Timestamp the record was last updated in NocoDB."
+      - name: material_color
+        description: "Material color shown in these images."
+
+  - name: dim_salesaya_workplace_diamonds
+    description: "Raw NocoDB diamonds mirror, exposing only the columns used by Salesaya. Grain is one row per diamond. Note: expected_arrival_date is omitted because the NocoDB diamonds table has no such field."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB diamond ID)."
+        tests:
+          - unique
+          - not_null
+      - name: variant_id
+        description: "Associated Haravan variant ID."
+      - name: image_urls
+        description: "Raw JSON array of diamond images."
+      - name: barcode
+        description: "Diamond barcode."
+      - name: product_id
+        description: "Associated Haravan product ID."
+      - name: edge_size_1
+        description: "Diamond edge size 1."
+      - name: edge_size_2
+        description: "Diamond edge size 2."
+      - name: color
+        description: "Diamond color grade."
+      - name: clarity
+        description: "Diamond clarity grade."
+      - name: fluorescence
+        description: "Diamond fluorescence intensity."
+      - name: shape
+        description: "Diamond shape."
+      - name: cut
+        description: "Diamond cut grade."
+      - name: carat
+        description: "Diamond carat weight."
+      - name: price
+        description: "Diamond selling price."
+      - name: is_incoming
+        description: "True if the diamond is incoming (not yet in stock)."
+      - name: report_no
+        description: "Diamond certificate number."
+
+  - name: dim_salesaya_workplace_products
+    description: "Raw NocoDB products mirror, exposing only the columns used by Salesaya. Grain is one row per NocoDB product."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB product ID)."
+        tests:
+          - unique
+          - not_null
+      - name: design_id
+        description: "Associated design ID."
+      - name: haravan_product_id
+        description: "Associated Haravan product ID."
+
+  - name: dim_salesaya_workplace_collections
+    description: "Raw NocoDB collections mirror, exposing only the columns used by Salesaya. Grain is one row per collection."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB collection ID)."
+        tests:
+          - unique
+          - not_null
+      - name: collection_name
+        description: "Collection display name."
+
+  - name: fct_salesaya_workplace_diamonds_haravan_collection
+    description: "Raw NocoDB diamond-to-collection bridge mirror. Grain is one row per (diamond, collection) link."
+    columns:
+      - name: diamond_id
+        description: "NocoDB diamond ID."
+        tests:
+          - not_null
+      - name: haravan_collection_id
+        description: "NocoDB haravan_collections ID."
+        tests:
+          - not_null
+
+  - name: fct_salesaya_workplace_products_haravan_collection
+    description: "Raw NocoDB product-to-collection bridge mirror. Grain is one row per (product, collection) link."
+    columns:
+      - name: products_id
+        description: "NocoDB product ID."
+        tests:
+          - not_null
+      - name: haravan_collections_id
+        description: "NocoDB haravan_collections ID."
+        tests:
+          - not_null
+
+  - name: dim_salesaya_workplace_temporary_products
+    description: "Raw NocoDB temporary_products mirror, exposing only the columns used by Salesaya. Grain is one row per temporary product."
+    columns:
+      - name: gia_report_no
+        description: "GIA report number of the temporary product."
+      - name: haravan_variant_id
+        description: "Matched Haravan variant ID, once the temporary product is sold."
+      - name: haravan_product_id
+        description: "Matched Haravan product ID, once the temporary product is sold."
+
+  - name: dim_salesaya_workplace_variants
+    description: "Raw NocoDB variants mirror, exposing only the columns used by Salesaya. Grain is one row per NocoDB variant."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB variant ID)."
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Parent NocoDB product ID."
+      - name: haravan_variant_id
+        description: "Associated Haravan variant ID."
+      - name: sku
+        description: "Variant SKU."
+      - name: ring_size
+        description: "Ring size."
+      - name: fineness
+        description: "Gold fineness."
+      - name: material_color
+        description: "Material color."
+      - name: final_discount_price
+        description: "Final discounted price for this variant."
+
+  - name: fct_salesaya_workplace_variant_serials
+    description: "Raw NocoDB variant_serials mirror, exposing only the columns used by Salesaya. Grain is one row per physical serial-tracked item."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB serial ID)."
+        tests:
+          - unique
+          - not_null
+      - name: variant_id
+        description: "Parent NocoDB variant ID."
+      - name: serial_number
+        description: "Serial number of the physical item."
+      - name: stock_at
+        description: "Current stock location name."
+      - name: storage_size_1
+        description: "Storage size 1."
+      - name: storage_size_2
+        description: "Storage size 2."
+      - name: order_reference
+        description: "Order reference, once sold."
+
+  - name: fct_salesaya_workplace_variant_serials_diamonds
+    description: "Raw NocoDB variant_serials-to-diamonds bridge mirror. Grain is one row per (serial, diamond) link."
+    columns:
+      - name: diamond_id
+        description: "NocoDB diamond ID."
+        tests:
+          - not_null
+      - name: variant_serials_id
+        description: "NocoDB variant_serials ID."
+        tests:
+          - not_null
+
+  - name: dim_salesaya_workplace_wedding_rings
+    description: "Raw NocoDB wedding_rings mirror (all rows, unfiltered) — distinct from dim_salesaya_wedding_rings, which only includes validated wedding-ring pairs. Grain is one row per wedding ring."
+    columns:
+      - name: id
+        description: "Primary key (NocoDB wedding_ring ID)."
+        tests:
+          - unique
+          - not_null

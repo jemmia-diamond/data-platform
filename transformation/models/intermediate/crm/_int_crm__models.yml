@@ -98,3 +98,41 @@ models:
       - name: product_type
         description: "Product type reference ID (e.g. CRM-LEAD-PRODUCT-0014)."
 
+  - name: int_crm__erpnext_customers
+    description: "Raw ERPNext customer record, passthrough of stg_erpnext__customers. Distinct from int_crm__customers (the unified Haravan+ERPNext marketing profile) — this preserves the full ERPNext system shape for consumers that need it verbatim."
+    columns:
+      - name: customer_id
+        description: "Primary key for the customer from ERPNext source."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_crm__contact_lead_links
+    description: "Fan-out of each contact's dynamic_links JSON array into one row per (contact, link) pair, for resolving which lead(s) a contact is linked to."
+    columns:
+      - name: contact_id
+        description: "ERPNext contact ID."
+        tests:
+          - not_null
+      - name: lead_id
+        description: "Linked document name from dynamic_links (only meaningful when link_doctype = 'Lead')."
+      - name: link_doctype
+        description: "Doctype of the linked document (e.g. Lead, Customer)."
+
+  - name: int_crm__contact_conversations
+    description: "Contact rows with the first dynamic_links entry extracted as lead_id, for conversation-level reporting."
+    columns:
+      - name: contact_id
+        description: "ERPNext contact ID."
+        tests:
+          - unique
+          - not_null
+      - name: lead_id
+        description: "Link name of the first dynamic_links entry (regardless of doctype)."
+      - name: pancake_page_id
+        description: "Pancake page ID this conversation belongs to."
+      - name: pancake_conversation_id
+        description: "Pancake conversation ID."
+      - name: source_name
+        description: "Marketing source name for this contact."
+

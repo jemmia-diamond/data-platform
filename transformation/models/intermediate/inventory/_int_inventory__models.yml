@@ -65,3 +65,37 @@ models:
         description: "Stock incoming (in-transit) to this location."
       - name: qty_available
         description: "Net available stock at this location."
+
+  - name: int_inventory__warehouses
+    description: "Haravan warehouse/location dimension, passthrough of stg_haravan__locations."
+    columns:
+      - name: location_id
+        description: "Primary key for the warehouse/location."
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: "Warehouse display name."
+      - name: location_type
+        description: "Type of location."
+      - name: is_primary
+        description: "Whether this is the primary warehouse."
+      - name: status
+        description: "Warehouse operational status."
+
+  - name: int_inventory__stock_by_variant
+    description: "Variant-level stock rollup across all warehouses — total quantity and per-location breakdowns, built on top of int_inventory__stock_by_location."
+    columns:
+      - name: variant_id
+        description: "Haravan variant ID."
+        tests:
+          - unique
+          - not_null
+      - name: total_qty_available
+        description: "Total available quantity for this variant across all warehouses."
+      - name: primary_location_id
+        description: "Highest location_id with stock for this variant, used as a deterministic 'primary' warehouse pick."
+      - name: stock_by_location_name
+        description: "JSON object mapping warehouse name to available quantity, for warehouses with qty_available > 0."
+      - name: warehouses
+        description: "JSON array of {id, name, qty_available} objects, for warehouses with qty_available > 0."

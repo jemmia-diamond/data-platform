@@ -11,6 +11,7 @@ SELECT
     -- Identity
     lead_id,
     lead_name,
+    first_name,
     gender,
     birth_date,
     
@@ -64,6 +65,7 @@ SELECT
     
     -- References
     budget_lead,
+    proposed_budget,
     purpose_lead,
     preferred_product_types,
     

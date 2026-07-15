@@ -39,7 +39,7 @@ SELECT
     -- Customer & Staff
     (customer->>'id')::bigint AS customer_id,
     user_id::bigint AS staff_user_id,
-    contact_email,
+    -- contact_email is disabled: the raw_haravan.orders table in this environment has no such column yet.
     email,
     note,
     tags,

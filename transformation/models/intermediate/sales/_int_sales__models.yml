@@ -55,3 +55,11 @@ models:
           - not_null
       - name: purpose_name
         description: "Purchase purpose display name (e.g. BT - Mua cho bản thân)."
+
+  - name: int_sales__haravan_sold_line_items
+    description: "Distinct (variant_id, product_id) pairs that have ever been sold via a Haravan order line — used for existence checks, not full order reporting (see int_sales__order_items for that)."
+    columns:
+      - name: variant_id
+        description: "Haravan variant ID."
+      - name: product_id
+        description: "Haravan product ID."

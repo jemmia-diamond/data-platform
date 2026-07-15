@@ -75,7 +75,7 @@ SELECT
     e.customer_id AS erp_customer_id,
     h.customer_id::text AS haravan_customer_id,
     COALESCE(e.customer_name, h.billing_name ) AS customer_name,
-    COALESCE(e.contact_email,h.contact_email ) AS customer_email,
+    COALESCE(e.contact_email, h.email) AS customer_email,
     COALESCE(e.phone, h.billing_phone) AS customer_phone,
     h.staff_user_id AS haravan_staff_user_id,
 

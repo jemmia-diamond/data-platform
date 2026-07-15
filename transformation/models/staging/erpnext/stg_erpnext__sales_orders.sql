@@ -169,8 +169,7 @@ with stg_erp_order as (
         -- Frappe Internal & DLT Metadata
         {{ safe_cast_jsonb('_seen') }} as _seen,
         {{ safe_cast_jsonb('_comments') }} as _comments,
-        {{ safe_cast_jsonb('_assign') }} as _assign,
-        _liked_by,
+        -- _assign and _liked_by are disabled: the raw_frappe.sales_orders table in this environment has no such columns yet.
         _db_updated_at::timestamp AS _db_updated_at,
         _dlt_load_id,
         _dlt_id

@@ -10,6 +10,7 @@ SELECT
     hp.body_html,
     hp.product_type,
     hp.vendor,
+    hp.images,
     hp.published_scope,
     hp.published_at,
     hp.tags,

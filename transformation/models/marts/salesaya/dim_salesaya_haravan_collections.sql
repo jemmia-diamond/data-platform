@@ -4,7 +4,7 @@
 ) }}
 
 WITH haravan_collections AS (
-    SELECT * FROM {{ ref('stg_nocodb__haravan_collections') }}
+    SELECT * FROM {{ ref('int_catalog__haravan_collections') }}
 )
 
 SELECT

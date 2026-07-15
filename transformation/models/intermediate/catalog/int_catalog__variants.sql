@@ -49,6 +49,9 @@ SELECT
     nv.final_discount_price,
 
     nd.diamond_id,
+    nd.barcode                                                              AS diamond_barcode,
+    nd.price                                                                AS diamond_price,
+    nd.image_urls                                                          AS diamond_image_urls,
     nd.carat                                                                AS diamond_carat,
     nd.shape                                                                AS diamond_shape,
     nd.color                                                                AS diamond_color,

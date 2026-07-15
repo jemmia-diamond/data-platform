@@ -3,15 +3,17 @@
     schema='marts_salesaya'
 ) }}
 
-WITH best_deal AS (
-    SELECT DISTINCT ON (product_collection_links.product_id)
-        product_collection_links.product_id,
-        haravan_collections.discount_type,
-        haravan_collections.discount_value
-    FROM {{ ref('stg_nocodb__products_haravan_collection') }} AS product_collection_links
-    JOIN {{ ref('stg_nocodb__haravan_collections') }} AS haravan_collections
-        ON haravan_collections.haravan_collection_id = product_collection_links.haravan_collection_id
-    ORDER BY product_collection_links.product_id, haravan_collections.discount_value DESC NULLS LAST
+WITH catalog_products AS (
+    SELECT * FROM {{ ref('int_catalog__products') }}
+    WHERE nocodb_product_id IS NOT NULL
+),
+
+designs AS (
+    SELECT * FROM {{ ref('int_catalog__designs') }}
+),
+
+best_deal AS (
+    SELECT * FROM {{ ref('int_catalog__product_best_deal') }}
 )
 
 SELECT DISTINCT ON (haravan_products.product_id)
@@ -30,28 +32,24 @@ SELECT DISTINCT ON (haravan_products.product_id)
     designs._4view                                                      AS "4view",
     designs.diamond_holder,
     designs.gender,
-    collections.collection_name,
+    designs.collection_name,
     designs.ring_band_type,
     designs.ring_band_style,
     designs.ring_head_style,
     haravan_products.published_scope,
     best_deal.discount_type,
     best_deal.discount_value,
-    nocodb_products.product_id                                          AS "wpId",
+    haravan_products.nocodb_product_id                                   AS "wpId",
     COALESCE(variant_data.total_qty, 0)                                 AS "totalQuantity",
     variant_data.variants_json                                          AS variants
 
-FROM {{ ref('stg_haravan__products') }} AS haravan_products
-JOIN {{ ref('stg_nocodb__products') }} AS nocodb_products
-    ON nocodb_products.haravan_product_id = haravan_products.product_id
+FROM catalog_products AS haravan_products
 LEFT JOIN {{ ref('stg_nocodb__design_design_images') }} AS design_images
-    ON design_images.design_id = nocodb_products.design_id
-LEFT JOIN {{ ref('stg_nocodb__designs') }} AS designs
-    ON designs.design_id = nocodb_products.design_id
-LEFT JOIN {{ ref('stg_nocodb__collections') }} AS collections
-    ON collections.collection_id = designs.collections_id
+    ON design_images.design_id = haravan_products.design_id
+LEFT JOIN designs
+    ON designs.design_id = haravan_products.design_id
 LEFT JOIN best_deal
-    ON best_deal.product_id = nocodb_products.product_id
+    ON best_deal.product_id = haravan_products.nocodb_product_id
 LEFT JOIN LATERAL (
     SELECT
         SUM(inventory_locations.qty_available) AS total_qty,
@@ -78,7 +76,7 @@ LEFT JOIN LATERAL (
             'serialNumbers', COALESCE(serials.list, '[]'::jsonb),
             'exist_in_line_items', EXISTS (
                 SELECT 1
-                FROM {{ ref('stg_haravan__order_lines') }} AS order_lines
+                FROM {{ ref('int_sales__haravan_sold_line_items') }} AS order_lines
                 WHERE order_lines.variant_id = haravan_variants.variant_id
                   AND order_lines.product_id = haravan_products.product_id
             )
@@ -89,7 +87,7 @@ LEFT JOIN LATERAL (
     LEFT JOIN {{ ref('stg_haravan__locations') }} AS locations
         ON locations.location_id = inventory_locations.location_id
     LEFT JOIN {{ ref('stg_nocodb__variants') }} AS nocodb_variants
-        ON nocodb_variants.product_id = nocodb_products.product_id
+        ON nocodb_variants.product_id = haravan_products.nocodb_product_id
        AND nocodb_variants.sku = haravan_variants.sku::text
     LEFT JOIN LATERAL (
         SELECT

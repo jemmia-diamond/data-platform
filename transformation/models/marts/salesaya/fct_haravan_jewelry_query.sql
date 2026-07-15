@@ -5,15 +5,11 @@
 
 WITH inventory_agg AS (
     SELECT
-        inventory_locations.variant_id,
-        jsonb_object_agg(locations.name, inventory_locations.qty_available)
-            FILTER (WHERE inventory_locations.qty_available > 0)             AS stock_locations,
-        SUM(inventory_locations.qty_available)                              AS total_qty,
-        MAX(inventory_locations.location_id)                                AS primary_loc_id
-    FROM {{ ref('stg_haravan__inventory_locations') }} AS inventory_locations
-    JOIN {{ ref('stg_haravan__locations') }} AS locations
-        ON locations.location_id = inventory_locations.location_id
-    GROUP BY inventory_locations.variant_id
+        variant_id,
+        stock_by_location_name                                              AS stock_locations,
+        total_qty_available                                                 AS total_qty,
+        primary_location_id                                                 AS primary_loc_id
+    FROM {{ ref('int_inventory__stock_by_variant') }}
 ),
 
 variant_calc AS (
@@ -44,7 +40,7 @@ variant_calc AS (
     FROM {{ ref('stg_haravan__product_variants') }} AS haravan_variants
     LEFT JOIN inventory_agg
         ON inventory_agg.variant_id = haravan_variants.variant_id
-    LEFT JOIN {{ ref('stg_haravan__locations') }} AS primary_location
+    LEFT JOIN {{ ref('int_inventory__warehouses') }} AS primary_location
         ON primary_location.location_id = inventory_agg.primary_loc_id
     LEFT JOIN {{ ref('stg_nocodb__variants') }} AS nocodb_variants
         ON nocodb_variants.haravan_variant_id = haravan_variants.variant_id
@@ -54,7 +50,7 @@ variant_calc AS (
         ON nocodb_products.product_id = nocodb_variants.product_id
     LEFT JOIN {{ ref('stg_nocodb__products_haravan_collection') }} AS product_collection_links
         ON product_collection_links.product_id = nocodb_products.product_id
-    LEFT JOIN {{ ref('stg_nocodb__haravan_collections') }} AS haravan_collections
+    LEFT JOIN {{ ref('int_catalog__haravan_collections') }} AS haravan_collections
         ON haravan_collections.haravan_collection_id = product_collection_links.haravan_collection_id
     ORDER BY
         haravan_variants.variant_id,
@@ -156,15 +152,13 @@ LEFT JOIN LATERAL (
         designs.ring_band_type,
         designs.ring_band_style,
         designs.ring_head_style,
-        collections.collection_name
-    FROM {{ ref('stg_nocodb__products') }} AS nocodb_products
+        designs.collection_name
+    FROM {{ ref('int_catalog__products') }} AS catalog_products
     JOIN {{ ref('stg_nocodb__design_design_images') }} AS design_images
-        ON design_images.design_id = nocodb_products.design_id
-    JOIN {{ ref('stg_nocodb__designs') }} AS designs
-        ON designs.design_id = nocodb_products.design_id
-    LEFT JOIN {{ ref('stg_nocodb__collections') }} AS collections
-        ON collections.collection_id = designs.collections_id
-    WHERE nocodb_products.haravan_product_id = haravan_products.product_id
+        ON design_images.design_id = catalog_products.design_id
+    JOIN {{ ref('int_catalog__designs') }} AS designs
+        ON designs.design_id = catalog_products.design_id
+    WHERE catalog_products.product_id = haravan_products.product_id
       AND design_images.retouch IS NOT NULL
       AND design_images.retouch <> '[]'
     LIMIT 1

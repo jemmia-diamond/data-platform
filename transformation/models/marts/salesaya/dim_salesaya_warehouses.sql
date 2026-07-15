@@ -4,7 +4,7 @@
 ) }}
 
 WITH haravan_locations AS (
-    SELECT * FROM {{ ref('stg_haravan__locations') }}
+    SELECT * FROM {{ ref('int_inventory__warehouses') }}
 )
 
 SELECT
