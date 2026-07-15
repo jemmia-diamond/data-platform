@@ -5,46 +5,32 @@ import os
 from typing import Optional
 
 import dlt
-import requests
 
 from .resources import TABLE_SPECS, build_conversations, build_pages, build_table_resource
 
 DEFAULT_PANCAKE_BASE_URL = "https://pages.fm/api"
 DEFAULT_START_DATE = "2026-07-01T00:00:00+00:00"
 
-_PAT_CONFIG_PREFIX = "PANCAKE_PATS_CONFIG_"
-_PAT_ENV_PREFIX = "SOURCES__PANCAKE__PAGE_ACCESS_TOKENS__"
+PAT_CONFIG_PREFIX = "PANCAKE_PATS_CONFIG_"
 
 
-def load_page_access_tokens() -> dict:
-    """Resolve Pancake page access tokens: env vars first, Infisical fallback. """
-    tokens = {
-        key[len(_PAT_ENV_PREFIX):]: value
-        for key, value in os.environ.items()
-        if key.startswith(_PAT_ENV_PREFIX) and value
-    }
-    if tokens:
-        return tokens
-    return _load_page_access_tokens_from_infisical()
-
-
-def _load_page_access_tokens_from_infisical() -> dict:
-    response = requests.get(
-        f"{os.environ['INFISICAL_HOST']}/api/v3/secrets/raw",
-        headers={"Authorization": f"Bearer {os.environ['PUBLIC_INFISICAL_TOKEN']}"},
-        params={
-            "workspaceId": os.environ["INFISICAL_WORKSPACE_ID"],
-            "environment": os.environ.get("INFISICAL_ENVIRONMENT", "prod"),
-            "secretPath": os.environ.get("INFISICAL_SECRET_PATH", "/commons/public"),
-        },
-        timeout=30,
-    )
-    response.raise_for_status()
-
-    tokens: dict = {}
-    for secret in response.json()["secrets"]:
-        if secret["secretKey"].startswith(_PAT_CONFIG_PREFIX) and secret["secretValue"]:
-            tokens.update(json.loads(secret["secretValue"]))
+def load_page_access_tokens() -> dict[str, str]:
+    """Resolve Pancake page access tokens from environment variables."""
+    tokens: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if not key.startswith(PAT_CONFIG_PREFIX) or not value:
+            continue
+        try:
+            page_tokens = json.loads(value)
+        except json.JSONDecodeError as error:
+            raise RuntimeError(
+                f"Environment variable {key} is not valid JSON: {error}"
+            ) from error
+        tokens.update(page_tokens)
+    if not tokens:
+        raise RuntimeError(
+            "No Pancake page access tokens found."
+        )
     return tokens
 
 
@@ -57,9 +43,9 @@ def pancake_source(
 ):
     """Build the Pancake source across all Facebook pages.
 
-    ``page_access_tokens`` is resolved lazily from Infisical when not supplied,
-    so callers that only need the source for asset-key derivation can pass a
-    placeholder to keep import time off the network.
+    ``page_access_tokens`` is resolved lazily from environment variables when
+    not supplied, so callers that only need the source for asset-key
+    derivation can pass a placeholder to avoid requiring tokens at import time.
     """
     if page_access_tokens is None:
         page_access_tokens = load_page_access_tokens()
