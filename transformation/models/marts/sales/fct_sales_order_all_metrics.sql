@@ -30,7 +30,8 @@ sales as (
         o.order_number,
 		o.split_order_group,
 		o.customer_id,
-		sa.sales_person_key,
+		o.primary_sales_person_id,
+		sa.sales_person_key as sales_person_key_kpi,
 		oi.product_key,
 		oi.variant_id,
 		o.sales_channel,
@@ -46,14 +47,14 @@ sales as (
 		  	when total_price > 80*1000000 and total_price <= 120*1000000 then '4. 80-120'
 		  	when total_price > 120*1000000 then '5. >120'
 		end total_price_range,
-		-- allocated total_price do 1 order có nhiều product và nhiều salesperson
+		-- Allocate total_price because one order can have multiple products and multiple salespersons
 		count(*) over (partition by o.order_id) as total_order_id_cnt,
 		o.total_price / count(*) over (partition by o.order_id) as allocated_total_price_by_order_id,
-		-- allocated amount này là hoa hồng
+		-- allocated amount is commission
 		sa.allocated_amount,
-		-- chia allocated kpi như allocated total price vì bị dup như trên
+		-- Allocate the KPI amount similarly to total_price due to the duplication mentioned above
 		sa.allocated_amount / count(*) over (partition by o.order_id, sa.sales_person_key) as allocated_amount_by_order_id,
-		-- chia product quantity và total price theo order_id và product_id
+		-- Allocate product quantity and total price by order_id and product_id
 		oi.quantity as product_quantity,
 		oi.quantity / count(*) over (partition by o.order_id, oi.product_key) as allocated_product_quantity_by_order_id,
 		oi.line_gross_amount as product_total_price,
@@ -103,23 +104,30 @@ sales as (
 sales_kpi as (
 	select
 		kpi.date_actual,
-		kpi.sales_person_key as sales_person_key_kpi,
 		kpi.daily_target_amount,
--- 		- do gom chung các bảng fact vào nên sẽ bị fan out (dup)
--- 		- daily target amount / count row (partition by date_actual, sales_person_key_kpi, split_order_group)
+        -- Duplication (fan-out effect) occurs due to combining multiple fact tables
+		-- Formula: daily_target_amount / row_count (partitioned by date_actual and sales_person_key)
 		count(*) over (partition by kpi.date_actual, kpi.sales_person_key) as total_order_id_kpi_cnt,
 		kpi.daily_target_amount / count(*) over (partition by kpi.date_actual, kpi.sales_person_key) as allocated_daily_kpi_target_by_sales_person,
 		s.*,
-		-- salesperson
+		-- primary salesperson
+		primary_ds.region_name as primary_salesperson_region_name,
+		primary_ds.sales_position as primary_salesperson_position,
+		primary_ds.sales_person_name as primary_salesperson_name,
+		primary_ds.store_name as primary_salesperson_store,
+        trim(primary_ds.city_name) as primary_salesperson_city,
+		primary_ds.parent_sales_person as primary_sales_person_parent,
+		-- salesperson kpi
 		ds.region_name as salesperson_region_name,
 		ds.sales_position as salesperson_position,
 		ds.sales_person_name as salesperson_name,
 		ds.store_name as salesperson_store,
-        ds.city_name as salesperson_city,
+        trim(ds.city_name) as salesperson_city,
 		ds.parent_sales_person as sales_person_parent
 	from kpi kpi
-	left join sales s on kpi.date_actual = s.order_date and kpi.sales_person_key = s.sales_person_key
+	left join sales s on kpi.date_actual = s.order_date and kpi.sales_person_key = s.sales_person_key_kpi
 	left join {{ ref('dim_sales_persons')}} ds on ds.sales_person_id = kpi.sales_person_key
+	left join {{ ref('dim_sales_persons')}} primary_ds on primary_ds.sales_person_id = s.primary_sales_person_id
 )
 select *
 from sales_kpi
