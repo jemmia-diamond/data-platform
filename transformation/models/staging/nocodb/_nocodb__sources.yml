@@ -93,3 +93,13 @@ sources:
         meta:
           dagster:
             asset_key: ["nocodb", "haravan_collections"]
+
+      - name: diamonds_history
+        meta:
+          dagster:
+            asset_key: ["nocodb", "diamonds_history"]
+
+      - name: diamonds_history_diamonds
+        meta:
+          dagster:
+            asset_key: ["nocodb", "diamonds_history_diamonds"]
