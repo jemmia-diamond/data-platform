@@ -57,4 +57,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'jewelries') }}
+FROM {{ dedup_nocodb('jewelries', 'barcode') }}

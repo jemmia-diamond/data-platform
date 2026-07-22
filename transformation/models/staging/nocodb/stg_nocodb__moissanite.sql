@@ -37,4 +37,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'moissanite') }}
+FROM {{ dedup_nocodb('moissanite', 'barcode') }}

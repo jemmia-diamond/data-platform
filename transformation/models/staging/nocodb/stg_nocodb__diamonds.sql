@@ -43,4 +43,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'diamonds') }}
+FROM {{ dedup_nocodb('diamonds', 'barcode') }}

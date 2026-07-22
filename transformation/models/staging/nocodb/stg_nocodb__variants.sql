@@ -40,4 +40,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'variants') }}
+FROM {{ dedup_nocodb('variants', 'haravan_variant_id::text') }}
