@@ -140,6 +140,20 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         incremental_field="database_updated_at",
         fields="variants_id,haravan_collections_id,database_updated_at",
     ),
+    TableSpec(
+        resource_name="diamonds_history",
+        table_id="m7ri1f1fdhlvajy",
+        primary_key="Id",
+        incremental_field="database_updated_at",
+        fields="Id,date,database_updated_at,database_created_at,errors,error_level,note,attachment,stage,status,buyback_tradein_order,buyback_tradein_status,purchase_statement",
+    ),
+    TableSpec(
+        resource_name="diamonds_history_diamonds",
+        table_id="myx0mek0hxj9iir",
+        primary_key=["diamonds_id", "diamonds_history_id"],
+        incremental_field="database_updated_at",
+        fields="diamonds_id,diamonds_history_id,database_created_at,database_updated_at",
+    ),
     # === Marketing ===
     TableSpec(
         resource_name="products_haravan_collection",
