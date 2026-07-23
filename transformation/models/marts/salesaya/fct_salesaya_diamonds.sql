@@ -4,7 +4,9 @@
 ) }}
 
 -- Salesaya diamond feed — per-diamond attributes enriched with per-warehouse availability, Haravan
--- collection membership, best available deal, and flags indicating whether the diamond has been sold.
+-- collection membership, best available deal, GIA certificate enrichment (pdf url / encrypted
+-- report no), a combo flag (diamond paired with a jewelry serial) and a lifecycle history JSON,
+-- plus flags indicating whether the diamond has been sold.
 -- Grain: 1 row per diamond.
 WITH diamond_collections AS (
     SELECT
@@ -30,6 +32,12 @@ best_deal AS (
     WHERE entity_type = 'diamond' AND best_deal_rank = 1
 ),
 
+combo_diamonds AS (
+    -- Diamonds that are paired with a jewelry variant serial (in a combo).
+    SELECT DISTINCT diamond_id
+    FROM {{ ref('stg_nocodb__variant_serials_diamonds') }}
+),
+
 temp_sold AS (
     SELECT DISTINCT tp.gia_report_no
     FROM {{ ref('int_catalog__temporary_products') }} tp
@@ -52,6 +60,8 @@ SELECT
     d.shape,
     d.cut,
     d.carat,
+    gia.pdf_url                                                  AS gia_pdf_url,
+    gia.encrypted_report_no,
     d.is_incoming,
     d.base_price,
     CASE
@@ -69,6 +79,8 @@ SELECT
     d.image_urls,
     sv.warehouses,
     dc.collections,
+    dh.history,
+    (combo.diamond_id IS NOT NULL)                                AS is_in_combo,
     (sold.variant_id IS NOT NULL)                                 AS exist_in_line_items,
     (ts.gia_report_no IS NOT NULL)                                AS is_temp_product_and_exist_in_line_items
 
@@ -77,10 +89,16 @@ LEFT JOIN {{ ref('int_catalog__variants') }} v
     ON v.variant_id = d.variant_id
 LEFT JOIN {{ ref('int_inventory__stock_by_variant') }} sv
     ON sv.variant_id = d.variant_id
+LEFT JOIN {{ ref('stg_gia_edu__report_no_data') }} gia
+    ON gia.report_no = d.report_no::text
 LEFT JOIN diamond_collections dc
     ON dc.diamond_id = d.diamond_id
 LEFT JOIN best_deal bd
     ON bd.diamond_id = d.diamond_id
+LEFT JOIN {{ ref('int_catalog__diamond_history') }} dh
+    ON dh.diamond_id = d.diamond_id
+LEFT JOIN combo_diamonds combo
+    ON combo.diamond_id = d.diamond_id
 LEFT JOIN {{ ref('int_sales__sold_variants') }} sold
     ON sold.variant_id = d.variant_id
    AND sold.product_id = d.product_id
