@@ -3,48 +3,28 @@
     schema='marts_salesaya'
 ) }}
 
-WITH wedding_rings AS (
-    SELECT * FROM {{ ref('stg_nocodb__wedding_rings') }}
-),
-
-designs AS (
-    SELECT * FROM {{ ref('stg_nocodb__designs') }}
-),
-
-nocodb_products AS (
-    SELECT * FROM {{ ref('stg_nocodb__products') }}
-),
-
-haravan_products AS (
-    SELECT * FROM {{ ref('stg_haravan__products') }}
-),
-
-valid_wedding_rings AS (
-    SELECT wedding_rings.wedding_ring_id
-    FROM wedding_rings
-    JOIN designs
-        ON designs.wedding_ring_id = wedding_rings.wedding_ring_id
-    JOIN nocodb_products
-        ON nocodb_products.design_id = designs.design_id
-    JOIN haravan_products
-        ON haravan_products.product_id = nocodb_products.haravan_product_id
-    WHERE designs.gender IN ('Nam', 'Nữ')
-      AND designs.design_type = 'Nhẫn Cưới'
-    GROUP BY wedding_rings.wedding_ring_id
-    HAVING COUNT(DISTINCT designs.gender) = 2
+-- Salesaya wedding-ring feed — wedding rings that have a complete pair (both a male 'Nam' and female
+-- 'Nữ' 'Nhẫn Cưới' design mapped to a live Haravan product), with a generated display title.
+-- Wedding-ring identities are derived from int_catalog__designs (wedding_ring_id).
+-- Grain: 1 row per wedding ring.
+WITH valid_pairs AS (
+    SELECT
+        d.wedding_ring_id
+    FROM {{ ref('int_catalog__designs') }} d
+    JOIN {{ ref('int_catalog__products') }} p
+        ON p.design_id = d.design_id
+    WHERE d.wedding_ring_id IS NOT NULL
+      AND d.gender IN ('Nam', 'Nữ')
+      AND d.design_type = 'Nhẫn Cưới'
+    GROUP BY d.wedding_ring_id
+    HAVING COUNT(DISTINCT d.gender) = 2
 )
 
 SELECT
-    wedding_rings.wedding_ring_id                                        AS id,
-    CONCAT('Nhẫn Cưới ', STRING_AGG(DISTINCT designs.design_code, ' / ')) AS title
-FROM wedding_rings
-JOIN designs
-    ON designs.wedding_ring_id = wedding_rings.wedding_ring_id
-JOIN nocodb_products
-    ON nocodb_products.design_id = designs.design_id
-JOIN haravan_products
-    ON haravan_products.product_id = nocodb_products.haravan_product_id
-WHERE wedding_rings.wedding_ring_id IN (
-    SELECT wedding_ring_id FROM valid_wedding_rings
-)
-GROUP BY wedding_rings.wedding_ring_id
+    d.wedding_ring_id                                                AS id,
+    CONCAT('Nhẫn Cưới ', STRING_AGG(DISTINCT d.design_code, ' / '))  AS title
+FROM {{ ref('int_catalog__designs') }} d
+WHERE d.gender IN ('Nam', 'Nữ')
+  AND d.design_type = 'Nhẫn Cưới'
+  AND d.wedding_ring_id IN (SELECT wedding_ring_id FROM valid_pairs)
+GROUP BY d.wedding_ring_id

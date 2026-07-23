@@ -4,7 +4,8 @@
 ) }}
 
 -- Diamond source of truth — one row per loose diamond, sourced from NocoDB diamonds.
--- Carries diamond identity, physical attributes, list price, GIA report, imagery and own stock.
+-- Carries diamond identity, physical attributes, list price, GIA report and imagery.
+-- (Stock quantities are sourced from Haravan variants downstream, not here.)
 -- Grain: 1 row per diamond.
 SELECT
     diamond_id,
@@ -33,10 +34,6 @@ SELECT
     country_of_origin,
     is_have_invoice,
     published_scope,
-    qty_onhand,
-    qty_available,
-    qty_commited,
-    qty_incoming,
     created_at,
     updated_at,
     _db_updated_at

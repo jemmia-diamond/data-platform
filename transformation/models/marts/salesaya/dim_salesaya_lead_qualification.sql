@@ -3,37 +3,21 @@
     schema='marts_salesaya'
 ) }}
 
-WITH contacts AS (
-    SELECT * FROM {{ ref('stg_erpnext__contacts') }}
-),
-
-leads AS (
-    SELECT * FROM {{ ref('stg_erpnext__leads') }}
-),
-
-users AS (
-    SELECT * FROM {{ ref('stg_erpnext__users') }}
-)
-
+-- Salesaya lead-qualification feed — one row per lead with its qualification flag, status, budget,
+-- pre-sales owner and the owner's Pancake id, plus the contact's Pancake conversation.
+-- Grain: 1 row per (lead, contact) — a lead may surface across multiple conversations.
 SELECT
-    leads.lead_id                                                       AS id,
-    CASE
-        WHEN leads.qualification_status = 'Qualified' THEN true
-        ELSE false
-    END                                                                 AS qualified,
-    contacts.pancake_conversation_id,
-    leads.lead_owner                                                    AS pre_sales,
-    leads.first_name                                                    AS name,
-    leads.status                                                        AS lead_status,
-    leads.budget_lead,
-    leads.proposed_budget,
-    users.pancake_id                                                    AS pre_sales_pancake_id,
-    ''::text                                                            AS sales,
-    ''::text                                                            AS sales_pancake_id
-FROM contacts
-CROSS JOIN LATERAL jsonb_to_recordset(contacts.dynamic_links)
-    AS contact_links(link_name text, link_doctype text)
-JOIN leads
-    ON contact_links.link_name = leads.lead_id
-LEFT JOIN users
-    ON users.email = leads.lead_owner
+    l.lead_id                               AS id,
+    (l.qualification_status = 'Qualified')  AS qualified,
+    c.pancake_conversation_id,
+    l.lead_owner                            AS pre_sales,
+    l.first_name                            AS name,
+    l.status                                AS lead_status,
+    l.budget_lead,
+    l.proposed_budget,
+    l.owner_pancake_id                      AS pre_sales_pancake_id,
+    ''::text                                AS sales,
+    ''::text                                AS sales_pancake_id
+FROM {{ ref('int_crm__leads') }} l
+LEFT JOIN {{ ref('int_crm__contacts') }} c
+    ON c.primary_lead_id = l.lead_id

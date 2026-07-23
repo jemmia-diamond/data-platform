@@ -71,8 +71,8 @@ models:
       - name: haravan_id
         description: "Linked Haravan customer ID."
 
-  - name: fct_haravan_jewelry_query
-    description: "Salesaya jewelry feed (legacy jewelry_query) — Haravan products that have a design with a non-empty retouch, enriched with NocoDB design attributes (gender, collection, ring styles, 4view, workplace media) and a JSON array of variants (best active/scheduled collection deal per variant, price, primary stock location, ring size, material, serial number). Includes product-level aggregates (min sale price, total quantity, ring sizes). Grain is one row per Haravan product. Note: storage sizes are disabled because the NocoDB variant_serials table has no storage_size fields (they live on jewelries)."
+  - name: fct_salesaya_jewelry_retouch
+    description: "Salesaya jewelry feed driven by design imagery — Haravan products that have a design with a non-empty retouch, enriched with NocoDB design attributes (gender, collection, ring styles, 4view, workplace media) and a JSON array of variants (best active collection deal per variant, price, primary stock location, ring size, material, serial number). Includes product-level aggregates (min sale price, total quantity, ring sizes). Grain is one row per Haravan product."
     columns:
       - name: id
         description: "Primary key for the jewelry product (Haravan product ID)."

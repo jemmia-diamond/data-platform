@@ -36,32 +36,40 @@ with get_all_item_finance_sales_order as (
 		oi.line_gross_amount as product_total_price,
 		oi.serial_numbers,
 		oi.variant_title,
-		-- customer
-		dc.age_group as customer_age_group,
-		dc.gender as customer_gender,
-		dc.default_province as customer_default_province,
-		coalesce(dc.lead_source_name, 'Chưa xác định') as customer_lead_source,
-        dc.lead_name,
--- 		o.purchase_purposes,
-		-- product
-		dp.product_name,
-		dp.product_type,
-		dp.design_type,
-		dp.fineness,
-		dp.size_type,
-		dp.ring_size,
-		dp.material_color,
-		dp.diamond_carat,
-		dp.diamond_color,
-		dp.diamond_shape,
-		dp.diamond_clarity,
-		dp.diamond_cut,
-		dp.diamond_fluorescence,
-		dp.diamond_edge_size,
-		dp.diamond_edge_size_display,
-        left(diamond_edge_size_1::text, 3)
+		-- customer (from int_crm__customers)
+		CASE
+			WHEN c.birth_date IS NULL THEN '8. Chưa xác định'
+			WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int <= 20 THEN '1. <20'
+			WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int <= 25 THEN '2. 21-25'
+			WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int <= 30 THEN '3. 26-30'
+			WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int <= 40 THEN '4. 31-40'
+			WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int <= 50 THEN '5. 41-50'
+			WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.birth_date))::int <= 60 THEN '6. 51-60'
+			ELSE '7. 61+'
+		END as customer_age_group,
+		c.gender as customer_gender,
+		c.default_province as customer_default_province,
+		coalesce(c.lead_source_name, 'Chưa xác định') as customer_lead_source,
+        c.lead_name,
+		-- product (from int_catalog__variants)
+		v.variant_title as product_name,
+		v.product_type,
+		v.design_type,
+		v.fineness,
+		v.size_type,
+		v.ring_size,
+		v.material_color,
+		v.diamond_carat,
+		v.diamond_color,
+		v.diamond_shape,
+		v.diamond_clarity,
+		v.diamond_cut,
+		v.diamond_fluorescence,
+		v.diamond_edge_size,
+		v.diamond_edge_size_display,
+        left(v.diamond_edge_size_1::text, 3)
         || ' x ' ||
-        left(diamond_edge_size_2::text, 3) as diamond_edge_size_transformed,
+        left(v.diamond_edge_size_2::text, 3) as diamond_edge_size_transformed,
         o.consultation_date,
         o.order_promotion,
         oi.new_promotions as order_item_promotion,
@@ -70,15 +78,14 @@ with get_all_item_finance_sales_order as (
         o.confirmed_status,
         o.fulfillment_status,
         oi.status_info,
---         o.fina
         o.payment_status,
         o.closed_status,
         o.carrier_status
 	from {{ ref('int_finance__receivable_order')}} o
 	left join {{ ref('int_sales__order_items')}} oi on o.order_id = oi.unified_sales_order_id
-	left join {{ ref('dim_sales_customers')}} dc on o.customer_id = dc.customer_id
-	left join {{ ref('dim_sales_products')}} dp on dp.product_key = oi.variant_id and dp.variant_id = oi.variant_id
-	where dp.product_type != 'Quà Tặng' or dp.product_type is null
+	left join {{ ref('int_crm__customers')}} c on c.unified_customer_id = o.customer_id
+	left join {{ ref('int_catalog__variants')}} v on v.variant_id = oi.variant_id
+	where v.product_type != 'Quà Tặng' or v.product_type is null
 )
 select *
 from get_all_item_finance_sales_order

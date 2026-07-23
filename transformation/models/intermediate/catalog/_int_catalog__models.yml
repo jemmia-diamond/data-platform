@@ -263,3 +263,85 @@ models:
         description: "Normalized moissanite polish grade."
       - name: moissanite_symmetry_norm
         description: "Normalized moissanite symmetry grade."
+
+  - name: int_catalog__haravan_collections
+    description: "Haravan collection reference (discount collections) — source of truth for collection title, discount configuration and validity window."
+    columns:
+      - name: collection_id
+        description: "Primary key for the Haravan collection."
+        tests:
+          - unique
+          - not_null
+      - name: collection_name
+        description: "Collection display title."
+      - name: discount_type
+        description: "Discount type applied by the collection ('percent' or 'amount')."
+      - name: discount_value
+        description: "Discount value applied by the collection."
+      - name: start_date
+        description: "Start of the collection's validity window."
+      - name: end_date
+        description: "End of the collection's validity window."
+
+  - name: int_catalog__temporary_products
+    description: "Temporary product reference (GIA-tracked one-off products) — source of truth for identity, Haravan links and GIA report number."
+    columns:
+      - name: temp_product_id
+        description: "Primary key for the temporary product."
+        tests:
+          - unique
+          - not_null
+      - name: gia_report_no
+        description: "GIA certificate number, when available."
+
+  - name: int_catalog__collection_deals
+    description: "Collection membership + best active deal per entity (product or diamond). One row per (entity, collection) with a best_deal_rank; marts filter rank = 1."
+    columns:
+      - name: entity_type
+        description: "'product' or 'diamond'."
+        tests:
+          - not_null
+      - name: entity_id
+        description: "Product or diamond identifier."
+        tests:
+          - not_null
+      - name: collection_id
+        description: "Haravan collection identifier."
+        tests:
+          - not_null
+      - name: discount_type
+        description: "Discount type of the collection ('percent' or 'amount')."
+      - name: discount_value
+        description: "Discount value of the collection."
+      - name: is_active
+        description: "True when the collection's validity window contains now()."
+      - name: best_deal_rank
+        description: "Rank of this deal within the entity (1 = best). Active deals rank first, then by discount value descending."
+
+  - name: int_catalog__design_images
+    description: "Design media reference — media JSON arrays (retouch, images, videos, render, try-on) deduplicated to one row per design."
+    columns:
+      - name: design_id
+        description: "Primary key (design identifier)."
+        tests:
+          - unique
+          - not_null
+      - name: retouch
+        description: "Retouch image JSON array."
+
+  - name: int_catalog__diamonds
+    description: "Diamond source of truth — one row per loose diamond with identity, physical attributes, list price, GIA report, imagery and own stock."
+    columns:
+      - name: diamond_id
+        description: "Primary key for the diamond."
+        tests:
+          - unique
+          - not_null
+      - name: base_price
+        description: "List price of the diamond before any collection discount."
+      - name: report_no
+        description: "GIA certificate number."
+      - name: product_id
+        description: "Associated Haravan product ID."
+      - name: variant_id
+        description: "Associated Haravan variant ID."
