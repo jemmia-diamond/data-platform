@@ -345,3 +345,14 @@ models:
         description: "Associated Haravan product ID."
       - name: variant_id
         description: "Associated Haravan variant ID."
+
+  - name: int_catalog__diamond_history
+    description: "Diamond lifecycle history — one row per diamond with an ordered JSON array of its history events (date, stage, status, errors, note, attachment)."
+    columns:
+      - name: diamond_id
+        description: "Primary key for the diamond."
+        tests:
+          - unique
+          - not_null
+      - name: history
+        description: "JSON array of diamond history events, most recent first."
