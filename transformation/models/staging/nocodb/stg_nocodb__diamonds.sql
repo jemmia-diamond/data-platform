@@ -31,9 +31,6 @@ SELECT
     vendor,
     published_scope,
     image_urls,
-    {# 
-    {{ safe_cast_date('expected_arrival_date') }} AS expected_arrival_date,
-    #}
     {{ safe_cast_boolean('is_incoming') }} AS is_incoming,
     {{ safe_cast_boolean('is_have_invoice') }} AS is_have_invoice,
     country_of_origin,
@@ -43,4 +40,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'diamonds') }}
+FROM {{ dedup_nocodb('diamonds', 'barcode') }}

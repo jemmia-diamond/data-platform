@@ -46,4 +46,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'designs') }}
+FROM {{ dedup_nocodb('designs', 'design_code') }}

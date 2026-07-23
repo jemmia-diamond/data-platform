@@ -71,8 +71,8 @@ models:
       - name: haravan_id
         description: "Linked Haravan customer ID."
 
-  - name: fct_haravan_jewelry_query
-    description: "Salesaya jewelry feed (legacy jewelry_query) — Haravan products that have a design with a non-empty retouch, enriched with NocoDB design attributes (gender, collection, ring styles, 4view, workplace media) and a JSON array of variants (best active/scheduled collection deal per variant, price, primary stock location, ring size, material, serial number). Includes product-level aggregates (min sale price, total quantity, ring sizes). Grain is one row per Haravan product. Note: storage sizes are disabled because the NocoDB variant_serials table has no storage_size fields (they live on jewelries)."
+  - name: fct_salesaya_jewelry_retouch
+    description: "Salesaya jewelry feed driven by design imagery — Haravan products that have a design with a non-empty retouch, enriched with NocoDB design attributes (gender, collection, ring styles, 4view, workplace media) and a JSON array of variants (best active collection deal per variant, price, primary stock location, ring size, material, serial number). Includes product-level aggregates (min sale price, total quantity, ring sizes). Grain is one row per Haravan product."
     columns:
       - name: id
         description: "Primary key for the jewelry product (Haravan product ID)."
@@ -127,7 +127,7 @@ models:
           - not_null
 
   - name: fct_salesaya_diamonds
-    description: "Salesaya diamond feed — per-diamond attributes enriched with Haravan variant stock, per-warehouse availability, Haravan collection membership, best available deal, and flags indicating whether the diamond has ever been sold. Grain is one row per diamond. Note: gia_pdf_url and encrypted_report_no are disabled pending ingestion of the gia/supplychain sources; expected_arrival_date is unavailable because the NocoDB diamonds table has no such field."
+    description: "Salesaya diamond feed — per-diamond attributes enriched with Haravan variant stock, per-warehouse availability, Haravan collection membership, best available deal, GIA report metadata (report_no_data), lifecycle history, and flags indicating whether the diamond has been sold or is part of a jewelry combo. Grain is one row per diamond. Note: gia_pdf_url and encrypted_report_no resolve to NULL until the report_no_data raw source is ingested."
     columns:
       - name: id
         description: "Primary key for the diamond (NocoDB diamond ID)."
@@ -152,6 +152,22 @@ models:
         description: "True if the diamond's variant/product pair appears in any Haravan order line."
       - name: is_temp_product_and_exist_in_line_items
         description: "True if the diamond's report number matches a temporary product that has been sold on Haravan."
+      - name: gia_pdf_url
+        description: "GIA PDF report URL from the report_no_data source (NULL until that raw source is ingested)."
+      - name: encrypted_report_no
+        description: "Encrypted GIA report number from the report_no_data source (NULL until that raw source is ingested)."
+      - name: history
+        description: "JSON array of diamond lifecycle history events (stage, status, errors, note, attachment)."
+      - name: is_in_combo
+        description: "True if the diamond is linked to a jewelry variant via the variant_serials_diamonds combo bridge."
+
+  - name: fct_salesaya_pancake_from_fulfilled
+    description: "Salesaya pancake-from-fulfilled feed (legacy get_latest_pancake_id_from_fulfilled_orders) — resolves the most recent Pancake conversation/page for leads of customers with a sales order fulfilled in the last 15 minutes (at refresh time). Grain is one row per (pancake_conversation_id, pancake_page_id)."
+    columns:
+      - name: pancake_conversation_id
+        description: "Most recent Pancake conversation ID for the target lead."
+      - name: pancake_page_id
+        description: "Pancake page ID of the conversation."
 
   - name: dim_salesaya_haravan_collections
     description: "Salesaya collection feed (legacy salesaya_haravan_collections) — NocoDB haravan_collections passed through with title, discount configuration and validity window. Grain is one row per Haravan collection."

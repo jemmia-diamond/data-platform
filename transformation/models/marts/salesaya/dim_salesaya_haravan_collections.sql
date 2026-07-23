@@ -3,15 +3,13 @@
     schema='marts_salesaya'
 ) }}
 
-WITH haravan_collections AS (
-    SELECT * FROM {{ ref('stg_nocodb__haravan_collections') }}
-)
-
+-- Salesaya collection feed — Haravan collections (discount configuration + validity window).
+-- Grain: 1 row per Haravan collection.
 SELECT
-    haravan_collection_id                                               AS id,
-    title,
+    collection_id   AS id,
+    collection_name AS title,
     discount_type,
     discount_value,
     start_date,
     end_date
-FROM haravan_collections
+FROM {{ ref('int_catalog__haravan_collections') }}

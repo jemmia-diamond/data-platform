@@ -1,7 +1,16 @@
-{{ config(
-    materialized='view',
-    schema='staging'
-) }}
+{{
+    config(
+        materialized='view',
+        schema='staging'
+    )
+}}
 
-select *
-from {{ source('erpnext', 'buyback_exchange_items') }}
+SELECT *
+FROM {{ source('erpnext', 'buyback_exchange_items') }}
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM {{ source('erpnext', 'deleted_documents') }} dd
+    WHERE dd.deleted_doctype = 'Buyback Exchange'
+      AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = parent
+)

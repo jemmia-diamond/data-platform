@@ -15,7 +15,7 @@ SELECT
     birth_date,
     
     -- Contact
-    email,
+    leads.email,
     phone,
     
     -- Geography
@@ -68,6 +68,12 @@ SELECT
     preferred_product_types,
     
     -- Metadata
-    _db_updated_at
+    leads._db_updated_at,
+
+    -- Salesaya enrichment: lead identity, budget, and owner's Pancake id
+    leads.first_name,
+    proposed_budget,
+    u.pancake_id AS owner_pancake_id
 
 FROM leads
+LEFT JOIN {{ ref('stg_erpnext__users') }} u ON u.email = leads.lead_owner

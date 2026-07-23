@@ -38,4 +38,4 @@ SELECT
     _dlt_load_id,
     _dlt_id
 
-FROM {{ source('nocodb', 'products') }}
+FROM {{ dedup_nocodb('products', 'COALESCE(haravan_product_id::text, design_code)') }}

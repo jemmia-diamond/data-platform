@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: gia_edu
+    schema: raw_gia_edu
+    tables:
+      - name: report_no_data

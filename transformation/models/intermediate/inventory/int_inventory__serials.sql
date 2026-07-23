@@ -40,6 +40,10 @@ SELECT
     vs.address_invoice,
     vs.policy,
     vs.created_at,
-    vs.updated_at
+    vs.updated_at,
+
+    -- Salesaya enrichment: physical storage dimensions (from variant_serials)
+    vs.storage_size_1,
+    vs.storage_size_2
 
 FROM {{ ref('stg_nocodb__variant_serials') }} vs

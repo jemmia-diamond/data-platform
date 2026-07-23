@@ -27,7 +27,9 @@ SELECT
     np.price_min                                                        AS nocodb_price_min,
     np.price_max                                                        AS nocodb_price_max,
     np.estimated_gold_weight,
-    np.has_360
+    np.has_360,
+
+    hp.images
 
 FROM {{ ref('stg_haravan__products') }} hp
 LEFT JOIN {{ ref('stg_nocodb__products') }} np

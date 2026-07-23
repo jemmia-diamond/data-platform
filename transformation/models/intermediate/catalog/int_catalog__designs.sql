@@ -48,7 +48,15 @@ SELECT
     COALESCE(i.image_count, 0)      AS image_count,
     COALESCE(i.has_synced_image, 0) > 0  AS has_synced_image,
     d.created_at,
-    d.updated_at
+    d.updated_at,
+
+    -- Salesaya enrichment (source-of-truth mappings)
+    d._4view,
+    d.collections_id,
+    d.wedding_ring_id,
+    c.collection_id,
+    c.collection_name
 
 FROM {{ ref('stg_nocodb__designs') }} d
 LEFT JOIN design_images i ON i.design_id = d.design_id
+LEFT JOIN {{ ref('stg_nocodb__collections') }} c ON c.collection_id = d.collections_id

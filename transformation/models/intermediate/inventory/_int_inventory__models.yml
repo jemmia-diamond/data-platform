@@ -65,3 +65,39 @@ models:
         description: "Stock incoming (in-transit) to this location."
       - name: qty_available
         description: "Net available stock at this location."
+
+  - name: int_inventory__locations
+    description: "Haravan location dimension (warehouse reference) — source of truth for location/warehouse attributes."
+    columns:
+      - name: location_id
+        description: "Primary key for the Haravan location."
+        tests:
+          - unique
+          - not_null
+      - name: location_name
+        description: "Location/warehouse display name."
+      - name: location_type
+        description: "Location type (e.g. warehouse, store)."
+      - name: is_primary
+        description: "True if this is a primary location."
+      - name: status
+        description: "Operational status of the location."
+
+  - name: int_inventory__stock_by_variant
+    description: "Variant-level warehouse stock aggregate — source of truth for available stock per variant across all warehouses. Builds on int_inventory__stock_by_location."
+    columns:
+      - name: variant_id
+        description: "Primary key (Haravan variant)."
+        tests:
+          - unique
+          - not_null
+      - name: stock_locations
+        description: "JSONB map of location_name to qty_available (positive quantities only)."
+      - name: warehouses
+        description: "JSON array of {id, name, qty_available} with positive stock."
+      - name: total_qty
+        description: "Total available quantity across all warehouses."
+      - name: primary_location_id
+        description: "Location ID with the max stock for this variant."
+      - name: primary_location_name
+        description: "Name of the primary stock location."

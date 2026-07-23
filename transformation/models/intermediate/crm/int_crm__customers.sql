@@ -78,9 +78,45 @@ SELECT
     e.created_at AS erp_created_at,
     h.created_at AS haravan_created_at,
     e.updated_at AS erp_updated_at,
-    h.updated_at AS haravan_updated_at
+    h.updated_at AS haravan_updated_at,
+
+    -- Salesaya / ERPNext operational detail (ERPNext-origin; NULL for Haravan-only customers)
+    e.owner AS erp_owner,
+    e.modified_by AS erp_modified_by,
+    e.docstatus,
+    e.idx,
+    e.naming_series,
+    e.salutation,
+    e.customer_name AS erp_customer_name,
+    e.person_name,
+    e.customer_type,
+    e.is_internal_customer,
+    e.language,
+    e.customer_primary_address,
+    e.primary_address,
+    e.primary_contact,
+    e.mobile_number,
+    e.phone_number,
+    e.invoice_type,
+    e.vat_email,
+    e.vat_name,
+    e.vat_address,
+    e.personal_tax_id,
+    e.purchase_amount_last_12_months,
+    e.cumulative_revenue,
+    e.true_cumulative_revenue,
+    e.cashback,
+    e.pending_cashback,
+    e.withdraw_cashback,
+    e.referrals_revenue,
+    e.priority_bank_account,
+    e.default_commission_rate,
+    e.so_required,
+    e.dn_required,
+    e.is_frozen,
+    e.is_disabled
 
 FROM erpnext_customers e
-LEFT JOIN haravan_customers h 
+FULL OUTER JOIN haravan_customers h 
     ON e.haravan_id = h.customer_id::text
 LEFT JOIN {{ ref('stg_erpnext__lead_sources') }} ls ON e.first_source = ls.lead_source_id
