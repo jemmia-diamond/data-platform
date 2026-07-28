@@ -1,5 +1,5 @@
 {{ config(
-    materialized='view',
+    materialized='table',
     schema='intermediate',
     indexes=[{"columns": ["variant_id"]}, {"columns": ["product_id"]}]
 ) }}
