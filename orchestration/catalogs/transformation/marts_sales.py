@@ -40,6 +40,13 @@ SALES_MARTS_EXECUTION_UNITS = validate_execution_units(
             schedule_token="hourly_business_hours",
             schedule_description="Run sales marts hourly during business hours 08:00-19:00 ICT (01:00-12:00 UTC)",
             max_runtime_seconds=2700,
+            exclude_asset_paths=(
+                ("transformation", "intermediate", "sales", "int_sales__orders"),
+                ("transformation", "intermediate", "sales", "haravan", "int_haravan__order_ancestry"),
+                ("transformation", "intermediate", "catalog", "int_catalog__variants"),
+                ("transformation", "intermediate", "catalog", "int_catalog__products"),
+                ("transformation", "intermediate", "catalog", "int_catalog__designs"),
+            ),
         ),
     )
 )

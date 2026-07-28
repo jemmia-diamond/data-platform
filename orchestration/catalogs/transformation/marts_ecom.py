@@ -30,6 +30,11 @@ ECOM_MARTS_EXECUTION_UNITS = validate_execution_units(
             schedule_token="every_30_minutes",
             schedule_description="Run ecommerce marts every 30 minutes (matches legacy ecom MVIEW refresh cadence)",
             max_runtime_seconds=1200,
+            exclude_asset_paths=(
+                ("transformation", "intermediate", "catalog", "int_catalog__variants"),
+                ("transformation", "intermediate", "catalog", "int_catalog__products"),
+                ("transformation", "intermediate", "catalog", "int_catalog__designs"),
+            ),
         ),
     )
 )

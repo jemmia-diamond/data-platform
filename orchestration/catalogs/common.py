@@ -22,6 +22,7 @@ class ExecutionUnitSpec:
     schedule_token: str | None = None
     schedule_description: str | None = None
     max_runtime_seconds: int | None = None
+    exclude_asset_paths: tuple[AssetPath, ...] = ()
 
     @property
     def resolved_name_segments(self) -> tuple[str, ...]:
