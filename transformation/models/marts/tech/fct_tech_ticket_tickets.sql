@@ -1,5 +1,4 @@
 {{ config(
-    materialized='materialized_view',
     schema='marts_tech',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_iso_record_id ON {{ this }} (record_id)",

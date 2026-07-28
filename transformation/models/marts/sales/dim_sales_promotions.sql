@@ -1,5 +1,4 @@
 {{ config(
-    materialized='materialized_view',
     schema='marts_sales',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_dspromotion_id ON {{ this }} (promotion_id)"

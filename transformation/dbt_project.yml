@@ -46,21 +46,19 @@ models:
       +schema: intermediate
       +materialized: view
     marts:
+      +materialized: table
       sales:
         +schema: marts_sales
-        +materialized: materialized_view
       marketing:
         +schema: marts_marketing
-        +materialized: materialized_view
       finance:
         +schema: marts_finance
-        +materialized: materialized_view
       salesaya:
         +schema: marts_salesaya
-        +materialized: materialized_view
       ecom:
         +schema: marts_ecom
-        +materialized: materialized_view
       core:
         +schema: marts_core
-        +materialized: table
+      tech:
+        +schema: marts_tech
+
