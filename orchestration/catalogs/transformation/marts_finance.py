@@ -36,6 +36,13 @@ FINANCE_MARTS_EXECUTION_UNITS = validate_execution_units(
             schedule_token="hourly",
             schedule_description="Run finance marts every hour",
             max_runtime_seconds=2700,
+            exclude_asset_paths=(
+                ("transformation", "intermediate", "sales", "int_sales__orders"),
+                ("transformation", "intermediate", "sales", "haravan", "int_haravan__order_ancestry"),
+                ("transformation", "intermediate", "catalog", "int_catalog__variants"),
+                ("transformation", "intermediate", "catalog", "int_catalog__products"),
+                ("transformation", "intermediate", "catalog", "int_catalog__designs"),
+            ),
         ),
     )
 )

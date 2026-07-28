@@ -3,12 +3,19 @@ from dagster import AssetKey, AssetSelection, define_asset_job
 from ..catalogs.common import ExecutionUnitSpec
 
 
-def build_asset_selection(*asset_paths: tuple[str, ...]) -> AssetSelection:
-    return AssetSelection.keys(*[AssetKey(list(asset_path)) for asset_path in asset_paths]).upstream()
+def build_asset_selection(
+    asset_paths: tuple[tuple[str, ...], ...],
+    exclude_asset_paths: tuple[tuple[str, ...], ...] = (),
+) -> AssetSelection:
+    selection = AssetSelection.keys(*[AssetKey(list(asset_path)) for asset_path in asset_paths]).upstream()
+    if exclude_asset_paths:
+        exclude_selection = AssetSelection.keys(*[AssetKey(list(path)) for path in exclude_asset_paths])
+        selection = selection - exclude_selection
+    return selection
 
 
 def build_job_definition(spec: ExecutionUnitSpec):
-    selection = build_asset_selection(*spec.asset_paths)
+    selection = build_asset_selection(spec.asset_paths, spec.exclude_asset_paths)
     tags = spec.dagster_tags
 
     return define_asset_job(

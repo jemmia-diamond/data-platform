@@ -1,6 +1,7 @@
 {{ config(
-    materialized='view',
-    schema='intermediate'
+    materialized='table',
+    schema='intermediate',
+    indexes=[{"columns": ["product_id"]}, {"columns": ["design_id"]}]
 ) }}
 
 SELECT

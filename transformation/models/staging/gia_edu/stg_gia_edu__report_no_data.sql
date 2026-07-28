@@ -1,5 +1,4 @@
 {{ config(
-    materialized='view',
     schema='staging'
 ) }}
 

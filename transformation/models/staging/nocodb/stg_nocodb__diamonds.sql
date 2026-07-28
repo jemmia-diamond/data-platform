@@ -9,6 +9,7 @@ SELECT
     report_lab,
     report_no,
     price::numeric,
+    {{ safe_cast_numeric('final_discounted_price') }} AS final_discounted_price,
     cogs::numeric,
     product_group,
     shape,

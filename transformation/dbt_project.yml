@@ -25,6 +25,12 @@ on-run-start:
   - "{{ create_raw_indexes() }}"
   - "{{ set_statement_timeout() }}"
 
+# Project-level variables (can be overridden via --vars or environment).
+vars:
+  # E-commerce storefront defaults (marts_ecom). Override when deploying.
+  ecom_default_jewelry_discount: 16   # default % off compare_at_price for the no-collection branch
+  ecom_website_public_url: ""         # public website base URL (reserved for gia_url construction)
+
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
@@ -51,6 +57,9 @@ models:
         +materialized: materialized_view
       salesaya:
         +schema: marts_salesaya
+        +materialized: materialized_view
+      ecom:
+        +schema: marts_ecom
         +materialized: materialized_view
       core:
         +schema: marts_core

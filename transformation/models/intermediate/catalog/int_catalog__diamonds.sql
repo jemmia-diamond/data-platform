@@ -1,6 +1,7 @@
 {{ config(
     materialized='view',
-    schema='intermediate'
+    schema='intermediate',
+    indexes=[{"columns": ["diamond_id"]}, {"columns": ["product_id"]}, {"columns": ["variant_id"]}, {"columns": ["report_no"]}]
 ) }}
 
 -- Diamond source of truth — one row per loose diamond, sourced from NocoDB diamonds.
@@ -22,6 +23,7 @@ SELECT
     carat,
     is_incoming,
     price AS base_price,
+    final_discounted_price,
     report_no,
     report_lab,
     image_urls,

@@ -8,7 +8,21 @@
     ("raw_frappe", "leads", "modified"),
     ("raw_frappe", "leads", "name"),
     ("raw_frappe", "contacts", "modified"),
+
     ("raw_frappe", "contacts", "name"),
+    ("raw_gia_edu", "report_no_data", "report_no"),
+    ("raw_nocodb", "products_haravan_collection", "products_id"),
+    ("raw_nocodb", "products_haravan_collection", "haravan_collections_id"),
+    ("raw_nocodb", "diamonds_haravan_collection", "diamond_id"),
+    ("raw_nocodb", "diamonds_haravan_collection", "haravan_collection_id"),
+    ("raw_nocodb", "variant_serials", "variant_id"),
+    ("raw_nocodb", "variant_serials_diamonds", "variant_serials_id"),
+    ("raw_nocodb", "design_design_images", "design_id"),
+    ("raw_nocodb", "diamonds", "report_no"),
+    ("raw_nocodb", "diamonds", "product_id"),
+    ("raw_nocodb", "diamonds", "variant_id"),
+    ("raw_haravan", "inventory_locations", "variant_id"),
+    ("raw_haravan", "inventory_locations", "product_id"),
 ] %}
 
 {% for schema, table, columns in indexes %}
