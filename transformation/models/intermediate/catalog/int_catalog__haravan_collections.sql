@@ -12,6 +12,7 @@ SELECT
     title AS collection_name,
     products_count,
     haravan_id,
+    handle,
     auto_create,
     is_excluded,
     is_exclusive,

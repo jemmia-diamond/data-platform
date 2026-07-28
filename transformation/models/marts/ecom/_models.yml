@@ -1,0 +1,96 @@
+version: 2
+
+models:
+  - name: fct_ecom_jewelry_products
+    description: "Ecom jewelry products feed (replaces ecom.materialized_products). One row per Haravan jewelry product (not 'Nhẫn Cưới', with a design). Aggregates price/quantity over eligible non-combo variants. NOTE: `pages` filter field omitted (no raw source); `primary_collection_handle` is NULL."
+    columns:
+      - name: haravan_product_id
+        description: "Haravan product ID."
+        tests:
+          - unique
+          - not_null
+      - name: design_id
+        description: "NocoDB design ID."
+      - name: min_price
+        description: "Minimum final display price across eligible variants."
+      - name: max_price
+        description: "Maximum final display price across eligible variants."
+      - name: max_price_18
+        description: "Maximum final price among 18K-fineness variants (fineness-priority sort)."
+      - name: max_price_14
+        description: "Maximum final price among 14K-fineness variants (fineness-priority sort)."
+      - name: qty_onhand
+        description: "Total on-hand quantity across eligible variants."
+      - name: sold_quantity
+        description: "Total sold quantity (uncancelled orders, earring types halved) + pre-2025 baseline."
+
+  - name: fct_ecom_jewelry_variants
+    description: "Ecom jewelry variants feed (replaces ecom.materialized_variants). One row per Haravan variant of a jewelry product, excluding diamond-combo variants."
+    columns:
+      - name: haravan_variant_id
+        description: "Haravan variant ID."
+        tests:
+          - unique
+          - not_null
+      - name: haravan_product_id
+        description: "Haravan product ID."
+        tests:
+          - not_null
+      - name: final_discount_price
+        description: "Final display price after the 3-branch logic."
+      - name: discount_branch
+        description: "Which branch produced the price (active_collection | direct_discount | default_discount)."
+
+  - name: fct_ecom_wedding_rings
+    description: "Ecom wedding rings feed (replaces ecom.materialized_wedding_rings). One row per wedding ring. fineness and material_colors are text arrays."
+    columns:
+      - name: id
+        description: "Wedding ring ID (NocoDB designs.wedding_ring_id)."
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Generated display title: 'Nhẫn Cưới ' + distinct design codes joined by ' / '."
+        tests:
+          - not_null
+      - name: fineness
+        description: "Distinct fineness values across the wedding ring's variants (text array)."
+      - name: material_colors
+        description: "Distinct material colors across the wedding ring's variants (text array)."
+
+  - name: fct_ecom_diamonds_catalog
+    description: "Ecom diamonds catalog (replaces legacy worker diamond list/detail/gia-report raw queries). One row per published, single-variant, in-stock (5 retail warehouses) loose diamond not in an excluded collection. Carries discount price and GIA report metadata."
+    columns:
+      - name: id
+        description: "NocoDB diamond ID."
+        tests:
+          - unique
+          - not_null
+      - name: variant_id
+        description: "Haravan variant ID."
+      - name: report_no
+        description: "GIA report number."
+      - name: price
+        description: "Price after the best collection discount."
+      - name: compare_at_price
+        description: "List price before discount."
+      - name: gia_url
+        description: "GIA report image URL built from simple_encrypted_report_no."
+
+  - name: dim_ecom_warehouse_stock
+    description: "Ecom warehouse stock for the availability API (GET products/:id/availability). One row per (variant, location) with available stock, keyed by product_id. VIEW — stays fresh with the raw inventory sync."
+    columns:
+      - name: product_id
+        description: "Haravan product ID (API filter key)."
+        tests:
+          - not_null
+      - name: variant_id
+        description: "Haravan variant ID."
+        tests:
+          - not_null
+      - name: store_id
+        description: "Haravan location ID."
+        tests:
+          - not_null
+      - name: available_quantity
+        description: "Available quantity at this location."

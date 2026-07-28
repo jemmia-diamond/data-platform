@@ -1,6 +1,7 @@
 {{ config(
     materialized='view',
-    schema='intermediate'
+    schema='intermediate',
+    indexes=[{"columns": ["design_id"]}]
 ) }}
 
 WITH design_images AS (

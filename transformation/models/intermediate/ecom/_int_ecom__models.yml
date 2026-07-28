@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: int_ecom__jewelry_variant_prices
+    description: "Ecom jewelry variant pricing — final sale price via the legacy worker 3-branch logic (active promo collection → direct discount → default 16% discount). Grain is one row per Haravan variant."
+    columns:
+      - name: variant_id
+        description: "Haravan variant ID."
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Haravan product ID."
+        tests:
+          - not_null
+      - name: final_price
+        description: "Final display price after the 3-branch logic."
+      - name: discount_branch
+        description: "Which branch produced final_price (active_collection | direct_discount | default_discount)."
+
+  - name: int_ecom__serial_diamond_variants
+    description: "Haravan variants that are part of a jewelry+diamond combo (a serial linked to a diamond). Excluded from the ecom jewelry variant feed."
+    columns:
+      - name: haravan_variant_id
+        description: "Haravan variant ID that is part of a diamond combo."
+        tests:
+          - unique
+          - not_null
+
+  - name: int_ecom__sold_metrics
+    description: "Total sold quantity per Haravan product (uncancelled orders, earring types halved) plus the pre-2025 baseline. Grain is one row per Haravan product."
+    columns:
+      - name: product_id
+        description: "Haravan product ID."
+        tests:
+          - unique
+          - not_null
+      - name: sold_quantity
+        description: "Total sold quantity (post-2025 + sold_before_2025)."
+
+  - name: int_ecom__design_images_cdn
+    description: "Per (design, material_color) array of CDN-rewritten image URLs extracted from NocoDB design_images.retouch."
+    columns:
+      - name: design_id
+        description: "NocoDB design ID."
+        tests:
+          - not_null
+      - name: material_color
+        description: "Material color the images belong to."
+      - name: images
+        description: "Array of CDN image URLs."
