@@ -115,7 +115,9 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             tool="dlt",
             system="frappe_erpnext",
             unit="payments_banking_buybacks_batch",
-            asset_paths=_asset_paths("payment_entries", "bank_transactions", "buyback_exchanges"),
+            asset_paths=_asset_paths(
+                "payment_entries", "bank_transactions", "buyback_exchanges", "buyback_exchange_items"
+            ),
             description="Refresh ERPNext payment entries, bank transactions, and buyback exchanges",
             cadence="20m",
             name_segments=FRAPPE_ERPNEXT_NAME_SEGMENTS,
