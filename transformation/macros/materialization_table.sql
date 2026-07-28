@@ -25,8 +25,19 @@
   -- `BEGIN` happens here:
   {{ run_hooks(pre_hooks, inside_transaction=True) }}
 
-  {%- if existing_relation is none -%}
-    -- First time: create new table
+  {%- if existing_relation is none or existing_relation.type != 'table' or should_full_refresh() -%}
+    -- Relation doesn't exist yet, OR it's currently a View/MatView (migration), OR --full-refresh:
+    {%- if existing_relation is not none -%}
+      {% call statement('drop_existing') -%}
+        {%- if existing_relation.type == 'view' -%}
+          drop view if exists {{ target_relation }} cascade;
+        {%- elif existing_relation.type == 'materialized_view' -%}
+          drop materialized view if exists {{ target_relation }} cascade;
+        {%- else -%}
+          drop table if exists {{ target_relation }} cascade;
+        {%- endif -%}
+      {%- endcall %}
+    {%- endif -%}
     {% call statement('main') -%}
       {{ get_create_table_as_sql(False, target_relation, sql) }}
     {%- endcall %}
@@ -44,7 +55,15 @@
     {%- if schema_changes['schema_changed'] -%}
       {%- set add_columns = schema_changes['source_not_in_target'] -%}
       {%- if add_columns | length > 0 -%}
-        {%- do alter_relation_add_remove_columns(target_relation, add_columns, none) -%}
+        {%- for col in add_columns -%}
+          {%- set dtype = col.data_type -%}
+          {%- if dtype | upper == 'ARRAY' -%}
+            {%- set dtype = 'text[]' -%}
+          {%- endif -%}
+          {% call statement('add_col_' ~ loop.index) -%}
+            alter table {{ target_relation }} add column {{ col.quoted }} {{ dtype }}
+          {%- endcall %}
+        {%- endfor -%}
         {% set add_msg %}
           [table] Added {{ add_columns | length }} column(s) to {{ target_relation }}:
           {% for col in add_columns %}  - {{ col.name }} ({{ col.data_type }})
