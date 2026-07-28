@@ -1,5 +1,6 @@
 {{ config(
-    materialized='view',
+    materialized='table',
+    indexes=[{'columns': ['report_no']}],
     schema='staging'
 ) }}
 
