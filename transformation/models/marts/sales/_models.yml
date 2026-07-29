@@ -278,7 +278,6 @@ models:
       Materialized as a materialized view in the marts_sales schema.
       Performs a full join between lead entries and qualified leads, then left joins with sales orders.
     config:
-      materialized: materialized_view
       schema: marts_sales
 
     columns:

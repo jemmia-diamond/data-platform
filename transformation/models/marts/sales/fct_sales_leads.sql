@@ -1,5 +1,4 @@
 {{ config(
-    materialized='materialized_view',
     schema='marts_sales',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_fsl_lead_entry_at ON {{ this }} USING brin (lead_entry_at)",

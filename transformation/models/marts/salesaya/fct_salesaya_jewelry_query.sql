@@ -1,5 +1,4 @@
 {{ config(
-    materialized='materialized_view',
     schema='marts_salesaya'
 ) }}
 

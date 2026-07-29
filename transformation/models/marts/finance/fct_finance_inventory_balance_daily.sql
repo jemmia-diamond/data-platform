@@ -1,5 +1,4 @@
 {{ config(
-    materialized='materialized_view',
     schema='marts_finance',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_fsa_report_date ON {{ this }} (report_date)"
