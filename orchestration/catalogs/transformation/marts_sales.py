@@ -36,9 +36,9 @@ SALES_MARTS_EXECUTION_UNITS = validate_execution_units(
             ),
             description="Refresh all sales marts",
             cadence="every_15_minutes",
-            cron_schedule="*/15 * * * *",
+            cron_schedule="9-59/15 * * * *",
             schedule_token="every_15_minutes",
-            schedule_description="Run sales marts every 15 minutes",
+            schedule_description="Run sales marts every 15 minutes (offset +9m, after leads/sales_orders/lead_products/haravan ingestion; runs before finance)",
             max_runtime_seconds=900,
             exclude_asset_paths=(
                 ("transformation", "intermediate", "sales", "int_sales__orders"),
