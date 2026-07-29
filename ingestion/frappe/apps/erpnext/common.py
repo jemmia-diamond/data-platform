@@ -73,6 +73,7 @@ RESOURCE_SPECS = (
     ResourceSpec("todos", "ToDo"),
     ResourceSpec("tags", "Tag"),
     ResourceSpec("notification_settings", "Notification Settings"),
+    ResourceSpec("note", "CRM Note"),
 
     # === Selling ===
     ResourceSpec("product_categories", "Product Category"),
