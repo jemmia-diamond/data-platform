@@ -21,5 +21,5 @@ select
     SUM(bal.ma_cuoi_ky_311) AS CDKT_ma_cuoi_ky_311,
     SUM(bal.ma_dau_ky_400) AS CDKT_ma_dau_ky_400,
     SUM(bal.ma_cuoi_ky_400) AS CDKT_ma_cuoi_ky_400
-from {{ ref('int_misa__balance_sheet_monthly_fact')}} bal
+from {{ ref('int_misa__balance_sheet_monthly')}} bal
 group by 1

@@ -29,4 +29,4 @@ select *,
     CASE WHEN item_code = '60' THEN prev_amount ELSE 0 END AS ma_dau_ky_60,
     CASE WHEN item_code = '60' THEN amount      ELSE 0 END AS ma_cuoi_ky_60
 
-from {{ ref('stg_misa__income_statement_monthly_fact')}}
+from {{ ref('stg_misa__income_statement_monthly')}}

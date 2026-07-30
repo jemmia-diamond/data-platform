@@ -23,5 +23,5 @@ select
     SUM(inco.ma_cuoi_ky_26) AS KQKD_ma_cuoi_ky_26,
     SUM(inco.ma_dau_ky_60) AS KQKD_ma_dau_ky_60,
     SUM(inco.ma_cuoi_ky_60) AS KQKD_ma_cuoi_ky_60
-from {{ ref('int_misa__income_statement_monthly_fact')}} inco
+from {{ ref('int_misa__income_statement_monthly')}} inco
 group by 1

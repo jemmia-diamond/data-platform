@@ -8,15 +8,71 @@ sources:
         meta:
           dagster:
             asset_key: ["misa", "balance_sheet_monthly_fact"]
+      - name: balance_sheet_quarterly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "balance_sheet_quarterly_fact"]
+      - name: balance_sheet_yearly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "balance_sheet_yearly_fact"]
       - name: income_statement_monthly_fact
         meta:
           dagster:
-            asset_key: [ "misa", "income_statement_monthly_fact" ]
+            asset_key: ["misa", "income_statement_monthly_fact"]
+      - name: income_statement_quarterly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "income_statement_quarterly_fact"]
+      - name: income_statement_yearly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "income_statement_yearly_fact"]
       - name: cash_flow_monthly_fact
         meta:
           dagster:
-            asset_key: [ "misa", "cash_flow_monthly_fact" ]
+            asset_key: ["misa", "cash_flow_monthly_fact"]
+      - name: cash_flow_quarterly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "cash_flow_quarterly_fact"]
+      - name: cash_flow_yearly_fact
+        meta:
+          dagster:
+            asset_key: ["misa", "cash_flow_yearly_fact"]
       - name: journal_entries
         meta:
           dagster:
-            asset_key: [ "misa", "journal_entries" ]
+            asset_key: ["misa", "journal_entries"]
+      - name: accounts_payable_details
+        meta:
+          dagster:
+            asset_key: ["misa", "accounts_payable_details"]
+      - name: inventory_detail_log
+        meta:
+          dagster:
+            asset_key: ["misa", "inventory_detail_log"]
+      - name: purchase_vouchers
+        meta:
+          dagster:
+            asset_key: ["misa", "purchase_vouchers"]
+      - name: purchase_voucher_details
+        meta:
+          dagster:
+            asset_key: ["misa", "purchase_voucher_details"]
+      - name: sales_detail_report
+        meta:
+          dagster:
+            asset_key: ["misa", "sales_detail_report"]
+      - name: loan_agreements
+        meta:
+          dagster:
+            asset_key: ["misa", "loan_agreements"]
+      - name: pending_loan_agreements
+        meta:
+          dagster:
+            asset_key: ["misa", "pending_loan_agreements"]
+      - name: budget_plan
+        meta:
+          dagster:
+            asset_key: ["misa", "budget_plan"]

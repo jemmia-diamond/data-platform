@@ -26,4 +26,4 @@ select *,
 
     CASE WHEN item_code = '400' THEN prev_amount ELSE 0 END AS ma_dau_ky_400,
     CASE WHEN item_code = '400' THEN amount      ELSE 0 END AS ma_cuoi_ky_400
-from {{ ref('stg_misa__balance_sheet_monthly_fact') }}
+from {{ ref('stg_misa__balance_sheet_monthly') }}
