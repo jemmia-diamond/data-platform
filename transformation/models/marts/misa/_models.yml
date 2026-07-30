@@ -41,7 +41,10 @@ models:
     description: 1:1 thin view of raw_misa.income_statement_yearly_fact. Báo cáo kết quả kinh doanh — năm.
 
   - name: journal_entries
-    description: 1:1 thin view of raw_misa.journal_entries. Bút toán kế toán (data_details giữ nguyên dạng jsonb).
+    description: >
+      1:1 thin view of raw_misa.journal_entries with the data_details
+      JSONB array unnested into flat columns (one row per array element).
+      Grain: 1 row = 1 bút toán chi tiết (journal detail line).
 
   - name: purchase_vouchers
     description: 1:1 thin view of raw_misa.purchase_vouchers. Phiếu nhập mua hàng — header.
