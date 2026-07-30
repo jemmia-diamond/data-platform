@@ -53,6 +53,8 @@ models:
         +schema: marts_marketing
       finance:
         +schema: marts_finance
+      misa:
+        +schema: marts_misa
       salesaya:
         +schema: marts_salesaya
       ecom:
