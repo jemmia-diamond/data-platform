@@ -22,7 +22,8 @@ SELECT
     province,
     region,
     country,
-    
+    store,
+
     -- Marketing & Source
     source,
     lead_source_name,
@@ -43,7 +44,13 @@ SELECT
     
     -- Temporal (Raw)
     first_reach_at AS lead_entry_at, -- Using first_reach_at as the primary entry point per user request
+    first_visited_at,
     qualified_on AS converted_at,
+
+    -- Messaging Activity
+    last_message_at,
+    last_customer_message_at,
+    last_sales_message_at,
     
     -- Business Metrics (Calculated)
     (qualification_status = 'Qualified') AS is_converted,

@@ -32,6 +32,7 @@ SELECT
     company,
     annual_revenue::numeric AS annual_revenue,
     no_of_employees,
+    store,
     
     -- Lead Tracking & Source
     source,
@@ -75,12 +76,18 @@ SELECT
     -- Timestamps
     lead_received_date::timestamp AS lead_received_date,
     first_reach_at::timestamp AS first_reach_at,
+    first_visited_at::timestamp AS first_visited_at,
     qualified_lead_date::timestamp AS qualified_lead_date,
     qualified_on::timestamp AS qualified_on,
     creation::timestamp AS created_at,
     modified::timestamp AS updated_at,
     owner,
     modified_by,
+
+    -- Messaging Activity
+    last_message_at::timestamp AS last_message_at,
+    last_customer_message_at::timestamp AS last_customer_message_at,
+    last_sales_message_at::timestamp AS last_sales_message_at,
     
     -- Frappe Internal & Metadata
     {{ safe_cast_jsonb('_user_tags') }} as _user_tags,
