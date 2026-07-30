@@ -9,5 +9,5 @@ select
     time_id,
     sum(cash.ma_dau_ky_20) as LCTT_ma_dau_ky_20,
     sum(cash.ma_cuoi_ky_20) as LCTT_ma_cuoi_ky_20
-from {{ ref('int_misa__cash_flow_monthly_fact')}} cash
+from {{ ref('int_misa__cash_flow_monthly')}} cash
 group by 1
