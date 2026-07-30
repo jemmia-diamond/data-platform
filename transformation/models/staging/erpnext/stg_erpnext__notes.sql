@@ -30,3 +30,10 @@ SELECT
     modified_by
 
 FROM {{ source('erpnext', 'note') }}
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM {{ source('erpnext', 'deleted_documents') }} dd
+    WHERE dd.deleted_doctype = 'CRM Note'
+      AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = name
+)
