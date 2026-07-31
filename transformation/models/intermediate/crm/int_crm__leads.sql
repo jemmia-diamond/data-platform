@@ -85,8 +85,4 @@ SELECT
 FROM leads
 LEFT JOIN {{ ref('stg_erpnext__users') }} u ON u.email = leads.lead_owner
 WHERE
-    leads.lead_owner IS NULL
-    OR leads.lead_owner NOT IN (
-        'an.nguyen@jemmia.vn', 'binh.le@jemmia.vn',
-        'lam.phan@jemmia.vn', 'nam.tran@jemmia.vn', 'tuong.le@jemmia.vn'
-    )
+    {{ exclude_dev_test_accounts('leads.lead_owner') }}
