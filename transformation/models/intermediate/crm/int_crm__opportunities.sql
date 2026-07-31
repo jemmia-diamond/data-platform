@@ -55,3 +55,9 @@ SELECT
     owner
 
 FROM {{ ref('stg_erpnext__opportunities') }}
+WHERE
+    opportunity_owner IS NULL
+    OR opportunity_owner NOT IN (
+        'an.nguyen@jemmia.vn', 'binh.le@jemmia.vn',
+        'lam.phan@jemmia.vn', 'nam.tran@jemmia.vn', 'tuong.le@jemmia.vn'
+    )

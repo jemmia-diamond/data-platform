@@ -185,7 +185,7 @@ models:
                 to: ref('dim_sales_persons')
                 field: sales_person_id
       - name: lead_status
-        description: "Lead status translated to Vietnamese."
+        description: "Raw lead status, defaults to 'Khác' if NULL."
       - name: qualification_status
         description: "Qualification status translated to Vietnamese."
       - name: is_converted
@@ -399,7 +399,7 @@ models:
         description: "Gender of the lead contact."
 
       - name: lead_status
-        description: "Lead status translated to Vietnamese, coalesced from both sides of the full join."
+        description: "Raw lead status (defaults to 'Khác' if NULL), coalesced from both sides of the full join."
 
       - name: lead_stage
         description: "Raw funnel stage of the lead, coalesced from both sides of the full join."

@@ -80,10 +80,7 @@ SELECT
     l.pancake_customer_id,
     l.pancake_conversation_id,
 
-    COALESCE(
-        l.status
-        'Khác'
-    ) AS lead_status,
+    COALESCE(l.status, 'Khác') AS lead_status,
 
     l.qualification_status AS qualification_status_raw,
 
