@@ -23,7 +23,11 @@ SELECT
     v.estimated_gold_weight,
     d.ring_band_style,
     d.ring_head_style,
-    COALESCE(dic.images, ARRAY[]::text[])                              AS images
+    COALESCE(dic.images, ARRAY[]::text[])                              AS images,
+    COALESCE(
+        CASE WHEN dm.diamond_variant_id IS NOT NULL THEN jsonb_build_array(dm.diamond_json) END,
+        '[]'::jsonb
+    )                                                                  AS diamonds
 
 FROM {{ ref('int_catalog__variants') }} v
 INNER JOIN {{ ref('int_ecom__jewelry_variant_prices') }} pr
@@ -37,6 +41,9 @@ LEFT JOIN {{ ref('stg_nocodb__variants') }} nv
 LEFT JOIN {{ ref('int_ecom__design_images_cdn') }} dic
     ON dic.design_id = p.design_id
    AND dic.material_color = v.material_color
+LEFT JOIN {{ ref('int_ecom__jewelry_diamond_matched') }} dm
+    ON dm.haravan_product_id = v.product_id
+   AND dm.haravan_variant_id = v.variant_id
 
 WHERE p.product_type <> 'Nhẫn Cưới'
   AND p.design_id IS NOT NULL
