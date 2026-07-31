@@ -37,7 +37,10 @@ lead_source as (
 		lead_status,
 		lead_stage,
         consultation_date_range,
-        time_to_convert_hours
+        time_to_convert_hours,
+        -- unified qualified flag: pre-2026-08-01 process flagged via qualification_status_raw,
+        -- post-2026-08-01 process flags via lead_status instead (qualification_status_raw is being retired)
+        (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted')) AS is_qualified_unified
 	from lead_data l
 	where 1 = 1
 ),
@@ -59,17 +62,18 @@ qualified_lead_source as (
 		lead_stage,
         consultation_date_range,
         time_to_convert_hours,
-		case when qualification_status_raw = 'Qualified' then lead_id end as qualified_lead_id,
+        (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted')) AS is_qualified_unified,
+		case when (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted')) then lead_id end as qualified_lead_id,
 		CASE
 		    WHEN DATE_TRUNC('month', lead_entry_date)
 		       <> DATE_TRUNC('month', converted_date)
-		       and qualification_status_raw = 'Qualified'
+		       and (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted'))
 		    THEN lead_id
 		END as qualified_lead_id_not_in_month,
 		CASE
 		    WHEN DATE_TRUNC('month', lead_entry_date)
 		       = DATE_TRUNC('month', converted_date)
-		       and qualification_status_raw = 'Qualified'
+		       and (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted'))
 		    THEN lead_id
 		END as qualified_lead_id_in_month
 	from lead_data q
@@ -96,12 +100,13 @@ lead_join_qualified as (
 	    COALESCE(l.lead_stage, q.lead_stage) AS lead_stage,
 	    COALESCE(l.consultation_date_range, q.consultation_date_range) AS consultation_date_range,
         COALESCE(l.time_to_convert_hours, q.time_to_convert_hours) as time_to_convert_hours,
+	    COALESCE(l.is_qualified_unified, q.is_qualified_unified)::int as is_qualified_unified,
 	    q.qualified_lead_id,
 	    q.qualified_lead_id_not_in_month,
 	    q.qualified_lead_id_in_month,
 		case
 			when l.lead_entry_date = l.converted_date
-			and l.qualification_status_raw = 'Qualified'
+			and l.is_qualified_unified
 			then qualified_lead_id
 		end as qualified_lead_id_in_day
 	from lead_source l

@@ -351,6 +351,12 @@ models:
       schema: marts_sales
 
     columns:
+      - name: is_qualified_unified
+        description: >
+          Unified qualified flag spanning the pre/post 2026-08-01 process change: TRUE if
+          qualification_status_raw = 'Qualified' (old process) OR lead_status IN ('Qualified', 'Converted')
+          (new process, where Qualified now implies an Opportunity was created). Drives qualified_lead_id
+          and its variants below.
       - name: date
         description: "Primary date field — greatest from lead_entry_date (entry side) or converted_date (qualified side)."
 
