@@ -107,16 +107,74 @@ sales as (
 	from {{ ref('fct_sales_order_all_metrics')}} s
 	where 1 = 1
 ),
+opportunities_ranked as (
+    select
+        *,
+        row_number() over (
+            partition by party_name
+            order by opportunity_date desc
+        ) as rn
+    from {{ ref('int_crm__opportunities') }}
+),
+latest_opportunity as (
+    -- most recent opportunity per lead (opportunities are sequential attempts, never concurrent)
+    select
+        party_name as lead_id,
+        opportunity_id,
+        status as opportunity_status,
+        sales_stage as opportunity_sales_stage,
+        probability as opportunity_probability,
+        opportunity_amount,
+        opportunity_date
+    from opportunities_ranked
+    where rn = 1
+),
+lead_notes as (
+    select
+        parent_id as lead_id,
+        string_agg(
+            COALESCE(note_type, 'Note') || ': ' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
+            E'\n' order by added_on
+        ) as lead_stage_note
+    from {{ ref('int_crm__notes') }}
+    where parent_type = 'Lead'
+    group by parent_id
+),
+opp_notes as (
+    select
+        parent_id as opportunity_id,
+        string_agg(
+            COALESCE(note_type, 'Note') || ': ' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
+            E'\n' order by added_on
+        ) as opp_stage_note
+    from {{ ref('int_crm__notes') }}
+    where parent_type = 'Opportunity'
+    group by parent_id
+),
 lead_sales as (
 	select
 		l.*,
         s.order_date,
         s.split_order_group as lead_name_has_order_group,
         s.order_number as lead_name_has_order_number,
-        s.allocated_total_price_by_order_id as total_price_lead_name_has_order
+        s.allocated_total_price_by_order_id as total_price_lead_name_has_order,
+        lo.opportunity_id,
+        lo.opportunity_status,
+        lo.opportunity_sales_stage,
+        lo.opportunity_probability,
+        lo.opportunity_amount,
+        lo.opportunity_date,
+        ln.lead_stage_note,
+        opn.opp_stage_note
 	from lead_join_qualified l
 	left join sales s
         on l.date <= s.order_date and l.lead_id_unified = s.lead_name
+    left join latest_opportunity lo
+        on l.lead_id_unified = lo.lead_id
+    left join lead_notes ln
+        on l.lead_id_unified = ln.lead_id
+    left join opp_notes opn
+        on lo.opportunity_id = opn.opportunity_id
 )
 select *
 from lead_sales
