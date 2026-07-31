@@ -49,3 +49,20 @@ models:
         description: "Material color the images belong to."
       - name: images
         description: "Array of CDN image URLs."
+
+  - name: int_ecom__jewelry_diamond_matched
+    description: "Auto-paired candidate loose GIA diamond for each eligible jewelry setting variant. Grain is one row per (haravan_product_id, haravan_variant_id) with a matched diamond."
+    columns:
+      - name: haravan_product_id
+        description: "Haravan product ID of the jewelry setting."
+        tests:
+          - not_null
+      - name: haravan_variant_id
+        description: "Haravan variant ID of the jewelry setting."
+        tests:
+          - not_null
+      - name: diamond_variant_id
+        description: "Haravan variant ID of the matched loose diamond."
+      - name: diamond_json
+        description: "JSON object containing matched diamond attributes (product_id, variant_id, report_no, shape, carat, color, clarity, cut, edge_size_1, edge_size_2, compare_at_price, price)."
+

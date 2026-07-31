@@ -40,6 +40,8 @@ models:
         description: "Final display price after the 3-branch logic."
       - name: discount_branch
         description: "Which branch produced the price (active_collection | direct_discount | default_discount)."
+      - name: diamonds
+        description: "JSON array containing the auto-paired candidate loose GIA diamond (or empty array [] if none matched)."
 
   - name: fct_ecom_wedding_rings
     description: "Ecom wedding rings feed (replaces ecom.materialized_wedding_rings). One row per wedding ring. fineness and material_colors are text arrays."
