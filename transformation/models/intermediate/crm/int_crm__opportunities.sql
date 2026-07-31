@@ -55,3 +55,5 @@ SELECT
     owner
 
 FROM {{ ref('stg_erpnext__opportunities') }}
+WHERE
+    {{ exclude_dev_test_accounts('opportunity_owner') }}

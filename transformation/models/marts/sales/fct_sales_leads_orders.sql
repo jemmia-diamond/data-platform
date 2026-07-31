@@ -34,6 +34,8 @@ lead_source as (
 		lead_source_platform,
 		demand_label,
 		gender,
+		lead_status,
+		lead_stage,
         consultation_date_range,
         time_to_convert_hours
 	from lead_data l
@@ -53,6 +55,8 @@ qualified_lead_source as (
 		lead_source_platform,
 		demand_label,
 		gender,
+		lead_status,
+		lead_stage,
         consultation_date_range,
         time_to_convert_hours,
 		case when qualification_status_raw = 'Qualified' then lead_id end as qualified_lead_id,
@@ -88,6 +92,8 @@ lead_join_qualified as (
 	    COALESCE(l.lead_source_platform, q.lead_source_platform) AS lead_source_platform,
 	    COALESCE(l.demand_label, q.demand_label) AS demand_label,
 	    COALESCE(l.gender, q.gender) AS gender,
+	    COALESCE(l.lead_status, q.lead_status) AS lead_status,
+	    COALESCE(l.lead_stage, q.lead_stage) AS lead_stage,
 	    COALESCE(l.consultation_date_range, q.consultation_date_range) AS consultation_date_range,
         COALESCE(l.time_to_convert_hours, q.time_to_convert_hours) as time_to_convert_hours,
 	    q.qualified_lead_id,

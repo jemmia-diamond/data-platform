@@ -84,3 +84,5 @@ SELECT
 
 FROM leads
 LEFT JOIN {{ ref('stg_erpnext__users') }} u ON u.email = leads.lead_owner
+WHERE
+    {{ exclude_dev_test_accounts('leads.lead_owner') }}

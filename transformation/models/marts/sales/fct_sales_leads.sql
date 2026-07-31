@@ -80,20 +80,7 @@ SELECT
     l.pancake_customer_id,
     l.pancake_conversation_id,
 
-    COALESCE(
-        CASE l.status
-            WHEN 'Lead' THEN 'Lead'
-            WHEN 'Converted' THEN 'Đã chuyển đổi'
-            WHEN 'Qualified' THEN 'Đã đạt chất lượng'
-            WHEN 'Spam' THEN 'Spam'
-            WHEN 'Opportunity' THEN 'Cơ hội'
-            WHEN 'Interested' THEN 'Quan tâm'
-            WHEN 'Do Not Contact' THEN 'Không liên lạc'
-            WHEN 'Contacted' THEN 'Đã liên lạc'
-            ELSE 'Khác'
-        END,
-        'Khác'
-    ) AS lead_status,
+    COALESCE(l.status, 'Khác') AS lead_status,
 
     l.qualification_status AS qualification_status_raw,
 
