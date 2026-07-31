@@ -60,6 +60,8 @@ SELECT
     {{ mask_birth_date('l.birth_date') }} AS birth_date,
 
     l.province,
+    l.country,
+    l.store,
 
     l.source,
     l.lead_source_name,
@@ -101,9 +103,13 @@ SELECT
         ELSE l.qualification_status
     END AS qualification_status,
 
+    l.lead_stage,
+    l.qualified_by,
+
     (l.lead_entry_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS lead_entry_date,
     l.lead_entry_at,
     l.lead_entry_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS lead_entry_at_vn,
+    l.first_visited_at,
     (l.converted_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS converted_date,
     l.converted_at,
     l.converted_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS converted_at_vn,
@@ -115,16 +121,22 @@ SELECT
     l.lead_owner,
     l.is_assigned,
     l.assigned_to,
+    l.owner_pancake_id,
 
     l.budget_lead,
     b.budget_label,
     b.budget_from,
     b.budget_to,
+    l.proposed_budget,
 
     l.purpose_lead,
     d.demand_label,
 
     l.preferred_product_types,
+
+    l.last_message_at,
+    l.last_customer_message_at,
+    l.last_sales_message_at,
 
     l._db_updated_at
 
