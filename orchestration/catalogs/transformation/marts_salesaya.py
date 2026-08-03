@@ -35,7 +35,7 @@ SALESAYA_MARTS_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="*/15 * * * *",
             schedule_token="every_15_minutes",
             schedule_description="Run salesaya marts every 15 minutes (matches legacy salesaya refresh cadence)",
-            max_runtime_seconds=300,
+            max_runtime_seconds=600,
             exclude_asset_paths=(
                 ("transformation", "intermediate", "catalog", "int_catalog__variants"),
                 ("transformation", "intermediate", "catalog", "int_catalog__products"),
