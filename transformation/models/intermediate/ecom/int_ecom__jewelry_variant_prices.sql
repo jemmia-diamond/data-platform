@@ -24,22 +24,10 @@
 -- Grain: 1 row per Haravan variant.
 
 -- Max collection discount per Haravan product (matches MView discount_info subquery).
-WITH collection_max_discount AS (
-    SELECT
-        np.haravan_product_id,
-        MAX(cd.discount_value)                                    AS max_discount
-    FROM {{ ref('int_catalog__collection_deals') }} cd
-    INNER JOIN {{ ref('stg_nocodb__products') }} np
-        ON np.product_id = cd.entity_id
-    WHERE cd.entity_type = 'product'
-      AND cd.discount_type IS NOT NULL
-      AND cd.discount_type <> ''
-      AND np.haravan_product_id IS NOT NULL
-    GROUP BY np.haravan_product_id
-),
+-- Now sourced from int_ecom__product_discounts (shared with fct_ecom_jewelry_products).
 
 -- Products in active promo collections (date range now — matches fn EXISTS check).
-active_collection_products AS (
+WITH active_collection_products AS (
     SELECT DISTINCT np.haravan_product_id
     FROM {{ ref('int_catalog__collection_deals') }} cd
     INNER JOIN {{ ref('stg_nocodb__products') }} np
@@ -57,14 +45,14 @@ variant_prices AS (
         v.final_discount_price,
         -- collection_price = MView's price column (collection-discounted).
         CASE
-            WHEN COALESCE(cmd.max_discount, 0) > 0
-            THEN v.price * (1 - cmd.max_discount / 100.0)
+            WHEN COALESCE(pd.max_discount, 0) > 0
+            THEN v.price * (1 - pd.max_discount / 100.0)
             ELSE v.price
         END                                                       AS collection_price,
         (acp.haravan_product_id IS NOT NULL)                      AS is_in_active_collection
     FROM {{ ref('int_catalog__variants') }} v
-    LEFT JOIN collection_max_discount cmd
-        ON cmd.haravan_product_id = v.product_id
+    LEFT JOIN {{ ref('int_ecom__product_discounts') }} pd
+        ON pd.haravan_product_id = v.product_id
     LEFT JOIN active_collection_products acp
         ON acp.haravan_product_id = v.product_id
 )

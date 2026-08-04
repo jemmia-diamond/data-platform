@@ -35,21 +35,21 @@ product_prices AS (
     SELECT
         product_id,
         product_type,
-        CASE WHEN product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếc') THEN
+        CASE WHEN product_type IN {{ ecom_earring_types() }} THEN
             COALESCE(MAX(price) FILTER (WHERE fineness = 'Vàng 18K'),
                      MAX(price) FILTER (WHERE fineness = 'Vàng 14K')) * 2
             ELSE COALESCE(MAX(price) FILTER (WHERE fineness = 'Vàng 18K'),
                           MAX(price) FILTER (WHERE fineness = 'Vàng 14K'))
         END                                                           AS max_price_18_raw,
-        CASE WHEN product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếc') THEN
+        CASE WHEN product_type IN {{ ecom_earring_types() }} THEN
             COALESCE(MAX(price) FILTER (WHERE fineness = 'Vàng 14K'),
                      MAX(price) FILTER (WHERE fineness = 'Vàng 18K')) * 2
             ELSE COALESCE(MAX(price) FILTER (WHERE fineness = 'Vàng 14K'),
                           MAX(price) FILTER (WHERE fineness = 'Vàng 18K'))
         END                                                           AS max_price_14_raw,
-        CASE WHEN product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếc')
+        CASE WHEN product_type IN {{ ecom_earring_types() }}
              THEN MIN(price) * 2 ELSE MIN(price) END                  AS min_price_raw,
-        CASE WHEN product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếc')
+        CASE WHEN product_type IN {{ ecom_earring_types() }}
              THEN MAX(price) * 2 ELSE MAX(price) END                  AS max_price_raw,
         STRING_AGG(DISTINCT fineness, ', ')                           AS fineness,
         STRING_AGG(DISTINCT material_color, ', ')                     AS material_colors
@@ -69,15 +69,6 @@ sold_products AS (
     INNER JOIN {{ ref('stg_haravan__orders') }} o ON o.order_id = li.order_id
     WHERE o.cancelled_at IS NULL AND o.financial_status = 'paid'
     GROUP BY li.product_id
-),
-
-product_discount AS (
-    SELECT np.haravan_product_id, MAX(cd.discount_value) AS max_discount
-    FROM {{ ref('int_catalog__collection_deals') }} cd
-    INNER JOIN {{ ref('stg_nocodb__products') }} np ON np.product_id = cd.entity_id
-    WHERE cd.entity_type = 'product'
-      AND cd.discount_type IS NOT NULL AND cd.discount_type <> ''
-    GROUP BY np.haravan_product_id
 ),
 
 product_applique AS (
@@ -110,7 +101,7 @@ SELECT
         WHEN p.product_type IN ('Nhẫn Nữ', 'Nhẫn Nữ Nguyên Chiếc') THEN 'Nhẫn Nữ'
         WHEN p.product_type IN ('Nhẫn Nam', 'Nhẫn Nam Nguyên Chiếc') THEN 'Nhẫn Nam'
         WHEN p.product_type IN ('Nhẫn Unisex', 'Nhẫn Unisex Nguyên Chiếc') THEN 'Nhẫn Nam'
-        WHEN p.product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếc') THEN 'Bông Tai'
+        WHEN p.product_type IN {{ ecom_earring_types() }} THEN 'Bông Tai'
         WHEN p.product_type IN ('Dây Chuyền Liền Mặt', 'Mặt Dây Chuyền', 'Vòng Cổ') THEN 'Mặt Dây Chuyền'
         WHEN p.product_type IN ('Lắc Tay', 'Vòng Tay') THEN 'Lắc Tay'
         WHEN p.product_type = 'Nhẫn Cưới' THEN 'Nhẫn Cưới'
@@ -161,7 +152,7 @@ INNER JOIN {{ ref('int_catalog__designs') }} d ON d.design_id = p.design_id
 LEFT JOIN product_prices pp ON pp.product_id = p.product_id
 LEFT JOIN stock st ON st.product_id = p.product_id
 LEFT JOIN sold_products sp ON sp.product_id = p.product_id
-LEFT JOIN product_discount pd ON pd.haravan_product_id = p.product_id
+LEFT JOIN {{ ref('int_ecom__product_discounts') }} pd ON pd.haravan_product_id = p.product_id
 LEFT JOIN product_applique pa ON pa.haravan_product_id = p.product_id
 LEFT JOIN primary_collections pcol ON pcol.haravan_product_id = p.product_id
 
