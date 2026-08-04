@@ -19,18 +19,15 @@
 --   is_not_excluded  — not in excluded collections [25,26,27,29]
 --   is_gia_title     — variant title starts with 'GIA'
 
-WITH in_stock_5 AS (
-    SELECT sl.variant_id
+WITH diamond_stock AS (
+    -- Single pass over int_inventory__stock_by_location (VIEW) — compute both 5-warehouse
+    -- and 3-store stock flags in one scan instead of two.
+    SELECT
+        sl.variant_id,
+        BOOL_OR(sl.location_name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ',
+                                     '[HCM] Kế Toán', '[HCM] Admin')) AS in_stock_5,
+        BOOL_OR(sl.location_name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')) AS in_stock_3
     FROM {{ ref('int_inventory__stock_by_location') }} sl
-    JOIN ({{ ecom_warehouses_5() }}) rw(name) ON rw.name = sl.location_name
-    GROUP BY sl.variant_id
-    HAVING SUM(sl.qty_available) > 0
-),
-
-in_stock_3 AS (
-    SELECT sl.variant_id
-    FROM {{ ref('int_inventory__stock_by_location') }} sl
-    JOIN ({{ ecom_warehouses_3() }}) rs(name) ON rs.name = sl.location_name
     GROUP BY sl.variant_id
     HAVING SUM(sl.qty_available) > 0
 ),
@@ -108,9 +105,9 @@ SELECT
          ELSE NULL
     END                                                                 AS gia_url,
     gia.propimg,
-    -- Stock flags
-    (isv5.variant_id IS NOT NULL)                                       AS in_stock_5,
-    (isv3.variant_id IS NOT NULL)                                       AS in_stock_3,
+    -- Stock flags (from single-pass diamond_stock CTE)
+    COALESCE(ds.in_stock_5, false)                                      AS in_stock_5,
+    COALESCE(ds.in_stock_3, false)                                      AS in_stock_3,
     -- Eligibility flags
     (COALESCE(p.variant_count, 1) = 1)                                  AS is_single_variant,
     (ex.diamond_id IS NULL)                                             AS is_not_excluded,
@@ -123,8 +120,7 @@ INNER JOIN {{ ref('int_catalog__products') }} p
 INNER JOIN {{ ref('int_catalog__variants') }} v
     ON v.variant_id = nd.variant_id
    AND v.qty_available > 0
-LEFT JOIN in_stock_5 isv5 ON isv5.variant_id = nd.variant_id
-LEFT JOIN in_stock_3 isv3 ON isv3.variant_id = nd.variant_id
+LEFT JOIN diamond_stock ds ON ds.variant_id = nd.variant_id
 LEFT JOIN diamond_discount dd ON dd.diamond_id = nd.diamond_id
 LEFT JOIN diamond_collections dc ON dc.diamond_id = nd.diamond_id
 LEFT JOIN excluded ex ON ex.diamond_id = nd.diamond_id
