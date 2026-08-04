@@ -3,8 +3,15 @@
 ) }}
 
 -- Ecom diamonds catalog — replaces the legacy worker raw diamond query (list/detail/gia-report
--- APIs). One row per loose diamond that is published (web/global), single-variant, in stock at
--- one of the 5 retail warehouses, with a GIA-prefixed variant and not in an excluded collection.
+-- APIs). One row per loose diamond that is published (web/global), in stock at one of the 5
+-- retail warehouses, with a GIA-prefixed variant.
+--
+-- IMPORTANT: fn list applies single-variant + excluded-collection filters; fn DETAIL does NOT.
+-- To serve both from one model, these two filters are exposed as boolean flags (is_single_variant,
+-- is_not_excluded) rather than hard WHERE clauses. The list BFF filters:
+--   WHERE is_listed = true
+-- The detail BFF does NOT filter on is_listed (matches fn detail behavior).
+--
 -- Carries physical attributes, list price + collection-discount price, Haravan product imagery
 -- and the GIA report metadata (encrypted report no, propimg, gia_url).
 WITH retail_warehouses(name) AS (
@@ -94,6 +101,11 @@ SELECT
     COALESCE((SELECT array_agg(elem ->> 'src' ORDER BY (elem ->> 'position')::int NULLS LAST)
               FROM jsonb_array_elements(p.images::jsonb) elem), ARRAY[]::text[]) AS images,
     COALESCE(dc.collections, '[]'::jsonb)                              AS collections,
+    -- Soft flags: fn list filters on these; fn detail does NOT.
+    (COALESCE(p.variant_count, 1) = 1)                                 AS is_single_variant,
+    (NOT (nd.diamond_id = ANY (SELECT diamond_id FROM excluded)))      AS is_not_excluded,
+    ((COALESCE(p.variant_count, 1) = 1)
+     AND (NOT (nd.diamond_id = ANY (SELECT diamond_id FROM excluded)))) AS is_listed,
     gia.simple_encrypted_report_no                                     AS encrypted_report_no,
     CASE
         WHEN gia.simple_encrypted_report_no IS NOT NULL
@@ -119,5 +131,4 @@ LEFT JOIN diamond_collections dc
 LEFT JOIN {{ ref('stg_gia_edu__report_no_data') }} gia
     ON gia.report_no = nd.report_no::text
 
-WHERE nd.diamond_id NOT IN (SELECT diamond_id FROM excluded)
-  AND COALESCE(p.variant_count, 1) = 1
+WHERE nd.diamond_id IS NOT NULL

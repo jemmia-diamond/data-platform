@@ -1,6 +1,7 @@
 {{ config(
-    materialized='view',
-    schema='intermediate'
+    materialized='table',
+    schema='intermediate',
+    indexes=[{"columns": ["design_id", "material_color"]}]
 ) }}
 
 -- Ecom design imagery — per (design, material_color) array of CDN-rewritten image URLs.

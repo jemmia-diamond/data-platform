@@ -1,6 +1,7 @@
 {{ config(
-    materialized='view',
-    schema='intermediate'
+    materialized='table',
+    schema='intermediate',
+    indexes=[{"columns": ["haravan_product_id", "haravan_variant_id"]}]
 ) }}
 
 -- Ecom jewelry diamond matching — auto-pairs jewelry settings with candidate loose GIA diamonds.

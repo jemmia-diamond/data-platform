@@ -13,7 +13,7 @@ WITH sold_post_2025 AS (
         ln.product_id,
         SUM(
             CASE
-                WHEN p.product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếu')
+                WHEN p.product_type IN ('Bông Tai', 'Bông Tai Nguyên Chiếc')
                     THEN ln.quantity::numeric / 2.0
                 ELSE ln.quantity::numeric
             END
