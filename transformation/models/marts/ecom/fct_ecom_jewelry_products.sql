@@ -108,6 +108,16 @@ SELECT
         WHEN p.product_type = 'Huy Hiệu' THEN 'Huy Hiệu'
         ELSE ''
     END                                                                AS category,
+    d.design_code,
+    d.diamond_holder,
+    CASE WHEN d.ring_band_type = 'None' THEN NULL ELSE d.ring_band_type END AS ring_band_type,
+    d.ring_band_style,
+    d.ring_head_style,
+    d.main_stone,
+    d.stone_quantity,
+    d.gender,
+    'Round'::text                                                     AS shape_of_main_stone,
+    d.tag                                                               AS design_tag,
     d.wedding_ring_id,
     TRIM(BOTH FROM CONCAT(
         CASE WHEN d.diamond_holder = 'Có ổ chủ' THEN 'Vỏ' ELSE '' END, ' ',
