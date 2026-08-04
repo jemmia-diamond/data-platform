@@ -22,7 +22,6 @@ clean-targets: # directories to be removed by `dbt clean`
   - "dbt_packages"
 
 on-run-start:
-  - "{{ create_raw_indexes() }}"
   - "{{ set_statement_timeout() }}"
 
 # Project-level variables (can be overridden via --vars or environment).

@@ -39,7 +39,7 @@ models:
       - name: final_discount_price
         description: "Final display price after the 3-branch logic."
       - name: discount_branch
-        description: "Which branch produced the price (active_collection | direct_discount | default_discount)."
+        description: "Which branch produced the price (active_collection | on_sale | default_discount)."
       - name: diamonds
         description: "JSON array containing the auto-paired candidate loose GIA diamond (or empty array [] if none matched)."
 
@@ -61,7 +61,7 @@ models:
         description: "Distinct material colors across the wedding ring's variants (text array)."
 
   - name: fct_ecom_diamonds_catalog
-    description: "Ecom diamonds catalog (replaces legacy worker diamond list/detail/gia-report raw queries). One row per published, single-variant, in-stock (5 retail warehouses) loose diamond not in an excluded collection. Carries discount price and GIA report metadata."
+    description: "Ecom diamonds catalog (replaces legacy worker diamond list/detail/gia-report raw queries). One row per published, in-stock (5 retail warehouses) loose diamond with a GIA-prefixed variant. Single-variant and excluded-collection filters are SOFT flags (is_listed) — fn list filters on them, fn detail does NOT."
     columns:
       - name: id
         description: "NocoDB diamond ID."
@@ -78,6 +78,8 @@ models:
         description: "List price before discount."
       - name: gia_url
         description: "GIA report image URL built from simple_encrypted_report_no."
+      - name: is_listed
+        description: "True if single-variant AND not in excluded collections [25,26,27,29]. fn list filters WHERE is_listed=true; fn detail does NOT filter."
 
   - name: dim_ecom_warehouse_stock
     description: "Ecom warehouse stock for the availability API (GET products/:id/availability). One row per (variant, location) with available stock, keyed by product_id. VIEW — stays fresh with the raw inventory sync."
