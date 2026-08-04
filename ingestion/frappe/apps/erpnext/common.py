@@ -296,20 +296,6 @@ def _build_resource(
                 )
                 return
 
-            for row in batch_rows:
-                name = row.get("name")
-                row_modified = row.get("modified")
-                if name is None or row_modified is None:
-                    continue
-
-                last_name = str(name)
-                last_modified = str(row_modified)
-                row["_db_updated_at"] = sync_timestamp
-                yield row
-
-            if len(batch_rows) < DEFAULT_PAGE_SIZE:
-                return
-
     rows.apply_hints(
         columns={
             "_db_updated_at": {
