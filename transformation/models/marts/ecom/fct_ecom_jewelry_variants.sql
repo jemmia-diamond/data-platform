@@ -35,9 +35,12 @@ SELECT
     v.qty_available,
     v.qty_onhand,
     nv.applique_material,
+    nv.final_discount_price,
     v.estimated_gold_weight,
     d.ring_band_style,
     d.ring_head_style,
+    d.created_date,
+    d.created_at                                                      AS database_created_at,
     COALESCE(dic.images, ARRAY[]::text[])                              AS images,
     COALESCE(
         CASE WHEN dm.diamond_variant_id IS NOT NULL THEN jsonb_build_array(dm.diamond_json) END,
@@ -60,11 +63,18 @@ LEFT JOIN {{ ref('int_ecom__jewelry_diamond_matched') }} dm
     ON dm.haravan_product_id = v.product_id
    AND dm.haravan_variant_id = v.variant_id
 
-WHERE p.product_type <> 'Nhẫn Cưới'
+WHERE p.published_scope IN ('global', 'web')
+  AND p.product_type IN (
+      'Bông Tai', 'Bông Tai Nguyên Chiếc', 'Dây Chuyền Liền Mặt', 'Lắc Tay',
+      'Mặt Dây Chuyền', 'Nhẫn Nam', 'Nhẫn Nữ', 'Nhẫn Nữ Nguyên Chiếc',
+      'Nhẫn Nam Nguyên Chiếc', 'Vòng Cổ', 'Vòng Tay', 'Nhẫn Cưới',
+      'Dây Chuyền Trơn', 'Huy Hiệu', 'Nhẫn Unisex Nguyên Chiếc'
+  )
   AND p.design_id IS NOT NULL
   AND v.price > 0
   -- MView variant eligibility (materialized_variants pre-filter)
-  AND nv.applique_material IN ('Kim Cương Tự Nhiên', 'Không Đính Đá')
-  AND nv.fineness IN ('Vàng 18K', 'Vàng 14K')
+  AND (nv.applique_material IN ('Kim Cương Tự Nhiên', 'Không Đính Đá')
+       AND nv.fineness IN ('Vàng 18K', 'Vàng 14K')
+       OR v.variant_id = 1157905842)
   -- Runtime: exclude serial-diamond combo variants
   AND v.variant_id NOT IN (SELECT haravan_variant_id FROM {{ ref('int_ecom__serial_diamond_variants') }})
