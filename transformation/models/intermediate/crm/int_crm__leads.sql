@@ -80,7 +80,8 @@ SELECT
     -- Salesaya enrichment: lead identity, budget, and owner's Pancake id
     leads.first_name,
     proposed_budget,
-    u.pancake_id AS owner_pancake_id
+    u.pancake_id AS owner_pancake_id,
+    expected_delivery_date
 
 FROM leads
 LEFT JOIN {{ ref('stg_erpnext__users') }} u ON u.email = leads.lead_owner

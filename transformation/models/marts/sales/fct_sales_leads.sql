@@ -120,6 +120,7 @@ SELECT
     d.demand_label,
 
     l.preferred_product_types,
+    l.expected_delivery_date,
 
     l.last_message_at,
     l.last_customer_message_at,
