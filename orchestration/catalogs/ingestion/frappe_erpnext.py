@@ -24,7 +24,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="1,11,21,31,41,51 * * * *",
             schedule_token="every_10m",
             schedule_description="Run ERPNext leads every 10 minutes",
-            max_runtime_seconds=480,
+            max_runtime_seconds=1800,  # 254K rows: fit full-scan recovery (state loss), L2 extract guard caps loops
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -38,7 +38,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="3,13,23,33,43,53 * * * *",
             schedule_token="every_10m",
             schedule_description="Run ERPNext sales orders and sales order items every 10 minutes",
-            max_runtime_seconds=480,
+            max_runtime_seconds=1800,  # 61K rows (2 resources): fit full-scan recovery
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -94,7 +94,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="6,26,46 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext contacts every 20 minutes",
-            max_runtime_seconds=900,
+            max_runtime_seconds=1800,  # 288K rows (largest table): fit full-scan recovery
         ),
         ExecutionUnitSpec(
             layer="ingestion",
@@ -138,7 +138,7 @@ FRAPPE_ERPNEXT_EXECUTION_UNITS = validate_execution_units(
             cron_schedule="18,38,58 * * * *",
             schedule_token="every_20m",
             schedule_description="Run ERPNext comments, files, deleted documents, and web forms every 20 minutes",
-            max_runtime_seconds=900,
+            max_runtime_seconds=1800,  # ~70K rows (4 resources, deleted_documents heavy): fit full-scan recovery
         ),
         ExecutionUnitSpec(
             layer="ingestion",
