@@ -25,6 +25,7 @@ lead_source as (
 		lead_entry_date,
 		lead_id,
 		converted_date,
+		converted_at,
 		qualification_status_raw,
 		sales_region,
 		region,
@@ -49,6 +50,7 @@ qualified_lead_source as (
 		lead_entry_date,
 		lead_id,
 		converted_date,
+		converted_at,
 		qualification_status_raw,
 		sales_region,
 		region,
@@ -84,6 +86,7 @@ lead_join_qualified as (
 		GREATEST(l.lead_entry_date, q.converted_date) AS date,
 		coalesce(l.lead_entry_date, q.lead_entry_date) as lead_entry_date,
 		coalesce(l.converted_date, q.converted_date) as converted_date,
+		coalesce(l.converted_at, q.converted_at) as converted_at,
 		coalesce(l.qualification_status_raw, q.qualification_status_raw) as qualification_status_raw,
 		coalesce(l.lead_id, q.lead_id) as lead_id_unified,
 	    l.lead_id as l_lead_id,
@@ -113,10 +116,18 @@ lead_join_qualified as (
 	full join qualified_lead_source q on l.lead_id = q.lead_id
 ),
 sales as (
+	-- fct_sales_order_all_metrics is grain order x product x sales-person-attribution x kpi row
+	-- (fans out on purpose, see its own comments); collapse back to 1 row per order here so this
+	-- join doesn't fan out lead x order too. allocated_total_price_by_order_id is pre-divided by
+	-- the fan-out count at the source, so SUM here recovers the order's true total_price.
 	select
-		s.*
-	from {{ ref('fct_sales_order_all_metrics')}} s
-	where 1 = 1
+		order_date,
+		lead_name,
+		split_order_group,
+		order_number,
+		sum(allocated_total_price_by_order_id) as total_price_lead_name_has_order
+	from {{ ref('fct_sales_order_all_metrics')}}
+	group by order_date, lead_name, split_order_group, order_number
 ),
 opportunities_ranked as (
     select
@@ -143,8 +154,9 @@ latest_opportunity as (
 lead_notes as (
     select
         parent_id as lead_id,
+        -- 1 dòng / note, format: added_on|added_by|note_type|note_content (parse bên Metabase bằng split trên '\n' rồi '|')
         string_agg(
-            COALESCE(note_type, 'Note') || ': ' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
+            added_on::text || '|' || COALESCE(added_by, '') || '|' || COALESCE(note_type, 'Note') || '|' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
             E'\n' order by added_on
         ) as lead_stage_note
     from {{ ref('int_crm__notes') }}
@@ -155,7 +167,7 @@ opp_notes as (
     select
         parent_id as opportunity_id,
         string_agg(
-            COALESCE(note_type, 'Note') || ': ' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
+            added_on::text || '|' || COALESCE(added_by, '') || '|' || COALESCE(note_type, 'Note') || '|' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
             E'\n' order by added_on
         ) as opp_stage_note
     from {{ ref('int_crm__notes') }}
@@ -168,13 +180,13 @@ lead_sales as (
         s.order_date,
         s.split_order_group as lead_name_has_order_group,
         s.order_number as lead_name_has_order_number,
-        s.allocated_total_price_by_order_id as total_price_lead_name_has_order,
+        s.total_price_lead_name_has_order,
         lo.opportunity_id,
         lo.opportunity_status,
         lo.opportunity_sales_stage,
         lo.opportunity_probability,
         lo.opportunity_amount,
-        lo.opportunity_date,
+        l.converted_at AS opportunity_date,
         ln.lead_stage_note,
         opn.opp_stage_note
 	from lead_join_qualified l
