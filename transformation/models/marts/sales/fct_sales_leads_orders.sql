@@ -154,10 +154,14 @@ latest_opportunity as (
 lead_notes as (
     select
         parent_id as lead_id,
-        -- 1 dòng / note, format: added_on|added_by|note_type|note_content (parse bên Metabase bằng split trên '\n' rồi '|')
-        string_agg(
-            added_on::text || '|' || COALESCE(added_by, '') || '|' || COALESCE(note_type, 'Note') || '|' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
-            E'\n' order by added_on
+        -- JSON array of notes, ordered oldest to newest. Metabase: jsonb_array_elements(lead_stage_note)
+        jsonb_agg(
+            jsonb_build_object(
+                'added_on', added_on,
+                'added_by', added_by,
+                'note_type', COALESCE(note_type, 'Note'),
+                'note_content', regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g')
+            ) order by added_on
         ) as lead_stage_note
     from {{ ref('int_crm__notes') }}
     where parent_type = 'Lead'
@@ -166,9 +170,13 @@ lead_notes as (
 opp_notes as (
     select
         parent_id as opportunity_id,
-        string_agg(
-            added_on::text || '|' || COALESCE(added_by, '') || '|' || COALESCE(note_type, 'Note') || '|' || regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g'),
-            E'\n' order by added_on
+        jsonb_agg(
+            jsonb_build_object(
+                'added_on', added_on,
+                'added_by', added_by,
+                'note_type', COALESCE(note_type, 'Note'),
+                'note_content', regexp_replace(COALESCE(note_content, ''), '<[^>]+>', '', 'g')
+            ) order by added_on
         ) as opp_stage_note
     from {{ ref('int_crm__notes') }}
     where parent_type = 'Opportunity'
