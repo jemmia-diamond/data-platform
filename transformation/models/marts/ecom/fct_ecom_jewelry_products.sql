@@ -154,6 +154,8 @@ SELECT
     p.nocodb_product_id                                                AS workplace_id,
     p.has_360,
     d.design_id,
+    d.created_date,
+    d.created_at                                                      AS database_created_at,
     p.published_scope
 
 FROM {{ ref('int_catalog__products') }} p
