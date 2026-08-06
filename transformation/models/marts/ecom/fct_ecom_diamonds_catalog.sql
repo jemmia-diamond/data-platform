@@ -36,3 +36,4 @@ SELECT
 FROM {{ ref('int_ecom__diamonds_base') }}
 WHERE is_gia_title
   AND in_stock_5
+  AND is_single_variant

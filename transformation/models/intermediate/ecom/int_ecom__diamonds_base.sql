@@ -24,12 +24,13 @@ WITH diamond_stock AS (
     -- and 3-store stock flags in one scan instead of two.
     SELECT
         sl.variant_id,
-        BOOL_OR(sl.location_name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ',
-                                     '[HCM] Kế Toán', '[HCM] Admin')) AS in_stock_5,
-        BOOL_OR(sl.location_name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')) AS in_stock_3
+        COALESCE(SUM(sl.qty_available) FILTER (WHERE sl.location_name IN (
+            '[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ',
+            '[HCM] Kế Toán', '[HCM] Admin')), 0) > 0 AS in_stock_5,
+        COALESCE(SUM(sl.qty_available) FILTER (WHERE sl.location_name IN (
+            '[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')), 0) > 0 AS in_stock_3
     FROM {{ ref('int_inventory__stock_by_location') }} sl
     GROUP BY sl.variant_id
-    HAVING SUM(sl.qty_available) > 0
 ),
 
 diamond_discount AS (
