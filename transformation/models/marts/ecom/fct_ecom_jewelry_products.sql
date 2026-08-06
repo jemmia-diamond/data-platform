@@ -152,7 +152,11 @@ SELECT
     np.ecom_title,
     np.sold_before_2025,
     p.nocodb_product_id                                                AS workplace_id,
-    p.has_360,
+    (e.product_id IS NOT NULL)                                          AS has_360,
+    CASE WHEN e.product_id IS NOT NULL
+         THEN '/jemmia-images/glb/' || d.design_code || '.glb'
+         ELSE NULL::text
+    END                                                                 AS path_to_360,
     d.design_id,
     d.created_date,
     d.created_at                                                      AS database_created_at,
@@ -167,6 +171,8 @@ LEFT JOIN sold_products sp ON sp.product_id = p.product_id
 LEFT JOIN {{ ref('int_ecom__product_discounts') }} pd ON pd.haravan_product_id = p.product_id
 LEFT JOIN product_applique pa ON pa.haravan_product_id = p.product_id
 LEFT JOIN primary_collections pcol ON pcol.haravan_product_id = p.product_id
+
+LEFT JOIN workplace.ecom_360 e ON e.product_id = p.nocodb_product_id
 
 WHERE p.published_scope IN ('global', 'web')
   AND p.product_type IN (

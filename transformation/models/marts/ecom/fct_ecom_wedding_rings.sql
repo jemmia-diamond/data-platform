@@ -55,6 +55,7 @@ member_products AS (
     INNER JOIN {{ ref('int_catalog__products') }} p ON p.design_id = d.design_id
     INNER JOIN {{ ref('stg_haravan__products') }} hp ON hp.product_id = p.product_id
                                                     AND hp.published_scope = 'global'
+    INNER JOIN {{ ref('fct_ecom_jewelry_products') }} fp ON fp.haravan_product_id = p.product_id
     LEFT JOIN {{ ref('stg_nocodb__products') }} np ON np.haravan_product_id = p.product_id
 ),
 

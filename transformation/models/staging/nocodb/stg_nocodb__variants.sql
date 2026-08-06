@@ -21,7 +21,7 @@ SELECT
     fineness,
     material_color,
     size_type,
-    {{ safe_cast_numeric('ring_size') }} AS ring_size,
+    COALESCE({{ safe_cast_numeric('ring_size') }}, ring_size__v_double) AS ring_size,
     title,
     {{ safe_cast_numeric('estimated_gold_weight') }} AS estimated_gold_weight,
     design_code,
