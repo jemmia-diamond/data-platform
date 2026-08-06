@@ -128,9 +128,10 @@ sales as (
 		lead_name,
 		split_order_group,
 		order_number,
+		primary_salesperson_city,
 		sum(allocated_total_price_by_order_id) as total_price_lead_name_has_order
 	from {{ ref('fct_sales_order_all_metrics')}}
-	group by order_date, lead_name, split_order_group, order_number
+	group by order_date, lead_name, split_order_group, order_number, primary_salesperson_city
 ),
 opportunities_ranked as (
     select
@@ -192,12 +193,13 @@ lead_sales as (
         s.split_order_group as lead_name_has_order_group,
         s.order_number as lead_name_has_order_number,
         s.total_price_lead_name_has_order,
+        s.primary_salesperson_city,
         lo.opportunity_id,
         lo.opportunity_status,
         lo.opportunity_sales_stage,
         lo.opportunity_probability,
         lo.opportunity_amount,
-        l.converted_at AS opportunity_date,
+        l.converted_at::date AS opportunity_date,
         ln.lead_stage_note,
         opn.opp_stage_note
 	from lead_join_qualified l
