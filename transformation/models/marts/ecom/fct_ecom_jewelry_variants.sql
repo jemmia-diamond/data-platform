@@ -67,11 +67,15 @@ WHERE p.published_scope IN ('global', 'web')
   AND p.product_type IN (
       'Bông Tai', 'Bông Tai Nguyên Chiếc', 'Dây Chuyền Liền Mặt', 'Lắc Tay',
       'Mặt Dây Chuyền', 'Nhẫn Nam', 'Nhẫn Nữ', 'Nhẫn Nữ Nguyên Chiếc',
-      'Nhẫn Nam Nguyên Chiếc', 'Vòng Cổ', 'Vòng Tay', 'Nhẫn Cưới',
+      'Nhẫn Nam Nguyên Chiếc', 'Vòng Cổ', 'Vòng Tay',
       'Dây Chuyền Trơn', 'Huy Hiệu', 'Nhẫn Unisex Nguyên Chiếc'
   )
+  -- fn jewelry listing excludes wedding rings (separate endpoint via fct_ecom_wedding_rings)
+  AND p.product_type != 'Nhẫn Cưới'
   AND p.design_id IS NOT NULL
   AND v.price > 0
+  -- fn excludeSerialsDiamonds: variants with serial-linked diamonds excluded from listing
+  AND v.variant_id NOT IN (SELECT haravan_variant_id FROM {{ ref('int_ecom__serial_diamond_variants') }})
   -- MView variant eligibility (materialized_variants pre-filter)
   AND (nv.applique_material IN ('Kim Cương Tự Nhiên', 'Không Đính Đá')
        AND nv.fineness IN ('Vàng 18K', 'Vàng 14K')

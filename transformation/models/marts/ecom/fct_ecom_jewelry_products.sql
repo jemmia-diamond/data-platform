@@ -91,6 +91,23 @@ primary_collections AS (
     LEFT JOIN {{ ref('int_catalog__haravan_collections') }} hc ON hc.haravan_id = cp.collection_id
     WHERE hc.handle IS NOT NULL
     ORDER BY np.haravan_product_id, hc.haravan_id
+),
+
+-- All collections + pages per product (matches fn linked_collections + pages filters)
+product_collections AS (
+    SELECT
+        np.haravan_product_id,
+        jsonb_agg(jsonb_build_object(
+            'collection_id', hc.collection_id,
+            'title', hc.collection_name,
+            'handle', hc.handle,
+            'is_excluded', hc.is_excluded
+        )) AS collections,
+        array_agg(DISTINCT hc.handle) FILTER (WHERE hc.handle IS NOT NULL) AS pages
+    FROM {{ ref('stg_nocodb__products_haravan_collection') }} phc
+    INNER JOIN {{ ref('stg_nocodb__products') }} np ON np.product_id = phc.product_id
+    INNER JOIN {{ ref('int_catalog__haravan_collections') }} hc ON hc.collection_id = phc.haravan_collection_id
+    GROUP BY np.haravan_product_id
 )
 
 SELECT
@@ -160,7 +177,9 @@ SELECT
     d.design_id,
     d.created_date,
     d.created_at                                                      AS database_created_at,
-    p.published_scope
+    p.published_scope,
+    COALESCE(pc.collections, '[]'::jsonb)                              AS collections,
+    COALESCE(pc.pages, ARRAY[]::text[])                                AS pages
 
 FROM {{ ref('int_catalog__products') }} p
 INNER JOIN {{ ref('stg_nocodb__products') }} np ON np.haravan_product_id = p.product_id
@@ -171,6 +190,7 @@ LEFT JOIN sold_products sp ON sp.product_id = p.product_id
 LEFT JOIN {{ ref('int_ecom__product_discounts') }} pd ON pd.haravan_product_id = p.product_id
 LEFT JOIN product_applique pa ON pa.haravan_product_id = p.product_id
 LEFT JOIN primary_collections pcol ON pcol.haravan_product_id = p.product_id
+LEFT JOIN product_collections pc ON pc.haravan_product_id = p.product_id
 
 LEFT JOIN workplace.ecom_360 e ON e.product_id = p.nocodb_product_id
 
