@@ -76,5 +76,3 @@ WHERE p.published_scope IN ('global', 'web')
   AND (nv.applique_material IN ('Kim Cương Tự Nhiên', 'Không Đính Đá')
        AND nv.fineness IN ('Vàng 18K', 'Vàng 14K')
        OR v.variant_id = 1157905842)
-  -- Runtime: exclude serial-diamond combo variants
-  AND v.variant_id NOT IN (SELECT haravan_variant_id FROM {{ ref('int_ecom__serial_diamond_variants') }})
