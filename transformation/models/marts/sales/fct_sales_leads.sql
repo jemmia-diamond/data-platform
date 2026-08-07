@@ -12,7 +12,7 @@ WITH leads AS (
 ),
 
 sales_persons AS (
-    SELECT sales_person_id, sales_person_name, region_name, employee_email
+    SELECT sales_person_id, sales_person_name, region_name, employee_email, city_name, sales_position
     FROM {{ ref('int_sales__sales_persons') }}
 ),
 
@@ -49,6 +49,8 @@ SELECT
     COALESCE(sp.region_name, r.region_name) AS region,
     sp.region_name AS sales_region,
     r.region_name AS lead_region,
+    trim(sp.city_name) AS salesperson_city,
+    sp.sales_position,
 
     {{ mask_email('l.email') }} AS email,
     {{ mask_phone('l.phone') }} AS phone,
