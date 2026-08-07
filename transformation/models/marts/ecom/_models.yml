@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: fct_ecom_jewelry_products
-    description: "Ecom jewelry products feed (replaces ecom.materialized_products). One row per Haravan jewelry product (not 'Nhẫn Cưới', with a design). Aggregates price/quantity over eligible non-combo variants. NOTE: `pages` filter field omitted (no raw source); `primary_collection_handle` is NULL."
+    description: "Ecom jewelry products feed (replaces ecom.materialized_products). One row per Haravan jewelry product (whitelisted product_type, with a design). Prices/fineness/material_colors computed per the primary applique_material (MView DISTINCT ON product, pinned to lowest-variant_id eligible material). Sourced from fresh dlt (raw_haravan/raw_nocodb); has_360 from ecom_360, primary_collections from haravan.collection_product."
     columns:
       - name: haravan_product_id
         description: "Haravan product ID."
@@ -11,18 +11,22 @@ models:
           - not_null
       - name: design_id
         description: "NocoDB design ID."
+      - name: gender
+        description: "Design gender (Nam/Nữ) — used by fn gender filter."
       - name: min_price
-        description: "Minimum final display price across eligible variants."
+        description: "Minimum final display price (collection-discounted) across the primary material's eligible variants."
       - name: max_price
-        description: "Maximum final display price across eligible variants."
+        description: "Maximum final display price (collection-discounted) across the primary material's eligible variants."
       - name: max_price_18
-        description: "Maximum final price among 18K-fineness variants (fineness-priority sort)."
+        description: "Max price among 18K-fineness variants (prefers 18K, falls back to 14K); earring types ×2."
       - name: max_price_14
-        description: "Maximum final price among 14K-fineness variants (fineness-priority sort)."
+        description: "Max price among 14K-fineness variants (prefers 14K, falls back to 18K); earring types ×2."
       - name: qty_onhand
-        description: "Total on-hand quantity across eligible variants."
+        description: "Total on-hand quantity across ALL Haravan variants of the product."
       - name: sold_quantity
-        description: "Total sold quantity (uncancelled orders, earring types halved) + pre-2025 baseline."
+        description: "Sold quantity from paid, uncancelled Haravan orders (no earring halving — MView variant)."
+      - name: has_360
+        description: "True if the NocoDB product has a 360 view in ecom_360 (fn workplace.ecom_360)."
 
   - name: fct_ecom_jewelry_variants
     description: "Ecom jewelry variants feed (replaces ecom.materialized_variants). One row per Haravan variant of a jewelry product, excluding diamond-combo variants."
@@ -39,9 +43,9 @@ models:
       - name: final_discount_price
         description: "Final display price after the 3-branch logic."
       - name: discount_branch
-        description: "Which branch produced the price (active_collection | on_sale | default_discount)."
+        description: "Which branch produced the price (active_collection | collection_discount | default_discount)."
       - name: diamonds
-        description: "JSON array containing the auto-paired candidate loose GIA diamond (or empty array [] if none matched)."
+        description: "JSON array containing the matched loose GIA diamond (edge_size [4.5,4.6), in_stock_3, GIA, single-variant, not-excluded; round-robin spread) or empty array [] if none matched."
 
   - name: fct_ecom_wedding_rings
     description: "Ecom wedding rings feed (replaces ecom.materialized_wedding_rings). One row per wedding ring. fineness and material_colors are text arrays."
@@ -61,7 +65,7 @@ models:
         description: "Distinct material colors across the wedding ring's variants (text array)."
 
   - name: fct_ecom_diamonds_catalog
-    description: "Ecom diamonds catalog (replaces legacy worker diamond list/detail/gia-report raw queries). One row per published, in-stock (5 retail warehouses) loose diamond with a GIA-prefixed variant. Single-variant and excluded-collection filters are SOFT flags (is_listed) — fn list filters on them, fn detail does NOT."
+    description: "Ecom diamonds catalog LIST (replaces fn buildGetDiamondsQuery). One row per published, in-stock (5 retail warehouses), single-variant, non-excluded loose GIA diamond. WHERE = is_gia_title AND in_stock_5 AND is_single_variant AND is_not_excluded (fn list exactly). fn DETAIL queries int_ecom__diamonds_base with only is_gia_title AND in_stock_5."
     columns:
       - name: id
         description: "NocoDB diamond ID."
@@ -75,11 +79,13 @@ models:
       - name: price
         description: "Price after the best collection discount."
       - name: compare_at_price
-        description: "List price before discount."
+        description: "List price before discount (workplace.diamonds.price)."
+      - name: final_discounted_price
+        description: "Raw workplace.diamonds.final_discounted_price (no computed fallback — matches fn)."
+      - name: images
+        description: "Haravan product images filtered by variant_ids association (fn haravan.images logic)."
       - name: gia_url
         description: "GIA report image URL built from simple_encrypted_report_no."
-      - name: is_listed
-        description: "True if single-variant AND not in excluded collections [25,26,27,29]. fn list filters WHERE is_listed=true; fn detail does NOT filter."
 
   - name: dim_ecom_warehouse_stock
     description: "Ecom warehouse stock for the availability API (GET products/:id/availability). One row per (variant, location) with available stock, keyed by product_id. VIEW — stays fresh with the raw inventory sync."
