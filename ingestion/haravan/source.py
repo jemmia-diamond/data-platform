@@ -14,6 +14,7 @@ from .resources import (
     build_custom_collections_resource,
     build_smart_collections_resource,
     build_inventory_locations_resource,
+    build_collection_product_resource,
 )
 
 DEFAULT_HARAVAN_BASE_URL = "https://apis.haravan.com/com/"
@@ -78,6 +79,12 @@ def haravan_source(
         start_date=start_date,
         end_date=end_date,
     )
+    collection_product_resource = build_collection_product_resource(
+        base_url=base_url,
+        api_token=api_token,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
     return (
         orders_resource,
@@ -89,6 +96,7 @@ def haravan_source(
         users_resource,
         custom_collections_resource,
         smart_collections_resource,
+        collection_product_resource,
     )
 
 
