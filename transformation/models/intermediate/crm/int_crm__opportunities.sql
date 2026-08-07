@@ -52,7 +52,8 @@ SELECT
     -- Metadata
     created_at,
     updated_at,
-    owner
+    owner,
+    modified_by
 
 FROM {{ ref('stg_erpnext__opportunities') }}
 WHERE

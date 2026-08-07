@@ -96,7 +96,8 @@ SELECT
 
     o.created_at,
     o.updated_at,
-    o.owner
+    o.owner,
+    o.modified_by
 
 FROM opportunities o
 LEFT JOIN leads l
