@@ -82,23 +82,30 @@ SELECT
              ELSE nd.base_price
         END, 2
     )                                                                   AS price,
-    COALESCE(
-        nd.final_discounted_price,
-        ROUND(
-            CASE WHEN COALESCE(dd.max_discount, 0) > 0
-                 THEN nd.base_price * (100 - dd.max_discount) / 100
-                 ELSE nd.base_price
-            END, 2
-        )
-    )                                                                   AS final_discounted_price,
+    -- fn returns the RAW workplace.diamonds.final_discounted_price (no computed fallback).
+    nd.final_discounted_price                                           AS final_discounted_price,
     p.title,
     p.handle,
-    COALESCE((SELECT array_agg(elem ->> 'src' ORDER BY (elem ->> 'position')::int NULLS LAST)
-              FROM jsonb_array_elements(p.images::jsonb) elem), ARRAY[]::text[]) AS images,
+    -- fn reads images from haravan.images filtered by variant_ids association
+    -- (image belongs to the product-level OR specifically to this variant).
+    COALESCE((
+        SELECT array_agg(pi.src ORDER BY pi.position NULLS LAST)
+        FROM {{ ref('stg_haravan__product_images') }} pi
+        WHERE pi.product_id = nd.product_id
+          AND (
+            pi.variant_ids IS NULL
+            OR pi.variant_ids = '[]'
+            OR nd.variant_id = ANY(
+                SELECT jsonb_array_elements_text(pi.variant_ids::jsonb)::bigint
+                WHERE jsonb_typeof(pi.variant_ids::jsonb) = 'array'
+            )
+          )
+    ), ARRAY[]::text[])                                                 AS images,
     COALESCE(dc.collections, '[]'::jsonb)                               AS collections,
     nd.sku                                                              AS diamond_sku,
     nd.product_name                                                     AS diamond_product_name,
     v.variant_title,
+    v.sku                                                               AS sku,
     v.qty_available,
     gia.simple_encrypted_report_no                                      AS encrypted_report_no,
     CASE WHEN gia.simple_encrypted_report_no IS NOT NULL
@@ -110,7 +117,9 @@ SELECT
     COALESCE(ds.in_stock_5, false)                                      AS in_stock_5,
     COALESCE(ds.in_stock_3, false)                                      AS in_stock_3,
     -- Eligibility flags
-    (COALESCE(p.variant_count, 1) = 1)                                  AS is_single_variant,
+    -- fn checks JSONB_ARRAY_LENGTH(p.variants) = 1; variant_count is derived from that
+    -- length, so NULL variants (= length NULL) must NOT count as single-variant.
+    (p.variant_count = 1)                                               AS is_single_variant,
     (ex.diamond_id IS NULL)                                             AS is_not_excluded,
     (v.variant_title LIKE 'GIA%')                                       AS is_gia_title
 

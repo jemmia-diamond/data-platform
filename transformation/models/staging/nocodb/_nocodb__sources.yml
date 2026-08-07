@@ -103,3 +103,18 @@ sources:
         meta:
           dagster:
             asset_key: ["nocodb", "diamonds_history_diamonds"]
+
+      - name: ecom_360
+        meta:
+          dagster:
+            asset_key: ["nocodb", "ecom_360"]
+
+      - name: sets
+        meta:
+          dagster:
+            asset_key: ["nocodb", "sets"]
+
+      - name: design_set
+        meta:
+          dagster:
+            asset_key: ["nocodb", "design_set"]

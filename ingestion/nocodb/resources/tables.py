@@ -156,6 +156,27 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
     ),
     # === Marketing ===
     TableSpec(
+        resource_name="ecom_360",
+        table_id="m7df6rjb4pvs516",
+        primary_key="id",
+        incremental_field=None,
+        fields="id,product_id,path,file_name",
+    ),
+    TableSpec(
+        resource_name="sets",
+        table_id="mbzyrmxifvvgu40",
+        primary_key="id",
+        incremental_field="database_updated_at",
+        fields="id,set_name,design_codes,haravan_product_id,haravan_variant_id,note,main_image_link,database_created_at,database_updated_at",
+    ),
+    TableSpec(
+        resource_name="design_set",
+        table_id="mu8ic8ons2wrat3",
+        primary_key="id",
+        incremental_field="database_updated_at",
+        fields="id,design_id,set_id,database_created_at,database_updated_at",
+    ),
+    TableSpec(
         resource_name="products_haravan_collection",
         table_id="m0ndwr6sst0xywa",
         primary_key=["products_id", "haravan_collections_id"],

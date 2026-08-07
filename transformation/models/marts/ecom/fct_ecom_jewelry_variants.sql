@@ -18,6 +18,8 @@
 --   collections JSONB (from product_haravan_collection — for linked_collections filter)
 --   product metadata: product_type, product_title, variant_title, handle, design_code
 
+-- Collections per product from NocoDB (= fn workplace.products_haravan_collection)
+-- Matching fn linked_collections filter: INNER JOIN workplace.products_haravan_collection ON products_id = p.workplace_id
 WITH variant_collections AS (
     SELECT
         np.haravan_product_id,

@@ -43,10 +43,11 @@ HARAVAN_EXECUTION_UNITS = validate_execution_units(
             asset_paths=_asset_paths(
                 "custom_collections",
                 "smart_collections",
+                "collection_product",
                 "locations",
                 "users",
             ),
-            description="Refresh Haravan custom collections, smart collections, locations, and users",
+            description="Refresh Haravan custom collections, smart collections, collection_product (collects), locations, and users",
             cadence="daily",
             cron_schedule="0 1 * * *",
             schedule_token="daily_01utc",
