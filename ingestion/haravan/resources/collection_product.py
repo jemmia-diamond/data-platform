@@ -6,6 +6,7 @@ from typing import Optional
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 
 DEFAULT_PAGE_LIMIT = 250
+DEFAULT_ORDER_FIELD = "updated_at"
 
 
 def build_collection_product_resource(
@@ -15,11 +16,16 @@ def build_collection_product_resource(
     start_date: str,
     end_date: Optional[str] = None,
 ):
-    """Haravan collects (product <-> collection mapping). Full-load each run (the
-    Haravan collects endpoint is fetched in full and merged on id), mirroring fn's
-    CollectionProductSyncService (`/collects.json` paginated by page)."""
+    """Haravan collects (product <-> collection mapping).
+
+    Incremental on `updated_at` (Haravan `/collects.json` supports `updated_at_min`
+    server-side — verified). Merge on id. fn's CollectionProductSyncService filters
+    client-side (legacy); the API filter is more efficient."""
     sync_timestamp = datetime.now(timezone.utc).isoformat()
-    endpoint_params: dict[str, object] = {"limit": DEFAULT_PAGE_LIMIT}
+    endpoint_params: dict[str, object] = {
+        "limit": DEFAULT_PAGE_LIMIT,
+        "order": DEFAULT_ORDER_FIELD,
+    }
     if end_date:
         endpoint_params["updated_at_max"] = end_date
 
@@ -45,6 +51,11 @@ def build_collection_product_resource(
                         "page_param": "page",
                         "base_page": 1,
                         "total_path": None,
+                    },
+                    "incremental": {
+                        "start_param": "updated_at_min",
+                        "cursor_path": "updated_at",
+                        "initial_value": start_date,
                     },
                 },
             }
