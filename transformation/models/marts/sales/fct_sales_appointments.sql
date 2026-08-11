@@ -16,7 +16,8 @@ SELECT
     status,
     order_status,
     scheduled_time,
-    scheduled_date,
+    scheduled_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS scheduled_time_vn,
+    (scheduled_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS scheduled_date,
     {{ mask_name('customer_name') }} AS customer_name,
     {{ mask_phone('customer_phone_number') }} AS customer_phone_number,
     {{ mask_email('customer_email') }} AS customer_email,
@@ -31,6 +32,8 @@ SELECT
     performed_by,
     notes,
     created_at,
+    created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS created_at_vn,
     updated_at,
+    updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS updated_at_vn,
     owner
 FROM {{ ref('int_crm__appointments') }}
