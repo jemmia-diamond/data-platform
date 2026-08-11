@@ -108,3 +108,8 @@ sources:
         meta:
           dagster:
             asset_key: [ "frappe_erpnext", "note" ]
+
+      - name: appointments
+        meta:
+          dagster:
+            asset_key: [ "frappe_erpnext", "appointments" ]
