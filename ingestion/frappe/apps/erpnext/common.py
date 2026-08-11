@@ -42,6 +42,7 @@ RESOURCE_SPECS = (
     ResourceSpec("lead_budgets", "Lead Budget"),
     ResourceSpec("lead_demands", "Lead Demand"),
     ResourceSpec("property_setters", "Property Setter"),
+    ResourceSpec("appointments", "Appointment"),
 
     # === Core Module ===
     ResourceSpec("deleted_documents", "Deleted Document"),
