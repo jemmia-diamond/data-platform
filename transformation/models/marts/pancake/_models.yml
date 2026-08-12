@@ -25,6 +25,12 @@ models:
         tests:
           - accepted_values:
               values: ['INBOX']
+      - name: pancake_updated_at
+        description: Original updated_at timestamp from Pancake API
+      - name: raw_db_updated_at
+        description: Ingestion timestamp when dlt saved the raw conversation
+      - name: updated_at
+        description: Dedicated timestamp when this mart row was generated/updated in PostgreSQL (for fn sync filtering)
       - name: platform
         description: Page platform with personal_zalo_koc remap for 4 KOC pages
       - name: customer_phone
