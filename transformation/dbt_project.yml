@@ -62,4 +62,6 @@ models:
         +schema: marts_core
       tech:
         +schema: marts_tech
+      pancake:
+        +schema: marts_pancake
 

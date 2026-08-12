@@ -4,6 +4,7 @@ from .marts_core import CORE_MARTS_EXECUTION_UNITS
 from .marts_ecom import ECOM_MARTS_EXECUTION_UNITS
 from .marts_finance import FINANCE_MARTS_EXECUTION_UNITS
 from .marts_marketing import MARKETING_MARTS_EXECUTION_UNITS
+from .marts_pancake import PANCAKE_MARTS_EXECUTION_UNITS
 from .marts_sales import SALES_MARTS_EXECUTION_UNITS
 from .marts_salesaya import SALESAYA_MARTS_EXECUTION_UNITS
 from .marts_tech import TECH_MARTS_EXECUTION_UNITS
@@ -18,6 +19,7 @@ all_execution_units = (
     + FINANCE_MARTS_EXECUTION_UNITS
     + TECH_MARTS_EXECUTION_UNITS
     + CORE_MARTS_EXECUTION_UNITS
+    + PANCAKE_MARTS_EXECUTION_UNITS
 )
 
 __all__ = [
@@ -30,5 +32,6 @@ __all__ = [
     "ECOM_MARTS_EXECUTION_UNITS",
     "FINANCE_MARTS_EXECUTION_UNITS",
     "TECH_MARTS_EXECUTION_UNITS",
+    "PANCAKE_MARTS_EXECUTION_UNITS",
     "all_execution_units",
 ]

@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: fct_pancake_conversations
+    description: |
+      One row per INBOX conversation from Pancake, flattened and enriched to replace
+      fn's `PancakeLeadSyncService.getLeadData` source. Sourced from
+      `raw_pancake.conversations` (embedded `page_customer` / `recent_phone_numbers`
+      / `tag_histories` JSONB) joined to `raw_pancake.page` for platform/page_name.
+      Incremental on `_db_updated_at` so it stays fresh as dlt re-syncs conversations.
+      Customer profile comes from the conversation's embedded JSONB (higher coverage
+      than the unscaled `raw_pancake.page_customers`).
+    columns:
+      - name: conversation_id
+        description: Pancake conversation id (business key, = raw_pancake.conversations.id)
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Pancake global customer id (cross-page; 1:1 with page in practice)
+      - name: page_id
+        description: Pancake page id
+      - name: type
+        description: Conversation type (always INBOX in this mart)
+        tests:
+          - accepted_values:
+              values: ['INBOX']
+      - name: platform
+        description: Page platform with personal_zalo_koc remap for 4 KOC pages
+      - name: customer_phone
+        description: Most recent captured phone (from recent_phone_numbers JSONB)
+      - name: has_phone
+        description: Whether the conversation ever surfaced a phone number (lead-creation signal)
+      - name: latest_message_at
+        description: Last activity time (= conversation updated_at)
+      - name: last_sender_is_sales
+        description: True if the page sent the last message (last_sent_by.id = page_id)
+      - name: last_sales_message_at
+        description: Time of last sales message; set only when sales sent last (= updated_at)
+      - name: last_customer_message_at
+        description: Time of last customer message; set only when customer sent last (= updated_at)
+      - name: tags
+        description: Active tag labels (latest action='add' per tag id), text[]
