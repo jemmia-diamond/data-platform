@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: pancake
+    schema: raw_pancake
+    tables:
+      - name: conversations
+        meta:
+          dagster:
+            asset_key: ["pancake", "conversations"]
+
+      - name: page
+        meta:
+          dagster:
+            asset_key: ["pancake", "page"]
