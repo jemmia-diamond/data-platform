@@ -50,11 +50,7 @@ class TransformationDagsterDbtTranslator(DagsterDbtTranslator):
     def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> AutomationCondition | None:
         original_file_path = Path(dbt_resource_props.get("original_file_path", ""))
         path_parts = list(original_file_path.parts)
-        if (
-            dbt_resource_props.get("resource_type") == "model"
-            and "marts" in path_parts
-            and "pancake" in path_parts
-        ):
+        if dbt_resource_props.get("resource_type") == "model" and "pancake" in path_parts:
             return AutomationCondition.eager()
         return None
 
