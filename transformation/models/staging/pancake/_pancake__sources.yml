@@ -7,9 +7,9 @@ sources:
       - name: conversations
         meta:
           dagster:
-            asset_key: ["pancake", "conversations"]
+            asset_key: ["ingestion", "pancake", "conversations"]
 
       - name: page
         meta:
           dagster:
-            asset_key: ["pancake", "page"]
+            asset_key: ["ingestion", "pancake", "page"]
