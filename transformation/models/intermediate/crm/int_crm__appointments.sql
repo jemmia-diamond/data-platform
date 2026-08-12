@@ -12,7 +12,6 @@ SELECT
     status,
     order_status,
     scheduled_time,
-    scheduled_time::date AS scheduled_date,
     customer_name,
     customer_phone_number,
     customer_email,
