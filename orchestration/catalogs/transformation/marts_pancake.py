@@ -18,11 +18,8 @@ PANCAKE_MARTS_EXECUTION_UNITS = validate_execution_units(
             system="pancake",
             unit="fct_pancake_conversations",
             asset_paths=_asset_paths("fct_pancake_conversations"),
-            description="Refresh fct_pancake_conversations (incremental; replaces fn PancakeLeadSync source)",
-            cadence="every_5_minutes",
-            cron_schedule="*/5 * * * *",
-            schedule_token="every_5_minutes",
-            schedule_description="Run pancake conversations mart every 5 minutes (keeps it fresh for the lead-sync flow)",
+            description="Refresh fct_pancake_conversations mart (manual on-demand run; automated execution is triggered eagerly when raw conversations update)",
+            cadence="manual",
             max_runtime_seconds=300,
         ),
     )

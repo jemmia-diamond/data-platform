@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Mapping
 
-from dagster import AssetKey
+from dagster import AssetKey, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator
 
 
@@ -19,6 +19,10 @@ class TransformationDagsterDbtTranslator(DagsterDbtTranslator):
         resource_type = dbt_resource_props["resource_type"]
 
         if resource_type == "source":
+            meta = dbt_resource_props.get("meta", {})
+            dagster_meta = meta.get("dagster", {})
+            if "asset_key" in dagster_meta:
+                return AssetKey(dagster_meta["asset_key"])
             return AssetKey(
                 [
                     "transformation",
@@ -42,6 +46,13 @@ class TransformationDagsterDbtTranslator(DagsterDbtTranslator):
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         return "transformation"
+
+    def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> AutomationCondition | None:
+        original_file_path = Path(dbt_resource_props.get("original_file_path", ""))
+        path_parts = list(original_file_path.parts)
+        if dbt_resource_props.get("resource_type") == "model" and "pancake" in path_parts:
+            return AutomationCondition.eager()
+        return None
 
 
 __all__ = ["TransformationDagsterDbtTranslator"]
