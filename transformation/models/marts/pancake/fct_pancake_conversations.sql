@@ -18,7 +18,7 @@ SELECT
     c.type,
     c.inserted_at,
     c.updated_at                                                  AS pancake_updated_at,
-    c._db_updated_at                                              AS raw_db_updated_at,
+    c._db_updated_at,
     CURRENT_TIMESTAMP                                             AS updated_at,
     c.has_phone,
     c.message_count,
@@ -75,5 +75,5 @@ LEFT JOIN {{ ref('int_pancake__conversation_profile') }} prof
     ON prof.conversation_id = c.id
 WHERE c.type = 'INBOX'
 {% if is_incremental() %}
-  AND c._db_updated_at > (SELECT max(raw_db_updated_at) FROM {{ this }})
+  AND c._db_updated_at > (SELECT max(_db_updated_at) FROM {{ this }})
 {% endif %}
