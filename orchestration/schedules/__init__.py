@@ -3,6 +3,7 @@ from ..catalogs.ingestion import all_execution_units as ingestion_execution_unit
 from ..catalogs.transformation import all_execution_units as transformation_execution_units
 from ..jobs import jobs_by_name
 from .common import build_schedules_by_name
+from .maintenance import all_schedules as maintenance_schedules
 
 schedules_by_name = build_schedules_by_name(all_execution_units, jobs_by_name)
 transformation_schedules = tuple(
@@ -15,11 +16,12 @@ ingestion_schedules = tuple(
     for spec in ingestion_execution_units
     if spec.has_schedule
 )
-all_schedules = transformation_schedules + ingestion_schedules
+all_schedules = transformation_schedules + ingestion_schedules + maintenance_schedules
 
 __all__ = [
     "all_schedules",
     "ingestion_schedules",
+    "maintenance_schedules",
     "schedules_by_name",
     "transformation_schedules",
 ]
