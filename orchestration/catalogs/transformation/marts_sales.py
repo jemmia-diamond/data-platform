@@ -27,6 +27,7 @@ SALES_MARTS_EXECUTION_UNITS = validate_execution_units(
                 "fct_sales_lead_preferred_products",
                 "fct_sales_notes",
                 "fct_sales_appointments",
+                "fct_sales_appointment_order",
                 "fct_sales_opportunities",
                 "fct_sales_order_purchase_purposes",
                 "fct_sales_order_product_categories",

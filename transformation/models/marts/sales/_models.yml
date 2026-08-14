@@ -294,6 +294,26 @@ models:
       - name: scheduled_date
         description: "Date part of scheduled_time — used for daily store dashboards."
 
+  - name: fct_sales_appointment_order
+    description: >
+      Maps each store appointment to the first order (if any) placed on/after its scheduled_date
+      by an online sale — i.e. the order the appointment converted into. Grain: 1 row = 1
+      fct_sales_appointments.appointment_id. party_id on the source appointment can be a Lead or
+      an existing Customer; resolved_lead_id always resolves back to the originating lead so it
+      can be matched against fct_sales_leads_orders (keyed on lead_id_unified).
+    columns:
+      - name: appointment_id
+        description: "Primary key — same grain as fct_sales_appointments.appointment_id."
+        tests:
+          - unique
+          - not_null
+      - name: resolved_lead_id
+        description: "party_id itself when appointment_with = 'Lead', otherwise the customer's originating lead via dim_sales_customers."
+      - name: has_order
+        description: "True if an online order was placed on/after scheduled_date for resolved_lead_id."
+      - name: order_revenue
+        description: "Revenue of the first matching order (0 if has_order is false). Only counts orders by an online sale (sales_position like '%Sale Online%')."
+
   - name: fct_sales_lead_preferred_products
     description: "Bridge table for lead preferred products. Grain: 1 row = 1 lead × 1 preferred product. 1 lead can have many products (1-n)."
     columns:
