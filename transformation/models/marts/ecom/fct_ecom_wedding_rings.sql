@@ -18,7 +18,10 @@
 --   qty_onhand  = SUM(member qty_onhand)
 --   sold_quantity = SUM(member sold_quantity)
 --
--- fn runtime adds per-product JSON with variants (raw prices, no 3-branch discount).
+-- fn runtime adds per-product JSON with variants — price from ecom.variants view semantics:
+--   price           = final_price (3-branch discounted, same as fct_ecom_jewelry_variants.price)
+--   compare_at_price = price_compare_at = raw Haravan selling price (giá gốc)
+--   (NOT raw haravan compare_at_price — that is 0 for 99.9% of variants.)
 -- fineness/material_colors are comma-separated TEXT (not arrays) — BFF must use LIKE ANY for filtering.
 
 WITH valid_wedding_rings AS (
@@ -87,8 +90,8 @@ variant_json AS (
                 'fineness', v.fineness,
                 'material_color', v.material_color,
                 'ring_size', v.ring_size,
-                'price', v.price,
-                'compare_at_price', v.compare_at_price,
+                'price', pr.final_price,
+                'compare_at_price', pr.price_compare_at,
                 'inventory_quantity', v.qty_available,
                 'title', v.variant_title,
                 'available', v.qty_available > 0
@@ -96,6 +99,7 @@ variant_json AS (
         ) AS variants
     FROM member_products mp
     INNER JOIN {{ ref('int_catalog__variants') }} v ON v.product_id = mp.product_id
+    INNER JOIN {{ ref('int_ecom__jewelry_variant_prices') }} pr ON pr.variant_id = v.variant_id
     GROUP BY mp.wedding_ring_id, mp.product_id
 )
 
