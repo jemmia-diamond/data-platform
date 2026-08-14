@@ -13,7 +13,10 @@ with appointments as (
         a.lead_id,
         a.party_id,
         a.appointment_with,
+        a.appointment_reason,
         a.scheduled_date,
+        a.scheduled_time_vn,
+        a.at_store,
         a.sales_person_id,
         a.sales_person_name,
         a.status,
@@ -71,11 +74,27 @@ select
     lead_id,
     party_id,
     appointment_with,
+    case
+        when appointment_with = 'Customer' then 'Khách cũ'
+        else 'Khách mới'
+    end as appointment_with_display,
+    appointment_reason,
     resolved_lead_id,
     scheduled_date,
     sales_person_id,
     sales_person_name,
     status,
+    case
+        when status = 'Done' then 'Hoàn thành'
+        when status = 'Cancelled' then 'Hủy'
+        when status = 'Open' and scheduled_time_vn < (now() at time zone 'Asia/Ho_Chi_Minh') then 'Quá hạn'
+        when status = 'Open' then 'Đang chờ'
+    end as status_display,
+    case
+        when at_store like '%Cần Thơ%' then 'Cần Thơ'
+        when at_store like '%Hà Nội%' then 'Hà Nội'
+        when at_store like '%Hồ Chí Minh%' then 'Hồ Chí Minh'
+    end as at_store_transformed,
     (first_order_date is not null) as has_order,
     first_order_date as order_date,
     first_order_number as order_number,

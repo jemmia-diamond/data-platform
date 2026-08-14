@@ -309,6 +309,12 @@ models:
           - not_null
       - name: resolved_lead_id
         description: "party_id itself when appointment_with = 'Lead', otherwise the customer's originating lead via dim_sales_customers."
+      - name: appointment_with_display
+        description: "Vietnamese label: 'Khách cũ' when appointment_with = 'Customer', else 'Khách mới'."
+      - name: status_display
+        description: "Vietnamese label for status, with Open split into 'Quá hạn' (scheduled_time_vn already passed) vs 'Đang chờ'."
+      - name: at_store_transformed
+        description: "at_store normalized down to city (Cần Thơ / Hà Nội / Hồ Chí Minh)."
       - name: has_order
         description: "True if an online order was placed on/after scheduled_date for resolved_lead_id."
       - name: order_revenue
