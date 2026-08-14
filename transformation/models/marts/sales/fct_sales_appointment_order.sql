@@ -17,8 +17,9 @@ with appointments as (
         a.scheduled_date,
         a.scheduled_time_vn,
         a.at_store,
-        a.sales_person_id,
-        a.sales_person_name,
+        a.sales_person_id as appointment_sales_person_id,
+        a.sales_person_name as appointment_sales_person_name,
+        dsp.sales_position as appointment_sales_person_position,
         a.status,
         -- party_id can be a Lead (new lead booking) or a Customer (existing customer booking a
         -- repeat appointment) depending on appointment_with. fct_sales_leads_orders is keyed on
@@ -31,44 +32,90 @@ with appointments as (
     left join {{ ref('dim_sales_customers') }} dc
         on dc.customer_id = a.party_id
         and a.appointment_with != 'Lead'
+    left join {{ ref('dim_sales_persons') }} dsp
+        on dsp.sales_person_id = a.sales_person_id
 ),
 
--- pre-aggregate every online order down to 1 row per (lead, order_date) ONCE for the whole
--- table, instead of re-running this GROUP BY inside a correlated subquery for every appointment.
+-- pre-aggregate every order down to 1 row per (lead, order_date) ONCE for the whole table,
+-- instead of re-running this GROUP BY inside a correlated subquery for every appointment.
 -- Orders in the same checkout group split across multiple order_number rows on the same
 -- order_date are collapsed here.
+-- order_sales_position is the order's own primary_sales_person_id resolved via dim_sales_persons
+-- (not lo.sales_position, which is copied from the lead's assigned salesperson at lead-creation
+-- time and is frequently blank) -- exposed as-is so BI can filter/group by online vs offline itself.
 lead_order_dates as (
     select
         lo.lead_id_unified,
         lo.order_date,
         string_agg(distinct lo.lead_name_has_order_number, ', ') as order_number,
         string_agg(distinct fso.order_id, ', ') as order_id,
+        string_agg(distinct dsp.sales_position, ', ') as order_sales_position,
         sum(lo.total_price_lead_name_has_order) as order_revenue
     from {{ ref('fct_sales_leads_orders') }} lo
     left join {{ ref('fct_sales_orders') }} fso
         on fso.order_number = lo.lead_name_has_order_number
+    left join {{ ref('dim_sales_persons') }} dsp
+        on dsp.sales_person_id = fso.primary_sales_person_id
     where lo.lead_name_has_order_group is not null
-    and lo.sales_position like '%Sale Online%'
     group by lo.lead_id_unified, lo.order_date
+),
+
+-- every (appointment, candidate order on/after its scheduled_date) pair for the same lead,
+-- ranked so the earliest order per appointment can be picked without a correlated lateral join
+appointment_candidate_orders as (
+    select
+        ap.appointment_id,
+        lod.order_date,
+        lod.order_number,
+        lod.order_id,
+        lod.order_sales_position,
+        lod.order_revenue,
+        row_number() over (
+            partition by ap.appointment_id
+            order by lod.order_date asc
+        ) as order_rank
+    from appointments ap
+    join lead_order_dates lod
+        on lod.lead_id_unified = ap.resolved_lead_id
+        and lod.order_date >= ap.scheduled_date
+),
+
+appointment_first_order as (
+    select appointment_id, order_date, order_number, order_id, order_sales_position, order_revenue
+    from appointment_candidate_orders
+    where order_rank = 1
+),
+
+-- 2 appointments of the same lead in the same calendar month can both resolve to the same next
+-- order (e.g. lead re-books before converting) -- only the appointment closest to the order date
+-- keeps the revenue credit, so summing order_revenue across appointments doesn't double count
+-- the order.
+appointment_order_dedup as (
+    select
+        afo.appointment_id,
+        afo.order_date,
+        afo.order_number,
+        afo.order_id,
+        afo.order_sales_position,
+        afo.order_revenue,
+        row_number() over (
+            partition by ap.resolved_lead_id, date_trunc('month', ap.scheduled_date), afo.order_date
+            order by ap.scheduled_date desc
+        ) as credit_rank
+    from appointment_first_order afo
+    join appointments ap on ap.appointment_id = afo.appointment_id
 ),
 
 appointment_order as (
     select
         ap.*,
-        fo.order_date as first_order_date,
-        fo.order_number as first_order_number,
-        fo.order_id as first_order_id,
-        fo.order_revenue as first_order_revenue
+        aod.order_date as first_order_date,
+        aod.order_number as first_order_number,
+        aod.order_id as first_order_id,
+        aod.order_sales_position as first_order_sales_position,
+        case when aod.credit_rank = 1 then aod.order_revenue else 0 end as first_order_revenue
     from appointments ap
-    left join lateral (
-        -- earliest pre-aggregated order date on/after the appointment for this lead
-        select lod.order_date, lod.order_number, lod.order_id, lod.order_revenue
-        from lead_order_dates lod
-        where lod.lead_id_unified = ap.resolved_lead_id
-        and lod.order_date >= ap.scheduled_date
-        order by lod.order_date asc
-        limit 1
-    ) fo on ap.resolved_lead_id is not null
+    left join appointment_order_dedup aod on aod.appointment_id = ap.appointment_id
 )
 
 select
@@ -83,8 +130,9 @@ select
     appointment_reason,
     resolved_lead_id,
     scheduled_date,
-    sales_person_id,
-    sales_person_name,
+    appointment_sales_person_id,
+    appointment_sales_person_name,
+    appointment_sales_person_position,
     status,
     case
         when status = 'Done' then 'Hoàn thành'
@@ -101,5 +149,6 @@ select
     first_order_date as order_date,
     first_order_number as order_number,
     first_order_id as order_id,
+    first_order_sales_position as order_sales_position,
     coalesce(first_order_revenue, 0) as order_revenue
 from appointment_order
