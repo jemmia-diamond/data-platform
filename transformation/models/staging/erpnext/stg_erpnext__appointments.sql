@@ -53,4 +53,5 @@ WHERE NOT EXISTS (
     FROM {{ source('erpnext', 'deleted_documents') }} dd
     WHERE dd.deleted_doctype = 'Appointment'
       AND (dd.restored IS NULL OR dd.restored = 0)
+      AND dd.deleted_name = name
 )
