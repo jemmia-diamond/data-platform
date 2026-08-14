@@ -48,10 +48,10 @@ SELECT
     modified_by
 
 FROM {{ source('erpnext', 'appointments') }}
-WHERE NOT EXISTS (
-    SELECT 1
+WHERE name not in (
+    SELECT deleted_name
     FROM {{ source('erpnext', 'deleted_documents') }} dd
     WHERE dd.deleted_doctype = 'Appointment'
       AND (dd.restored IS NULL OR dd.restored = 0)
-      AND dd.deleted_name = name
+    --   AND dd.deleted_name = name
 )
