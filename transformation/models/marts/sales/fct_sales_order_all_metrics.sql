@@ -51,6 +51,9 @@ sales as (
 		o.total_price / count(*) over (partition by o.order_id) as allocated_total_price_by_order_id,
 		-- allocated amount is commission
 		sa.allocated_amount,
+		-- ERP-assigned revenue split for this sales person on this order (e.g. 33.33 for a
+		-- 3-way split) -- authoritative, unlike deriving a % share from allocated_total_price_by_order_id
+		sa.allocated_percentage,
 		-- Allocate the KPI amount similarly to total_price due to the duplication mentioned above
 		sa.allocated_amount / count(*) over (partition by o.order_id, sa.sales_person_key) as allocated_amount_by_order_id,
 		-- Allocate product quantity and total price by order_id and product_id
