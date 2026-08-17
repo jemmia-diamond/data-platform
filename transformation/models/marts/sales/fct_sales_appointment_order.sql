@@ -17,6 +17,7 @@ with appointments as (
         a.scheduled_date,
         a.scheduled_time_vn,
         a.at_store,
+        a.notes,
         a.sales_person_id as appointment_sales_person_id,
         a.sales_person_name as appointment_sales_person_name,
         dsp.sales_position as appointment_sales_person_position,
@@ -128,16 +129,20 @@ select
         else 'Khách mới'
     end as appointment_with_display,
     appointment_reason,
+    notes,
     resolved_lead_id,
     scheduled_date,
     appointment_sales_person_id,
     appointment_sales_person_name,
     appointment_sales_person_position,
     status,
+    -- overdue takes priority over "due today": an Open appointment scheduled earlier today
+    -- whose time has already passed is 'Quá hạn', not 'Cần follow'
     case
-        when status = 'Done' then 'Hoàn thành'
         when status = 'Cancelled' then 'Hủy'
+        when status = 'Done' then 'Thành công'
         when status = 'Open' and scheduled_time_vn < (now() at time zone 'Asia/Ho_Chi_Minh') then 'Quá hạn'
+        when status = 'Open' and scheduled_time_vn::date = (now() at time zone 'Asia/Ho_Chi_Minh')::date then 'Cần follow'
         when status = 'Open' then 'Đang chờ'
     end as status_display,
     case
