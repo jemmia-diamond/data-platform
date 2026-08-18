@@ -23,14 +23,15 @@ SELECT
     COALESCE(h.first_name || ' ' || h.last_name, e.customer_name) AS full_name,
     COALESCE(h.email, e.email) AS email,
     COALESCE(h.phone, e.phone) AS phone,
-    -- Normalized Gender (Mapping Haravan 1:Male, 2:Female or similar to ERPNext strings)
+    -- Normalized Gender (Mapping Haravan 1:Male, 2:Female to ERPNext strings). Haravan's 0
+    -- means "not set" rather than a real "Unknown" answer, so it falls through to e.gender
+    -- instead of forcing 'Unknown' over a real ERPNext value.
     COALESCE(
-        CASE 
+        CASE
             WHEN h.gender = 1 THEN 'Male'
             WHEN h.gender = 2 THEN 'Female'
-            WHEN h.gender = 0 THEN 'Unknown'
-            ELSE NULL 
-        END, 
+            ELSE NULL
+        END,
         e.gender
     ) AS gender,
     COALESCE(h.birthday::date, e.birth_date) AS birth_date,
