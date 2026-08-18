@@ -46,6 +46,7 @@ SELECT
     COALESCE((h.price * h.quantity) - COALESCE(h.total_discount, 0), e.net_amount) AS line_net_amount,
     
     -- ERP Specific Details (Jewelry Context - Full Schema Retained)
+    e.item_type,
     e.serial_numbers,
     e.serial,
     e.diamond_details,

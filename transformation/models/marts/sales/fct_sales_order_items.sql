@@ -39,6 +39,7 @@ SELECT
     i.product_name,
     i.variant_title,
     i.product_type,
+    i.item_type,
     i.vendor,
 
     i.erp_sales_order_id,
