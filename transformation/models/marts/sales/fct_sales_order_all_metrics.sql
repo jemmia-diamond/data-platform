@@ -33,6 +33,7 @@ sales as (
 		sa.sales_person_key as sales_person_key_kpi,
 		oi.product_key,
 		oi.variant_id,
+		oi.item_type,
 		o.sales_channel,
 		o.sales_channel_raw,
 		o.order_customer_type,
