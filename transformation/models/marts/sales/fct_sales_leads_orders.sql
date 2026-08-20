@@ -192,6 +192,10 @@ opp_notes as (
     where parent_type = 'Opportunity'
     group by parent_id
 ),
+lead_owner_sales_person as (
+    select * from {{ ref('int_sales__sales_persons') }}
+),
+
 lead_sales as (
 	select
 		l.*,
@@ -207,7 +211,15 @@ lead_sales as (
         lo.opportunity_amount,
         l.converted_at::date AS opportunity_date,
         ln.lead_stage_note,
-        opn.opp_stage_note
+        opn.opp_stage_note,
+        -- resolved here (not left to downstream BI) because it requires joining lead_owner
+        -- (a raw, unmasked email) against int_sales__sales_persons.employee_email -- the
+        -- masked employee_email on dim_sales_persons collapses to just the first letter
+        -- (e.g. "t***@jemmia.vn" matches 29 different people), so BI tools can't do this
+        -- join themselves without unmasked PII access
+        losp.sales_person_id as lead_owner_sales_person_id,
+        losp.sales_person_name as lead_owner_sales_person_name,
+        losp.sales_position as lead_owner_sales_position
 	from lead_join_qualified l
 	left join sales s
         on l.date <= s.order_date and l.lead_id_unified = s.lead_name
@@ -217,6 +229,8 @@ lead_sales as (
         on l.lead_id_unified = ln.lead_id
     left join opp_notes opn
         on lo.opportunity_id = opn.opportunity_id
+    left join lead_owner_sales_person losp
+        on lower(losp.employee_email) = lower(l.lead_owner)
 )
 select *
 from lead_sales
