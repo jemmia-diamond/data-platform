@@ -71,7 +71,15 @@ sales as (
 		o.purchase_purposes,
 		-- product
 		dp.product_name,
-		dp.product_type,
+		-- product_type from the order line (Haravan), not the catalog: 'virtual' is a
+		-- placeholder used for custom/temp products (SPT-xxxx) before a real catalog SKU
+		-- exists -- fall back to ERPNext's item_type once it's been backfilled with the
+		-- real classification (only when the line has actual revenue)
+		case
+			when lower(oi.product_type) = 'virtual' and oi.line_gross_amount > 0
+				then coalesce(oi.item_type, oi.product_type)
+			else oi.product_type
+		end as product_type,
 		dp.design_type,
 		dp.fineness,
 		dp.size_type,
