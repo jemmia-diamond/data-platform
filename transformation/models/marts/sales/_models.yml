@@ -275,6 +275,26 @@ models:
       - name: parent_type
         description: "Entity type the note is attached to — 'Lead' or 'Opportunity'."
 
+  - name: fct_sales_call_logs
+    description: >
+      Call log fact table (ERPNext CRM Call Log, Stringee/vbot telephony). Grain: 1 row = 1 call.
+      Data quality caveat: only ~5% of rows have participant_lead_id/participant_customer_id
+      populated (most calls aren't linked to a Lead/Customer record), and agent attribution
+      (agent_name etc.) is populated for a small minority of rows only — treat both as
+      best-effort, not a reliable dimension to slice by today.
+    columns:
+      - name: call_log_id
+        description: "Primary key — ERPNext CRM Call Log ID."
+        tests:
+          - unique
+          - not_null
+      - name: participant_lead_id
+        description: "FK — fct_sales_leads.lead_id, when participant_type = 'Lead'. Sparse."
+      - name: participant_customer_id
+        description: "FK — dim_sales_customers.customer_id, when participant_type = 'Customer'. Sparse."
+      - name: direction
+        description: "Call direction, Vietnamese display label — Gọi đến / Gọi đi."
+
   - name: fct_sales_appointments
     description: >
       Store appointment fact table. Grain: 1 row = 1 ERPNext Appointment. Used for in-store sales
