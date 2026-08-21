@@ -2,6 +2,7 @@
     schema='marts_sales',
     post_hook=[
       "CREATE INDEX IF NOT EXISTS idx_fscl_start_time ON {{ this }} USING brin (start_time)",
+      "CREATE INDEX IF NOT EXISTS idx_fscl_start_date_vn ON {{ this }} (start_date_vn)",
       "CREATE INDEX IF NOT EXISTS idx_fscl_participant_lead_id ON {{ this }} (participant_lead_id)",
       "CREATE INDEX IF NOT EXISTS idx_fscl_participant_customer_id ON {{ this }} (participant_customer_id)",
     ]
@@ -26,6 +27,7 @@ SELECT
     duration_seconds,
     start_time,
     start_time_vn,
+    start_date_vn,
     end_time,
 
     recording_url,
