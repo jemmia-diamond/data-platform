@@ -26,6 +26,7 @@ SELECT
     duration_seconds,
     start_time,
     start_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS start_time_vn,
+    (start_time AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS start_date_vn,
     end_time,
 
     recording_url,
