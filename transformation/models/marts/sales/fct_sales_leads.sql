@@ -31,6 +31,11 @@ regions AS (
     FROM {{ ref('int_sales__regions') }}
 ),
 
+lead_sources AS (
+    SELECT lead_source_id, source_name
+    FROM {{ ref('int_crm__lead_sources') }}
+),
+
 contacts as (
 	select
 		pancake_customer_id,
@@ -66,7 +71,10 @@ SELECT
     l.store,
 
     l.source,
-    l.lead_source_name,
+    -- ERPNext only auto-fills lead_source_name when the lead is saved through the UI
+    -- (fetch_from) -- leads created via API/import keep it blank even though `source`
+    -- (the FK) is set, so fall back to resolving it ourselves via lead_sources.
+    COALESCE(l.lead_source_name, ls.source_name) AS lead_source_name,
 --     l.lead_source_platform,
     CASE
         WHEN lead_source_platform IS NULL THEN 'Chưa xác định'
@@ -139,5 +147,7 @@ LEFT JOIN demands d
     ON l.purpose_lead = d.lead_demand_id
 LEFT JOIN regions r
     ON l.region = r.region_id
+LEFT JOIN lead_sources ls
+    ON l.source = ls.lead_source_id
 LEFT JOIN contacts c
 	ON c.pancake_customer_id = l.pancake_customer_id
