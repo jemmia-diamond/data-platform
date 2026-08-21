@@ -113,3 +113,8 @@ sources:
         meta:
           dagster:
             asset_key: [ "frappe_erpnext", "appointments" ]
+
+      - name: call_logs
+        meta:
+          dagster:
+            asset_key: [ "frappe_erpnext", "call_logs" ]
