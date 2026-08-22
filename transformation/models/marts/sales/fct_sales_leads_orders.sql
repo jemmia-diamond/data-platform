@@ -44,7 +44,8 @@ lead_source as (
         time_to_convert_hours,
         -- unified qualified flag: pre-2026-08-01 process flagged via qualification_status_raw,
         -- post-2026-08-01 process flags via lead_status instead (qualification_status_raw is being retired)
-        (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted')) AS is_qualified_unified
+        -- COALESCE: qualification_status_raw NULL (newly-inserted lead) must not produce NULL flag
+        COALESCE(qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted'), false) AS is_qualified_unified
 	from lead_data l
 	where 1 = 1
 ),
@@ -70,7 +71,7 @@ qualified_lead_source as (
 		expected_delivery_date,
         consultation_date_range,
         time_to_convert_hours,
-        (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted')) AS is_qualified_unified,
+        COALESCE(qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted'), false) AS is_qualified_unified,
 		case when (qualification_status_raw = 'Qualified' OR lead_status IN ('Qualified', 'Converted')) then lead_id end as qualified_lead_id,
 		CASE
 		    WHEN DATE_TRUNC('month', lead_entry_date)

@@ -7,7 +7,7 @@
 -- Grain: 1 row per (lead, contact) — a lead may surface across multiple conversations.
 SELECT
     l.lead_id                               AS id,
-    (l.qualification_status = 'Qualified')  AS qualified,
+    COALESCE(l.qualification_status = 'Qualified', false) AS qualified,
     c.pancake_conversation_id,
     l.lead_owner                            AS pre_sales,
     l.first_name                            AS name,
