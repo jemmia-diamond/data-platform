@@ -53,7 +53,9 @@ SELECT
     last_sales_message_at,
     
     -- Business Metrics (Calculated)
-    (qualification_status = 'Qualified') AS is_converted,
+    -- COALESCE: qualification_status can be NULL transiently for newly-inserted leads
+    -- (server-side insert before ERPNext sets the default) — NULL = 'Qualified' yields NULL, failing not_null test
+    COALESCE(qualification_status = 'Qualified', false) AS is_converted,
     
     CASE 
         WHEN qualification_status = 'Qualified' AND qualified_on IS NOT NULL AND first_reach_at IS NOT NULL 
