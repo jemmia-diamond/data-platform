@@ -208,6 +208,8 @@ models:
         description: "Raw funnel stage of the lead (ERPNext lead_stage field)."
       - name: qualified_by
         description: "User who qualified the lead."
+      - name: lead_temperature
+        description: "Sales-assessed interest level of the lead (e.g. Hot, Warm, Cold, Not Potential). Mostly unset."
       - name: first_visited_at
         description: "Timestamp of the lead's first site/page visit."
       - name: last_message_at
@@ -474,6 +476,11 @@ models:
 
       - name: lead_stage
         description: "Raw funnel stage of the lead, coalesced from both sides of the full join."
+
+      - name: lead_temperature
+        description: >
+          Sales-assessed interest level of the lead (e.g. Hot, Warm, Cold, Not Potential),
+          coalesced from both sides of the full join. Mostly unset.
 
       - name: consultation_date_range
         description: >
