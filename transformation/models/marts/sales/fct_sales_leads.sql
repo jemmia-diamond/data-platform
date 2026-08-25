@@ -102,6 +102,7 @@ SELECT
 
     l.lead_stage,
     l.qualified_by,
+    l.lead_temperature,
 
     (l.lead_entry_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS lead_entry_date,
     l.lead_entry_at,

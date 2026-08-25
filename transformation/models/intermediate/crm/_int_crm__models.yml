@@ -22,6 +22,8 @@ models:
         description: "Boolean flag indicating if the lead was qualified/converted."
         tests:
           - not_null
+      - name: lead_temperature
+        description: "Sales-assessed interest level of the lead (e.g. Hot, Warm, Cold, Not Potential). Blank/empty raw values are nulled out; mostly unset."
 
   - name: int_crm__contacts
     columns:

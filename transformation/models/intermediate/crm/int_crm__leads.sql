@@ -41,6 +41,7 @@ SELECT
     lead_stage,
     qualification_status,
     qualified_by,
+    lead_temperature,
     
     -- Temporal (Raw)
     first_reach_at AS lead_entry_at, -- Using first_reach_at as the primary entry point per user request

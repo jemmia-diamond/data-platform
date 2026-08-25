@@ -52,6 +52,7 @@ SELECT
     qualification_status,
     type,
     qualified_by,
+    NULLIF(lead_temperature, '') AS lead_temperature,
     
     -- Needs & Requirements
     budget_lead,
