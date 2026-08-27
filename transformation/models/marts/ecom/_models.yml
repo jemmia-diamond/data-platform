@@ -65,7 +65,7 @@ models:
         description: "Distinct material colors across the wedding ring's variants (text array)."
 
   - name: fct_ecom_diamonds_catalog
-    description: "Ecom diamonds catalog LIST (replaces fn buildGetDiamondsQuery). One row per published, in-stock (5 retail warehouses), single-variant, non-excluded loose GIA diamond. WHERE = is_gia_title AND in_stock_5 AND is_single_variant AND is_not_excluded (fn list exactly). fn DETAIL queries int_ecom__diamonds_base with only is_gia_title AND in_stock_5."
+    description: "Ecom diamonds catalog LIST (replaces fn buildGetDiamondsQuery). One row per published, in-stock (5 retail warehouses), single-variant, non-excluded loose GIA diamond that is NOT linked to a variant serial (variant_serials_diamonds combo stones excluded). WHERE = is_gia_title AND in_stock_5 AND is_single_variant AND is_not_excluded AND NOT EXISTS variant_serials_diamonds. fn DETAIL queries int_ecom__diamonds_base with only is_gia_title AND in_stock_5."
     columns:
       - name: id
         description: "NocoDB diamond ID."

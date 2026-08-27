@@ -6,6 +6,8 @@
 -- Replicates fn diamond LIST (buildGetDiamondsQuery) exactly:
 --   is_gia_title AND in_stock_5 AND is_single_variant AND is_not_excluded
 -- Detail BFF queries int_ecom__diamonds_base directly (only is_gia_title AND in_stock_5).
+-- Plus: diamonds linked to a jewelry serial via variant_serials_diamonds (combo stones)
+-- are excluded from the standalone catalog listing.
 
 SELECT
     id,
@@ -32,8 +34,14 @@ SELECT
     gia_url,
     propimg
 
-FROM {{ ref('int_ecom__diamonds_base') }}
-WHERE is_gia_title
-  AND in_stock_5
-  AND is_single_variant
-  AND is_not_excluded
+FROM {{ ref('int_ecom__diamonds_base') }} d
+WHERE d.is_gia_title
+  AND d.in_stock_5
+  AND d.is_single_variant
+  AND d.is_not_excluded
+  -- NOT EXISTS (NULL-safe): exclude diamonds bound to a variant serial (jewelry+diamond combo)
+  AND NOT EXISTS (
+      SELECT 1
+      FROM {{ ref('stg_nocodb__variant_serials_diamonds') }} vsd
+      WHERE vsd.diamond_id = d.id
+  )
