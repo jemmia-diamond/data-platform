@@ -34,7 +34,10 @@ with appointments as (
         coalesce(
             case when a.appointment_with = 'Lead' then a.party_id end,
             dc.lead_name
-        ) as resolved_lead_id
+        ) as resolved_lead_id,
+        -- direct customer anchor for the customer order path below: keeps first-order matching
+        -- working for repeat customers even when they have no originating lead linkage
+        case when a.appointment_with != 'Lead' then a.party_id end as resolved_customer_id
     from {{ ref('fct_sales_appointments') }} a
     left join {{ ref('dim_sales_customers') }} dc
         on dc.customer_id = a.party_id
@@ -67,8 +70,31 @@ lead_order_dates as (
     group by lo.lead_id_unified, lo.order_date
 ),
 
--- every (appointment, candidate order on/after its scheduled_date) pair for the same lead,
--- ranked so the earliest order per appointment can be picked without a correlated lateral join
+-- customer-anchored order dates: 1 row per (customer, order_date) straight from the order
+-- metrics, independent of lead linkage. This is the repeat-customer (khách cũ) path so the
+-- first post-appointment order is counted for customers whose orders are not reachable
+-- through a lead.
+customer_order_dates as (
+    select
+        m.customer_id,
+        m.order_date,
+        string_agg(distinct m.order_number, ', ') as order_number,
+        string_agg(distinct m.order_id, ', ') as order_id,
+        string_agg(distinct dsp.sales_position, ', ') as order_sales_position,
+        sum(m.allocated_total_price_by_order_id) as order_revenue
+    from {{ ref('fct_sales_order_all_metrics') }} m
+    left join {{ ref('fct_sales_orders') }} fso
+        on fso.order_number = m.order_number
+    left join {{ ref('dim_sales_persons') }} dsp
+        on dsp.sales_person_id = fso.primary_sales_person_id
+    where m.customer_id is not null
+    group by m.customer_id, m.order_date
+),
+
+-- every (appointment, candidate order on/after its scheduled_date) pair reachable via
+-- EITHER the lead path or the direct-customer path, ranked so the earliest order per
+-- appointment can be picked without a correlated lateral join. source_priority only
+-- breaks same-date ties (lead path first, keeping historical numbers stable).
 appointment_candidate_orders as (
     select
         ap.appointment_id,
@@ -77,26 +103,48 @@ appointment_candidate_orders as (
         lod.order_id,
         lod.order_sales_position,
         lod.order_revenue,
-        row_number() over (
-            partition by ap.appointment_id
-            order by lod.order_date asc
-        ) as order_rank
+        1 as source_priority
     from appointments ap
     join lead_order_dates lod
         on lod.lead_id_unified = ap.resolved_lead_id
         and lod.order_date >= ap.scheduled_date
+
+    union all
+
+    select
+        ap.appointment_id,
+        cod.order_date,
+        cod.order_number,
+        cod.order_id,
+        cod.order_sales_position,
+        cod.order_revenue,
+        2 as source_priority
+    from appointments ap
+    join customer_order_dates cod
+        on cod.customer_id = ap.resolved_customer_id
+        and cod.order_date >= ap.scheduled_date
+),
+
+appointment_candidate_orders_ranked as (
+    select
+        *,
+        row_number() over (
+            partition by appointment_id
+            order by order_date asc, source_priority asc
+        ) as order_rank
+    from appointment_candidate_orders
 ),
 
 appointment_first_order as (
     select appointment_id, order_date, order_number, order_id, order_sales_position, order_revenue
-    from appointment_candidate_orders
+    from appointment_candidate_orders_ranked
     where order_rank = 1
 ),
 
--- 2 appointments of the same lead in the same calendar month can both resolve to the same next
--- order (e.g. lead re-books before converting) -- only the appointment closest to the order date
--- keeps the revenue credit, so summing order_revenue across appointments doesn't double count
--- the order.
+-- 2 appointments of the same lead (or the same lead-less customer) in the same calendar
+-- month can both resolve to the same next order (e.g. lead re-books before converting)
+-- -- only the appointment closest to the order date keeps the revenue credit, so summing
+-- order_revenue across appointments doesn't double count the order.
 appointment_order_dedup as (
     select
         afo.appointment_id,
@@ -106,7 +154,8 @@ appointment_order_dedup as (
         afo.order_sales_position,
         afo.order_revenue,
         row_number() over (
-            partition by ap.resolved_lead_id, date_trunc('month', ap.scheduled_date), afo.order_date
+            partition by coalesce(ap.resolved_lead_id, ap.resolved_customer_id),
+                     date_trunc('month', ap.scheduled_date), afo.order_date
             order by ap.scheduled_date desc
         ) as credit_rank
     from appointment_first_order afo
