@@ -319,10 +319,12 @@ models:
   - name: fct_sales_appointment_order
     description: >
       Maps each store appointment to the first order (if any) placed on/after its scheduled_date
-      by an online sale — i.e. the order the appointment converted into. Grain: 1 row = 1
+      — i.e. the order the appointment converted into. Grain: 1 row = 1
       fct_sales_appointments.appointment_id. party_id on the source appointment can be a Lead or
-      an existing Customer; resolved_lead_id always resolves back to the originating lead so it
-      can be matched against fct_sales_leads_orders (keyed on lead_id_unified).
+      an existing Customer; candidate orders are matched BOTH via the originating lead
+      (resolved_lead_id → fct_sales_leads_orders) AND directly on the customer
+      (customer_id → fct_sales_order_all_metrics), so repeat customers without lead linkage
+      still earn first-order revenue credit.
     columns:
       - name: appointment_id
         description: "Primary key — same grain as fct_sales_appointments.appointment_id."
@@ -330,7 +332,7 @@ models:
           - unique
           - not_null
       - name: resolved_lead_id
-        description: "party_id itself when appointment_with = 'Lead', otherwise the customer's originating lead via dim_sales_customers."
+        description: "party_id itself when appointment_with = 'Lead', otherwise the customer's originating lead via dim_sales_customers. NULL when the customer has no lead linkage — such appointments match orders via customer_id instead."
       - name: appointment_with_display
         description: "Vietnamese label: 'Khách cũ' when appointment_with = 'Customer', else 'Khách mới'."
       - name: status_display
@@ -338,9 +340,9 @@ models:
       - name: at_store_transformed
         description: "at_store normalized down to city (Cần Thơ / Hà Nội / Hồ Chí Minh)."
       - name: has_order
-        description: "True if an online order was placed on/after scheduled_date for resolved_lead_id."
+        description: "True if an order was placed on/after scheduled_date for the appointment's lead or customer."
       - name: order_revenue
-        description: "Revenue of the first matching order (0 if has_order is false). Only counts orders by an online sale (sales_position like '%Sale Online%')."
+        description: "Revenue of the first matching order on/after scheduled_date (0 if has_order is false). Matched via lead linkage or directly on customer_id — includes both khách mới (Lead) and khách cũ (Customer)."
 
   - name: fct_sales_lead_preferred_products
     description: "Bridge table for lead preferred products. Grain: 1 row = 1 lead × 1 preferred product. 1 lead can have many products (1-n)."
