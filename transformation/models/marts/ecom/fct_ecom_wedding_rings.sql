@@ -58,7 +58,7 @@ member_products AS (
     INNER JOIN {{ ref('int_catalog__products') }} p ON p.design_id = d.design_id
     INNER JOIN {{ ref('stg_haravan__products') }} hp ON hp.product_id = p.product_id
                                                     AND hp.published_scope = 'global'
-    INNER JOIN {{ ref('fct_ecom_jewelry_products') }} fp ON fp.haravan_product_id = p.product_id
+    INNER JOIN {{ ref('int_ecom__jewelry_products') }} fp ON fp.haravan_product_id = p.product_id
     LEFT JOIN {{ ref('stg_nocodb__products') }} np ON np.haravan_product_id = p.product_id
 ),
 
@@ -74,7 +74,7 @@ member_aggregates AS (
         STRING_AGG(DISTINCT fv.fineness_val, ', ')                        AS fineness,
         STRING_AGG(DISTINCT mv.material_val, ', ')                        AS material_colors
     FROM member_products mp
-    LEFT JOIN {{ ref('fct_ecom_jewelry_products') }} fp ON fp.haravan_product_id = mp.product_id
+    LEFT JOIN {{ ref('int_ecom__jewelry_products') }} fp ON fp.haravan_product_id = mp.product_id
     CROSS JOIN LATERAL unnest(string_to_array(fp.fineness, ', ')) AS fv(fineness_val)
     CROSS JOIN LATERAL unnest(string_to_array(fp.material_colors, ', ')) AS mv(material_val)
     GROUP BY mp.wedding_ring_id
