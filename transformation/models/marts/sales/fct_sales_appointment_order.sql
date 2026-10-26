@@ -12,6 +12,7 @@ with appointments as (
         a.appointment_id,
         a.lead_id,
         a.party_id,
+        a.erp_sales_order_id,
         a.appointment_with,
         a.appointment_reason,
         a.scheduled_date,
@@ -178,6 +179,7 @@ select
     appointment_id,
     lead_id,
     party_id,
+    erp_sales_order_id,
     appointment_with,
     case
         when appointment_with = 'Customer' then 'Khách cũ'

@@ -4,6 +4,7 @@
       "CREATE INDEX IF NOT EXISTS idx_fsa_scheduled_date ON {{ this }} (scheduled_date)",
       "CREATE INDEX IF NOT EXISTS idx_fsa_store ON {{ this }} (store)",
       "CREATE INDEX IF NOT EXISTS idx_fsa_sales_person_id ON {{ this }} (sales_person_id)",
+      "CREATE INDEX IF NOT EXISTS idx_fsa_erp_sales_order_id ON {{ this }} (erp_sales_order_id)",
     ]
 ) }}
 
@@ -11,6 +12,7 @@ SELECT
     appointment_id,
     lead_id,
     party_id,
+    erp_sales_order_id,
     appointment_reason,
     appointment_with,
     status,

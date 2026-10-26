@@ -7,6 +7,7 @@ SELECT
     appointment_id,
     lead_id,
     party_id,
+    erp_sales_order_id,
     appointment_reason,
     appointment_with,
     status,
