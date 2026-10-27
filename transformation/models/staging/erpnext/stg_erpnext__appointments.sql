@@ -10,6 +10,7 @@ SELECT
     -- Parent link (the Lead this appointment is attached to)
     lead AS lead_id,
     party AS party_id,
+    sales_order AS erp_sales_order_id,
 
     -- Content
     appointment_reason,
