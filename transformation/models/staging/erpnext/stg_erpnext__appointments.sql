@@ -10,7 +10,6 @@ SELECT
     -- Parent link (the Lead this appointment is attached to)
     lead AS lead_id,
     party AS party_id,
-    sales_order AS erp_sales_order_id,
 
     -- Content
     appointment_reason,
@@ -46,7 +45,10 @@ SELECT
     creation::timestamp AS created_at,
     modified::timestamp AS updated_at,
     owner,
-    modified_by
+    modified_by,
+
+    -- Linked Sales Order (appended at end for CREATE OR REPLACE VIEW compatibility)
+    sales_order AS erp_sales_order_id
 
 FROM {{ source('erpnext', 'appointments') }}
 WHERE name not in (
