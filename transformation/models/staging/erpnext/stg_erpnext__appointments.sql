@@ -48,7 +48,12 @@ SELECT
     modified_by,
 
     -- Linked Sales Order (appended at end for CREATE OR REPLACE VIEW compatibility)
-    sales_order AS erp_sales_order_id
+    sales_order AS erp_sales_order_id,
+
+    -- Linked order group, resolved by ERPNext (appended at end for CREATE OR REPLACE VIEW compatibility)
+    e_order AS erp_order_number,
+    sales_order_group_names AS erp_order_group_names,
+    group_order_grand_total::numeric AS erp_group_order_grand_total
 
 FROM {{ source('erpnext', 'appointments') }}
 WHERE name not in (

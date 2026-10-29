@@ -13,6 +13,9 @@ with appointments as (
         a.lead_id,
         a.party_id,
         a.erp_sales_order_id,
+        a.erp_order_number,
+        a.erp_order_group_names,
+        a.erp_group_order_grand_total,
         a.appointment_with,
         a.appointment_reason,
         a.scheduled_date,
@@ -44,57 +47,34 @@ with appointments as (
         on dsp.sales_person_id = a.sales_person_id
 ),
 
--- the order staff linked directly on the appointment in ERPNext (Appointment.sales_order).
--- No inference: an appointment without a linked order (or whose linked order is not a valid
--- order in fct_sales_orders) has no order.
-linked_orders as (
-    select
-        ap.appointment_id,
-        ap.scheduled_date,
-        fso.order_id,
-        fso.order_date,
-        fso.split_order_group_name as order_group,
-        coalesce(fso.split_order_group, fso.order_id) as split_key
-    from appointments ap
-    join {{ ref('fct_sales_orders') }} fso
-        on fso.erp_order_id = ap.erp_sales_order_id
-),
-
--- one checkout can be split into several orders (split_order_group); the appointment is
--- credited with the whole group: every order number in it and its total revenue
-order_groups as (
-    select
-        coalesce(fso.split_order_group, fso.order_id) as split_key,
-        string_agg(distinct fso.order_number, ', ') as order_number,
-        string_agg(distinct dsp.sales_position, ', ') as order_sales_position,
-        sum(fso.total_price) as order_revenue
-    from {{ ref('fct_sales_orders') }} fso
-    left join {{ ref('dim_sales_persons') }} dsp
-        on dsp.sales_person_id = fso.primary_sales_person_id
-    where coalesce(fso.split_order_group, fso.order_id) in (select split_key from linked_orders)
-    group by coalesce(fso.split_order_group, fso.order_id)
-),
-
--- several appointments can be linked to orders of the same group (e.g. the customer
--- re-books before buying) -- only the latest appointment keeps the revenue credit, so
--- summing order_revenue across appointments doesn't double count the group.
+-- the order staff linked on the appointment in ERPNext. ERPNext resolves the order number,
+-- the split order group and the group grand total itself (e_order, sales_order_group_names,
+-- group_order_grand_total) -- they are taken as-is, no recomputation here.
+-- fct_sales_orders is only looked up for order_date / order_sales_position.
+-- several appointments can be linked to the same order group (e.g. the customer re-books
+-- before buying) -- only the latest appointment keeps the revenue credit, so summing
+-- order_revenue across appointments doesn't double count the group.
 appointment_order as (
     select
-        lo.appointment_id,
-        lo.order_date,
-        lo.order_id,
-        lo.order_group,
-        og.order_number,
-        og.order_sales_position,
+        ap.appointment_id,
+        fso.order_date,
+        ap.erp_sales_order_id as order_id,
+        ap.erp_order_group_names as order_group,
+        ap.erp_order_number as order_number,
+        dsp.sales_position as order_sales_position,
         case
             when row_number() over (
-                partition by lo.split_key
-                order by lo.scheduled_date desc, lo.appointment_id desc
-            ) = 1 then og.order_revenue
+                partition by coalesce(ap.erp_order_group_names, ap.erp_order_number)
+                order by ap.scheduled_date desc, ap.appointment_id desc
+            ) = 1 then ap.erp_group_order_grand_total
             else 0
         end as order_revenue
-    from linked_orders lo
-    join order_groups og on og.split_key = lo.split_key
+    from appointments ap
+    left join {{ ref('fct_sales_orders') }} fso
+        on fso.erp_order_id = ap.erp_sales_order_id
+    left join {{ ref('dim_sales_persons') }} dsp
+        on dsp.sales_person_id = fso.primary_sales_person_id
+    where ap.erp_order_number is not null
 )
 
 select
@@ -135,7 +115,7 @@ select
         when ap.at_store like '%Hà Nội%' then 'Hà Nội'
         when ap.at_store like '%Hồ Chí Minh%' then 'Hồ Chí Minh'
     end as at_store_transformed,
-    (ao.order_id is not null) as has_order,
+    (ao.order_number is not null) as has_order,
     ao.order_date,
     ao.order_number,
     ao.order_id,

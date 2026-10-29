@@ -37,5 +37,8 @@ SELECT
     created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS created_at_vn,
     updated_at,
     updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh' AS updated_at_vn,
-    owner
+    owner,
+    erp_order_number,
+    erp_order_group_names,
+    erp_group_order_grand_total
 FROM {{ ref('int_crm__appointments') }}
