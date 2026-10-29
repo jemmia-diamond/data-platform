@@ -30,15 +30,12 @@ with appointments as (
         dsp.sales_position as appointment_sales_person_position,
         a.status,
         -- party_id can be a Lead (new lead booking) or a Customer (existing customer booking a
-        -- repeat appointment) depending on appointment_with. fct_sales_leads_orders is keyed on
-        -- lead_id_unified, so for the Customer case resolve back to the originating lead first.
+        -- repeat appointment) depending on appointment_with. Resolve the Customer case back to
+        -- its originating lead so BI can join appointments to lead-level facts.
         coalesce(
             case when a.appointment_with = 'Lead' then a.party_id end,
             dc.lead_name
-        ) as resolved_lead_id,
-        -- direct customer anchor for the customer order path below: keeps first-order matching
-        -- working for repeat customers even when they have no originating lead linkage
-        case when a.appointment_with != 'Lead' then a.party_id end as resolved_customer_id
+        ) as resolved_lead_id
     from {{ ref('fct_sales_appointments') }} a
     left join {{ ref('dim_sales_customers') }} dc
         on dc.customer_id = a.party_id
@@ -47,176 +44,103 @@ with appointments as (
         on dsp.sales_person_id = a.sales_person_id
 ),
 
--- pre-aggregate every order down to 1 row per (lead, order_date) ONCE for the whole table,
--- instead of re-running this GROUP BY inside a correlated subquery for every appointment.
--- Orders in the same checkout group split across multiple order_number rows on the same
--- order_date are collapsed here.
--- order_sales_position is the order's own primary_sales_person_id resolved via dim_sales_persons
--- (not lo.sales_position, which is copied from the lead's assigned salesperson at lead-creation
--- time and is frequently blank) -- exposed as-is so BI can filter/group by online vs offline itself.
-lead_order_dates as (
-    select
-        lo.lead_id_unified,
-        lo.order_date,
-        string_agg(distinct lo.lead_name_has_order_number, ', ') as order_number,
-        string_agg(distinct fso.order_id, ', ') as order_id,
-        string_agg(distinct dsp.sales_position, ', ') as order_sales_position,
-        sum(lo.total_price_lead_name_has_order) as order_revenue
-    from {{ ref('fct_sales_leads_orders') }} lo
-    left join {{ ref('fct_sales_orders') }} fso
-        on fso.order_number = lo.lead_name_has_order_number
-    left join {{ ref('dim_sales_persons') }} dsp
-        on dsp.sales_person_id = fso.primary_sales_person_id
-    where lo.lead_name_has_order_group is not null
-    group by lo.lead_id_unified, lo.order_date
-),
-
--- customer-anchored order dates: 1 row per (customer, order_date) straight from the order
--- metrics, independent of lead linkage. This is the repeat-customer (khách cũ) path so the
--- first post-appointment order is counted for customers whose orders are not reachable
--- through a lead.
-customer_order_dates as (
-    select
-        m.customer_id,
-        m.order_date,
-        string_agg(distinct m.order_number, ', ') as order_number,
-        string_agg(distinct m.order_id, ', ') as order_id,
-        string_agg(distinct dsp.sales_position, ', ') as order_sales_position,
-        sum(m.allocated_total_price_by_order_id) as order_revenue
-    from {{ ref('fct_sales_order_all_metrics') }} m
-    left join {{ ref('fct_sales_orders') }} fso
-        on fso.order_number = m.order_number
-    left join {{ ref('dim_sales_persons') }} dsp
-        on dsp.sales_person_id = fso.primary_sales_person_id
-    where m.customer_id is not null
-    group by m.customer_id, m.order_date
-),
-
--- every (appointment, candidate order on/after its scheduled_date) pair reachable via
--- EITHER the lead path or the direct-customer path, ranked so the earliest order per
--- appointment can be picked without a correlated lateral join. source_priority only
--- breaks same-date ties (lead path first, keeping historical numbers stable).
-appointment_candidate_orders as (
+-- the order staff linked directly on the appointment in ERPNext (Appointment.sales_order).
+-- No inference: an appointment without a linked order (or whose linked order is not a valid
+-- order in fct_sales_orders) has no order.
+linked_orders as (
     select
         ap.appointment_id,
-        lod.order_date,
-        lod.order_number,
-        lod.order_id,
-        lod.order_sales_position,
-        lod.order_revenue,
-        1 as source_priority
+        ap.scheduled_date,
+        fso.order_id,
+        fso.order_date,
+        fso.split_order_group_name as order_group,
+        coalesce(fso.split_order_group, fso.order_id) as split_key
     from appointments ap
-    join lead_order_dates lod
-        on lod.lead_id_unified = ap.resolved_lead_id
-        and lod.order_date >= ap.scheduled_date
+    join {{ ref('fct_sales_orders') }} fso
+        on fso.erp_order_id = ap.erp_sales_order_id
+),
 
-    union all
-
+-- one checkout can be split into several orders (split_order_group); the appointment is
+-- credited with the whole group: every order number in it and its total revenue
+order_groups as (
     select
-        ap.appointment_id,
-        cod.order_date,
-        cod.order_number,
-        cod.order_id,
-        cod.order_sales_position,
-        cod.order_revenue,
-        2 as source_priority
-    from appointments ap
-    join customer_order_dates cod
-        on cod.customer_id = ap.resolved_customer_id
-        and cod.order_date >= ap.scheduled_date
+        coalesce(fso.split_order_group, fso.order_id) as split_key,
+        string_agg(distinct fso.order_number, ', ') as order_number,
+        string_agg(distinct dsp.sales_position, ', ') as order_sales_position,
+        sum(fso.total_price) as order_revenue
+    from {{ ref('fct_sales_orders') }} fso
+    left join {{ ref('dim_sales_persons') }} dsp
+        on dsp.sales_person_id = fso.primary_sales_person_id
+    where coalesce(fso.split_order_group, fso.order_id) in (select split_key from linked_orders)
+    group by coalesce(fso.split_order_group, fso.order_id)
 ),
 
-appointment_candidate_orders_ranked as (
-    select
-        *,
-        row_number() over (
-            partition by appointment_id
-            order by order_date asc, source_priority asc
-        ) as order_rank
-    from appointment_candidate_orders
-),
-
-appointment_first_order as (
-    select appointment_id, order_date, order_number, order_id, order_sales_position, order_revenue
-    from appointment_candidate_orders_ranked
-    where order_rank = 1
-),
-
--- 2 appointments of the same lead (or the same lead-less customer) in the same calendar
--- month can both resolve to the same next order (e.g. lead re-books before converting)
--- -- only the appointment closest to the order date keeps the revenue credit, so summing
--- order_revenue across appointments doesn't double count the order.
-appointment_order_dedup as (
-    select
-        afo.appointment_id,
-        afo.order_date,
-        afo.order_number,
-        afo.order_id,
-        afo.order_sales_position,
-        afo.order_revenue,
-        row_number() over (
-            partition by coalesce(ap.resolved_lead_id, ap.resolved_customer_id),
-                     date_trunc('month', ap.scheduled_date), afo.order_date
-            order by ap.scheduled_date desc
-        ) as credit_rank
-    from appointment_first_order afo
-    join appointments ap on ap.appointment_id = afo.appointment_id
-),
-
+-- several appointments can be linked to orders of the same group (e.g. the customer
+-- re-books before buying) -- only the latest appointment keeps the revenue credit, so
+-- summing order_revenue across appointments doesn't double count the group.
 appointment_order as (
     select
-        ap.*,
-        aod.order_date as first_order_date,
-        aod.order_number as first_order_number,
-        aod.order_id as first_order_id,
-        aod.order_sales_position as first_order_sales_position,
-        case when aod.credit_rank = 1 then aod.order_revenue else 0 end as first_order_revenue
-    from appointments ap
-    left join appointment_order_dedup aod on aod.appointment_id = ap.appointment_id
+        lo.appointment_id,
+        lo.order_date,
+        lo.order_id,
+        lo.order_group,
+        og.order_number,
+        og.order_sales_position,
+        case
+            when row_number() over (
+                partition by lo.split_key
+                order by lo.scheduled_date desc, lo.appointment_id desc
+            ) = 1 then og.order_revenue
+            else 0
+        end as order_revenue
+    from linked_orders lo
+    join order_groups og on og.split_key = lo.split_key
 )
 
 select
-    appointment_id,
-    lead_id,
-    party_id,
-    erp_sales_order_id,
-    appointment_with,
+    ap.appointment_id,
+    ap.lead_id,
+    ap.party_id,
+    ap.erp_sales_order_id,
+    ap.appointment_with,
     case
-        when appointment_with = 'Customer' then 'Khách cũ'
+        when ap.appointment_with = 'Customer' then 'Khách cũ'
         else 'Khách mới'
     end as appointment_with_display,
-    appointment_reason,
-    notes,
-    order_status,
-    budget,
-    created_at_vn,
-    updated_at,
-    updated_at_vn,
-    resolved_lead_id,
-    scheduled_date,
-    scheduled_time,
-    appointment_sales_person_id,
-    appointment_sales_person_name,
-    appointment_sales_person_position,
-    status,
+    ap.appointment_reason,
+    ap.notes,
+    ap.order_status,
+    ap.budget,
+    ap.created_at_vn,
+    ap.updated_at,
+    ap.updated_at_vn,
+    ap.resolved_lead_id,
+    ap.scheduled_date,
+    ap.scheduled_time,
+    ap.appointment_sales_person_id,
+    ap.appointment_sales_person_name,
+    ap.appointment_sales_person_position,
+    ap.status,
     -- overdue takes priority over "due today": an Open appointment scheduled earlier today
     -- whose time has already passed is 'Quá hạn', not 'Cần follow'
     case
-        when status = 'Cancelled' then 'Hủy'
-        when status = 'Done' then 'Thành công'
-        when status = 'Open' and scheduled_time_vn < (now() at time zone 'Asia/Ho_Chi_Minh') then 'Quá hạn'
-        when status = 'Open' and scheduled_time_vn::date = (now() at time zone 'Asia/Ho_Chi_Minh')::date then 'Cần follow'
-        when status = 'Open' then 'Đang chờ'
+        when ap.status = 'Cancelled' then 'Hủy'
+        when ap.status = 'Done' then 'Thành công'
+        when ap.status = 'Open' and ap.scheduled_time_vn < (now() at time zone 'Asia/Ho_Chi_Minh') then 'Quá hạn'
+        when ap.status = 'Open' and ap.scheduled_time_vn::date = (now() at time zone 'Asia/Ho_Chi_Minh')::date then 'Cần follow'
+        when ap.status = 'Open' then 'Đang chờ'
     end as status_display,
     case
-        when at_store like '%Cần Thơ%' then 'Cần Thơ'
-        when at_store like '%Hà Nội%' then 'Hà Nội'
-        when at_store like '%Hồ Chí Minh%' then 'Hồ Chí Minh'
+        when ap.at_store like '%Cần Thơ%' then 'Cần Thơ'
+        when ap.at_store like '%Hà Nội%' then 'Hà Nội'
+        when ap.at_store like '%Hồ Chí Minh%' then 'Hồ Chí Minh'
     end as at_store_transformed,
-    (first_order_date is not null) as has_order,
-    first_order_date as order_date,
-    first_order_number as order_number,
-    first_order_id as order_id,
-    first_order_sales_position as order_sales_position,
-    coalesce(first_order_revenue, 0) as order_revenue
-from appointment_order
+    (ao.order_id is not null) as has_order,
+    ao.order_date,
+    ao.order_number,
+    ao.order_id,
+    ao.order_sales_position,
+    coalesce(ao.order_revenue, 0) as order_revenue,
+    ao.order_group
+from appointments ap
+left join appointment_order ao on ao.appointment_id = ap.appointment_id

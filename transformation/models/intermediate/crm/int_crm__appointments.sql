@@ -7,7 +7,6 @@ SELECT
     appointment_id,
     lead_id,
     party_id,
-    erp_sales_order_id,
     appointment_reason,
     appointment_with,
     status,
@@ -28,6 +27,7 @@ SELECT
     notes,
     created_at,
     updated_at,
-    owner
+    owner,
+    erp_sales_order_id
 
 FROM {{ ref('stg_erpnext__appointments') }}

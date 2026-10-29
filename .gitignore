@@ -46,6 +46,8 @@ htmlcov/
 .tmp_dagster_home_*/
 .kilo/
 kilo.json
+.mcp.json
+.claude/settings.local.json
 .continue/
 .roocode/
 
