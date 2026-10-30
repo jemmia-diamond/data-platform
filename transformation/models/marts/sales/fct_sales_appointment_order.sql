@@ -13,9 +13,8 @@ with appointments as (
         a.lead_id,
         a.party_id,
         a.erp_sales_order_id,
-        a.erp_order_number,
-        a.erp_order_group_names,
         a.erp_group_order_grand_total,
+        a.erp_order_group_names,
         a.appointment_with,
         a.appointment_reason,
         a.scheduled_date,
@@ -47,10 +46,11 @@ with appointments as (
         on dsp.sales_person_id = a.sales_person_id
 ),
 
--- the order staff linked on the appointment in ERPNext. ERPNext resolves the order number,
--- the split order group and the group grand total itself (e_order, sales_order_group_names,
--- group_order_grand_total) -- they are taken as-is, no recomputation here.
--- fct_sales_orders is only looked up for order_date / order_sales_position.
+-- the Sales Order staff linked on the appointment in ERPNext (Appointment.sales_order).
+-- Order group and its grand total are resolved by ERPNext itself
+-- (Appointment.sales_order_group_names, group_order_grand_total) and taken as-is.
+-- The order number is only looked up for the linked Sales Order in int_sales__orders (which
+-- still holds cancelled orders); order_date / order_sales_position in fct_sales_orders.
 -- several appointments can be linked to the same order group (e.g. the customer re-books
 -- before buying) -- only the latest appointment keeps the revenue credit, so summing
 -- order_revenue across appointments doesn't double count the group.
@@ -60,21 +60,23 @@ appointment_order as (
         fso.order_date,
         ap.erp_sales_order_id as order_id,
         ap.erp_order_group_names as order_group,
-        ap.erp_order_number as order_number,
+        so.order_number,
         dsp.sales_position as order_sales_position,
         case
             when row_number() over (
-                partition by coalesce(ap.erp_order_group_names, ap.erp_order_number)
+                partition by coalesce(ap.erp_order_group_names, ap.erp_sales_order_id)
                 order by ap.scheduled_date desc, ap.appointment_id desc
             ) = 1 then ap.erp_group_order_grand_total
             else 0
         end as order_revenue
     from appointments ap
+    left join {{ ref('int_sales__orders') }} so
+        on so.erp_sales_order_id = ap.erp_sales_order_id
     left join {{ ref('fct_sales_orders') }} fso
         on fso.erp_order_id = ap.erp_sales_order_id
     left join {{ ref('dim_sales_persons') }} dsp
         on dsp.sales_person_id = fso.primary_sales_person_id
-    where ap.erp_order_number is not null
+    where ap.erp_sales_order_id is not null
 )
 
 select
@@ -115,7 +117,7 @@ select
         when ap.at_store like '%Hà Nội%' then 'Hà Nội'
         when ap.at_store like '%Hồ Chí Minh%' then 'Hồ Chí Minh'
     end as at_store_transformed,
-    (ao.order_number is not null) as has_order,
+    (ao.order_id is not null) as has_order,
     ao.order_date,
     ao.order_number,
     ao.order_id,

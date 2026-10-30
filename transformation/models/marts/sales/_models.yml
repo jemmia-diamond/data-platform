@@ -318,10 +318,10 @@ models:
 
   - name: fct_sales_appointment_order
     description: >
-      Maps each store appointment to the order staff linked on the appointment in ERPNext.
-      Order number, split order group and group grand total are resolved by ERPNext itself
-      (Appointment.e_order, sales_order_group_names, group_order_grand_total) and taken as-is.
-      No inference: appointments without a linked order have has_order = false.
+      Maps each store appointment to the Sales Order staff linked on the appointment in ERPNext
+      (Appointment.sales_order). Order group and its grand total are resolved by ERPNext
+      (Appointment.sales_order_group_names, group_order_grand_total), taken as-is. No inference: appointments without
+      a linked order have has_order = false.
       Grain: 1 row = 1 fct_sales_appointments.appointment_id.
     columns:
       - name: appointment_id
@@ -340,7 +340,7 @@ models:
       - name: at_store_transformed
         description: "at_store normalized down to city (Cần Thơ / Hà Nội / Hồ Chí Minh)."
       - name: has_order
-        description: "True if ERPNext resolved an order on the appointment (Appointment.e_order is set)."
+        description: "True if a Sales Order is linked on the appointment (Appointment.sales_order is set)."
         tests:
           - not_null
       - name: order_id
@@ -348,13 +348,13 @@ models:
       - name: order_date
         description: "Order date of the linked Sales Order, looked up in fct_sales_orders. NULL if that order is not a valid order there."
       - name: order_number
-        description: "Haravan order number resolved by ERPNext (Appointment.e_order), e.g. ORDER123456."
+        description: "Haravan order number of the linked Sales Order (int_sales__orders.order_number), e.g. ORDER123456."
       - name: order_group
-        description: "Sales orders of the linked order group resolved by ERPNext (Appointment.sales_order_group_names), comma-separated."
+        description: "Sales Orders of the linked order group resolved by ERPNext (Appointment.sales_order_group_names), comma-separated."
       - name: order_sales_position
         description: "Sales position of the linked Sales Order's primary sales person, looked up via fct_sales_orders."
       - name: order_revenue
-        description: "Grand total of the linked order group resolved by ERPNext (Appointment.group_order_grand_total), 0 if has_order is false. When several appointments link to the same group only the latest appointment keeps the revenue, so summing across appointments never double counts."
+        description: "Grand total of the linked order group computed by ERPNext (Appointment.group_order_grand_total), 0 if has_order is false. When several appointments link to the same group only the latest appointment keeps the revenue, so summing across appointments never double counts."
         tests:
           - not_null
 
