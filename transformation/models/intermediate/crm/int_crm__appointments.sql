@@ -29,8 +29,7 @@ SELECT
     updated_at,
     owner,
     erp_sales_order_id,
-    erp_order_number,
-    erp_order_group_names,
-    erp_group_order_grand_total
+    erp_group_order_grand_total,
+    erp_order_group_names
 
 FROM {{ ref('stg_erpnext__appointments') }}
