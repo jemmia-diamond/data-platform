@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from dlt.extract.resource import DltResource
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
@@ -22,6 +22,10 @@ class TableSpec:
     fields: Optional[str] = None
     column_hints: dict[str, dict[str, str]] = field(default_factory=dict)
     page_limit: int = DEFAULT_PAGE_LIMIT
+    # "replace" reloads the whole table every run. Use it for tables whose incremental cursor
+    # NocoDB never fills (no physical database_updated_at column) or whose rows are deleted:
+    # "merge" only inserts/updates, so those tables silently stop updating and keep deleted rows.
+    write_disposition: Literal["merge", "replace"] = "merge"
 
 
 # --- R&D ------------------------------------------------------------------
@@ -78,7 +82,8 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="moissanite",
         table_id="mohak48lzcj6de0",
         primary_key="id",
-        incremental_field="database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
         fields="id,product_group,shape,length,width,color,clarity,fluorescence,cut,polish,symmetry,product_group_norm,shape_norm,length_norm,width_norm,color_norm,clarity_norm,fluorescence_norm,cut_norm,polish_norm,symmetry_norm,haravan_product_id,haravan_variant_id,auto_create,title,price,barcode,moissanite_serials,database_updated_at",
         column_hints={
             "database_updated_at": {"data_type": "timestamp"},
@@ -117,13 +122,15 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         table_id="mw50xuq1hl3fvls",
         primary_key=["diamonds_id", "variant_serials_id"],
         incremental_field=None,
+        write_disposition="replace",
         fields="diamonds_id,variant_serials_id",
     ),
     TableSpec(
         resource_name="temporary_products",
         table_id="m87hzbjkusszj4q",
         primary_key="id",
-        incremental_field="database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
         fields="id,haravan_product_id,haravan_variant_id,customer_name,customer_phone,variant_title,code,price,product_information,design_id,category,applique_material,material_color,size_type,ring_size,fineness,design_code,summary,use_case,ticket_type,product_group,gia_report_no,request_code,ref_design_code,database_created_at,database_updated_at",
     ),
     TableSpec(
@@ -137,7 +144,8 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="variants_haravan_collection",
         table_id="m9kbvsd875ga6pl",
         primary_key=["variants_id", "haravan_collections_id"],
-        incremental_field="database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
         fields="variants_id,haravan_collections_id,database_updated_at",
     ),
     TableSpec(
@@ -180,14 +188,16 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="products_haravan_collection",
         table_id="m0ndwr6sst0xywa",
         primary_key=["products_id", "haravan_collections_id"],
-        incremental_field="database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
         fields="products_id,haravan_collections_id,positive,database_updated_at",
     ),
     TableSpec(
         resource_name="diamonds_haravan_collection",
         table_id="m4nfkbe9wt73fiy",
         primary_key=["diamond_id", "haravan_collection_id", "position"],
-        incremental_field="database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
         fields="diamond_id,haravan_collection_id,position,is_primary,synced_at,created_at,database_updated_at",
     ),
     TableSpec(
@@ -245,7 +255,7 @@ def build_table_resource(
 
     resource_def: dict[str, Any] = {
         "name": spec.resource_name,
-        "write_disposition": "merge",
+        "write_disposition": spec.write_disposition,
         "endpoint": {
             "path": f"tables/{spec.table_id}/records",
             "params": endpoint_params,
