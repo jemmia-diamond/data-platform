@@ -17,9 +17,10 @@ SELECT
     {{ safe_cast_numeric('discount_value') }} AS discount_value,
     start_date,
     end_date,
-    program,
     _db_updated_at::timestamp,
     _dlt_load_id,
-    _dlt_id
+    _dlt_id,
+    -- Added after the others: CREATE OR REPLACE VIEW can only append columns.
+    program
 
 FROM {{ source('nocodb', 'haravan_collections') }}

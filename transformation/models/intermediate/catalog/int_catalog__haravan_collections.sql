@@ -20,6 +20,7 @@ SELECT
     discount_value,
     start_date,
     end_date,
-    program,
-    _db_updated_at
+    _db_updated_at,
+    -- Added after the others: CREATE OR REPLACE VIEW can only append columns.
+    program
 FROM {{ ref('stg_nocodb__haravan_collections') }}
