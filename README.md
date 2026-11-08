@@ -117,6 +117,8 @@ Then log in at [http://localhost:3080](http://localhost:3080) with:
    - Use `primary_key` for deduplication.
    - Use `write_disposition="merge"` for upsert logic.
    - Use `incremental` to fetch only new/updated records.
+   - Use `write_disposition="replace"` (full reload) when the source has no reliable update
+     cursor or deletes rows: merge never removes rows, so such a copy silently goes stale.
 2. **Setup Source**: In `ingestion/<connector>/source.py`, define the `dlt.source`.
 3. **Register Assets**: In `orchestration/assets/ingestion/<connector>.py`, use `@dlt_assets`.
 4. **Env Vars**: Add `SOURCES__<CONNECTOR>__API_TOKEN` to `.env`.
