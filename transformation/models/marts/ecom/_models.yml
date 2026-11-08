@@ -41,9 +41,9 @@ models:
         tests:
           - not_null
       - name: final_discount_price
-        description: "Final display price after the 3-branch logic."
+        description: "NocoDB final_discount_price for the variant (used while its collection is running)."
       - name: discount_branch
-        description: "Which branch produced the price (active_collection | collection_discount | default_discount)."
+        description: "Which rule produced the price (combo | active_collection | collection_discount | combo_product | list_price)."
       - name: diamonds
         description: "JSON array containing the matched loose GIA diamond (edge_size [4.5,4.6), in_stock_3, GIA, single-variant, not-excluded; round-robin spread) or empty array [] if none matched."
 
