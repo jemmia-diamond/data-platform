@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 from dlt.extract.resource import DltResource
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
+from requests import Response
 
 DEFAULT_PAGE_LIMIT = 200
 LARGE_TABLE_PAGE_LIMIT = 50
@@ -47,7 +48,8 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="design_details",
         table_id="mxhzqdiwzvkxdf0",
         primary_key="id",
-        incremental_field="database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
         fields="id,gold_weight,labour_cost,shape_of_main_stone,main_stone_length,main_stone_width,melee_total_price,database_created_at,database_updated_at",
         column_hints={
             "database_created_at": {"data_type": "timestamp"},
@@ -218,6 +220,23 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
 )
 
 
+def _refuse_empty_table(resource_name: str) -> Callable[..., Response]:
+    """Fail the run when NocoDB reports an empty table.
+
+    A replace load swaps in whatever was fetched, so an empty answer would wipe the table
+    downstream. Failing before the load keeps the previous copy.
+    """
+
+    def check(response: Response, *args: Any, **kwargs: Any) -> Response:
+        if response.json().get("pageInfo", {}).get("totalRows") == 0:
+            raise ValueError(
+                f"NocoDB returned no rows for {resource_name}; refusing to replace the table"
+            )
+        return response
+
+    return check
+
+
 def build_table_resource(
     *,
     spec: TableSpec,
@@ -236,8 +255,14 @@ def build_table_resource(
         endpoint_params["viewId"] = spec.view_id
     if spec.fields:
         endpoint_params["fields"] = spec.fields
-    if spec.incremental_field and not full_refresh:
-        endpoint_params["sort"] = spec.incremental_field
+    # Offset pages need a stable order, or rows that change mid-run are skipped or repeated.
+    # The primary key breaks ties between rows with the same cursor value.
+    sort_fields = [spec.incremental_field] if spec.incremental_field and not full_refresh else []
+    if spec.primary_key:
+        primary_key = [spec.primary_key] if isinstance(spec.primary_key, str) else spec.primary_key
+        sort_fields += [key for key in primary_key if key not in sort_fields]
+    if sort_fields:
+        endpoint_params["sort"] = ",".join(sort_fields)
 
     incremental_config = None
     if spec.incremental_field and not full_refresh:
@@ -271,6 +296,10 @@ def build_table_resource(
     }
     if spec.primary_key:
         resource_def["primary_key"] = spec.primary_key
+    if spec.write_disposition == "replace":
+        resource_def["endpoint"]["response_actions"] = [
+            {"status_code": 200, "action": _refuse_empty_table(spec.resource_name)},
+        ]
 
     config: RESTAPIConfig = {
         "client": {
