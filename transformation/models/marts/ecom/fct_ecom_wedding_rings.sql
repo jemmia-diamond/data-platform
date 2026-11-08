@@ -19,7 +19,7 @@
 --   sold_quantity = SUM(member sold_quantity)
 --
 -- fn runtime adds per-product JSON with variants — price from ecom.variants view semantics:
---   price           = final_price (3-branch discounted, same as fct_ecom_jewelry_variants.price)
+--   price           = final_price (same as fct_ecom_jewelry_variants.price)
 --   compare_at_price = price_compare_at = raw Haravan selling price (giá gốc)
 --   (NOT raw haravan compare_at_price — that is 0 for 99.9% of variants.)
 -- fineness/material_colors are comma-separated TEXT (not arrays) — BFF must use LIKE ANY for filtering.

@@ -20,5 +20,6 @@ SELECT
     discount_value,
     start_date,
     end_date,
+    program,
     _db_updated_at
 FROM {{ ref('stg_nocodb__haravan_collections') }}

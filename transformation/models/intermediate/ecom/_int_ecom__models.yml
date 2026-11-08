@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: int_ecom__jewelry_variant_prices
-    description: "Ecom jewelry variant pricing — final sale price via the legacy worker 3-branch logic (active promo collection → direct discount → default 16% discount). Grain is one row per Haravan variant."
+    description: "Ecom jewelry variant pricing — the price Haravan charges at checkout. Discounts follow the NocoDB links (combo → collection → combo product); no link means list price. Rates come from haravan_collections.program. Loose diamonds are excluded. Grain is one row per Haravan variant."
     columns:
       - name: variant_id
         description: "Haravan variant ID."
@@ -14,9 +14,9 @@ models:
         tests:
           - not_null
       - name: final_price
-        description: "Final display price after the 3-branch logic."
+        description: "Final display price (see discount_branch)."
       - name: discount_branch
-        description: "Which branch produced final_price (active_collection | direct_discount | default_discount)."
+        description: "Which rule produced final_price (combo | active_collection | collection_discount | combo_product | list_price)."
 
   - name: int_ecom__serial_diamond_variants
     description: "Haravan variants that are part of a jewelry+diamond combo (a serial linked to a diamond). Excluded from the ecom jewelry variant feed."

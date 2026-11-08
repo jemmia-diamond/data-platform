@@ -27,7 +27,6 @@ on-run-start:
 # Project-level variables (can be overridden via --vars or environment).
 vars:
   # E-commerce storefront defaults (marts_ecom). Override when deploying.
-  ecom_default_jewelry_discount: 16   # default % off compare_at_price for the no-collection branch
   ecom_website_public_url: ""         # public website base URL (reserved for gia_url construction)
 
 # Configuring models
