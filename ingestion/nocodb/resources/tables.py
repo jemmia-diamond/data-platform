@@ -211,8 +211,9 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         resource_name="haravan_collections",
         table_id="m7k3ehq5fv2aijy",
         primary_key="id",
-        incremental_field="database_updated_at",
-        fields="id,collection_type,title,products_count,haravan_id,auto_create,handle,is_excluded,is_exclusive,discount_type,discount_value,start_date,end_date,database_updated_at",
+        incremental_field=None,
+        write_disposition="replace",
+        fields="id,collection_type,title,products_count,haravan_id,auto_create,handle,is_excluded,is_exclusive,discount_type,discount_value,start_date,end_date,program,database_updated_at",
     ),
 )
 

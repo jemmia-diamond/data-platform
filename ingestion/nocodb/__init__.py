@@ -15,6 +15,7 @@ def build_nocodb_pipeline(pipeline_name: str = NOCODB_PIPELINE_NAME):
     return build_dlt_pipeline(
         connector_name=pipeline_name,
         dataset_name=NOCODB_DATASET_NAME,
+        replace_strategy="insert-from-staging",
     )
 
 
