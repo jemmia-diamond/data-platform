@@ -8,6 +8,7 @@ from .resources import (
     build_orders_resource,
     build_customers_resource,
     build_products_resource,
+    build_products_full_reload_resource,
     build_locations_resource,
     build_events_resource,
     build_users_resource,
@@ -46,6 +47,10 @@ def haravan_source(
         api_token=api_token,
         start_date=start_date,
         end_date=end_date,
+    )
+    products_full_reload_resource = build_products_full_reload_resource(
+        base_url=base_url,
+        api_token=api_token,
     )
     locations_resource = build_locations_resource(
         base_url=base_url,
@@ -90,6 +95,7 @@ def haravan_source(
         orders_resource,
         customers_resource,
         products_resource,
+        products_full_reload_resource,
         locations_resource,
         inventory_locations_resource,
         events_resource,
