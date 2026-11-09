@@ -358,6 +358,42 @@ models:
         tests:
           - not_null
 
+  - name: fct_sales_appointment_order_split
+    description: >
+      fct_sales_appointment_order with revenue split between sales persons via the ERPNext
+      Appointment Sales Split child table (percentage-based). Appointments without split rows
+      credit the primary sales person 100%.
+      Grain: 1 row = 1 appointment x 1 credited sales person. Use count(distinct appointment_id)
+      to count appointments; sum(order_revenue) adds back up to fct_sales_appointment_order.order_revenue.
+    columns:
+      - name: appointment_sales_key
+        description: "Primary key — appointment_id:appointment_sales_person_id."
+        tests:
+          - unique
+          - not_null
+      - name: appointment_id
+        description: "Appointment ID (fct_sales_appointment_order.appointment_id). Repeats once per credited sales person when the appointment is split."
+        tests:
+          - not_null
+      - name: appointment_sales_person_id
+        description: "Credited sales person: the split sales person, or the appointment's primary sales when not split."
+      - name: appointment_sales_person_name
+        description: "Name of the credited sales person."
+      - name: appointment_sales_person_position
+        description: "Sales position of the credited sales person (dim_sales_persons.sales_position)."
+      - name: is_split
+        description: "True if the credit comes from an Appointment Sales Split row, false if it is the primary sales 100% fallback."
+        tests:
+          - not_null
+      - name: split_percentage
+        description: "Share of the appointment credited to this sales person (0-100), normalized so an appointment's rows always total 100."
+      - name: order_revenue
+        description: "This sales person's share (split_percentage) of fct_sales_appointment_order.order_revenue. Summing across appointments and sales persons never double counts."
+        tests:
+          - not_null
+      - name: order_group_revenue
+        description: "Full (unsplit) fct_sales_appointment_order.order_revenue, repeated on every split row — do not sum across sales persons."
+
   - name: fct_sales_lead_preferred_products
     description: "Bridge table for lead preferred products. Grain: 1 row = 1 lead × 1 preferred product. 1 lead can have many products (1-n)."
     columns:

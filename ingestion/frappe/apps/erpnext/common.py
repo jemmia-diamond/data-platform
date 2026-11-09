@@ -143,7 +143,10 @@ CHILD_JSON_EMBEDS: dict[str, list[tuple[str, str]]] = {
         ("tabContact Phone", "phones"),
         ("tabContact Email", "emails"),
         ("tabDynamic Link", "dynamic_links")
-    ]
+    ],
+    "appointments": [
+        ("tabAppointment Sales Split", "sales_splits"),
+    ],
 }
 
 
