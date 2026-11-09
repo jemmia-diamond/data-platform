@@ -16,6 +16,10 @@ def build_asset_selection(
 
 def build_job_definition(spec: ExecutionUnitSpec):
     selection = build_asset_selection(spec.asset_paths, spec.exclude_asset_paths)
+    if spec.layer == "transformation":
+        # dbt sources point at the ingestion assets, so `.upstream()` reaches them. A
+        # transformation job only rebuilds models; ingestion runs on its own schedules.
+        selection = selection - AssetSelection.groups("ingestion")
     tags = spec.dagster_tags
 
     return define_asset_job(

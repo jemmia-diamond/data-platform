@@ -7,114 +7,114 @@ sources:
       - name: sales_orders
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "sales_orders"]
+            asset_key: ["ingestion", "frappe", "erpnext", "sales_orders"]
             
       - name: sales_order_items
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "sales_order_items"]
+            asset_key: ["ingestion", "frappe", "erpnext", "sales_order_items"]
             
       - name: deleted_documents
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "deleted_documents"]
+            asset_key: ["ingestion", "frappe", "erpnext", "deleted_documents"]
             
       - name: customers
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "customers"]
+            asset_key: ["ingestion", "frappe", "erpnext", "customers"]
             
       - name: leads
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "leads"]
+            asset_key: ["ingestion", "frappe", "erpnext", "leads"]
             
       - name: contacts
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "contacts"]
+            asset_key: ["ingestion", "frappe", "erpnext", "contacts"]
 
       - name: users
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "users"]
+            asset_key: ["ingestion", "frappe", "erpnext", "users"]
             
       - name: addresses
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "addresses"]
+            asset_key: ["ingestion", "frappe", "erpnext", "addresses"]
             
       - name: lead_sources
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "lead_sources"]
+            asset_key: ["ingestion", "frappe", "erpnext", "lead_sources"]
 
       - name: regions
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "regions"]
+            asset_key: ["ingestion", "frappe", "erpnext", "regions"]
 
       - name: lead_budgets
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "lead_budgets"]
+            asset_key: ["ingestion", "frappe", "erpnext", "lead_budgets"]
       
       - name: lead_demands
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "lead_demands"]
+            asset_key: ["ingestion", "frappe", "erpnext", "lead_demands"]
 
       - name: lead_products
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "lead_products"]
+            asset_key: ["ingestion", "frappe", "erpnext", "lead_products"]
 
       - name: sales_persons
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "sales_persons"]
+            asset_key: ["ingestion", "frappe", "erpnext", "sales_persons"]
 
       - name: product_categories
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "product_categories"]
+            asset_key: ["ingestion", "frappe", "erpnext", "product_categories"]
 
       - name: purchase_purposes
         meta:
           dagster:
-            asset_key: ["frappe_erpnext", "purchase_purposes"]
+            asset_key: ["ingestion", "frappe", "erpnext", "purchase_purposes"]
 
       - name: promotions
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "promotions" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "promotions"]
 
       - name: buyback_exchanges
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "buyback_exchanges" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "buyback_exchanges"]
 
       - name: buyback_exchange_items
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "buyback_exchange_items" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "buyback_exchange_items"]
 
       - name: opportunities
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "opportunities" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "opportunities"]
 
       - name: note
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "note" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "note"]
 
       - name: appointments
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "appointments" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "appointments"]
 
       - name: call_logs
         meta:
           dagster:
-            asset_key: [ "frappe_erpnext", "call_logs" ]
+            asset_key: ["ingestion", "frappe", "erpnext", "call_logs"]

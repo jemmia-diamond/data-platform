@@ -7,17 +7,17 @@ sources:
       - name: orders
         meta:
           dagster:
-            asset_key: ["haravan", "orders"]
+            asset_key: ["ingestion", "haravan", "orders"]
 
       - name: customers
         meta:
           dagster:
-            asset_key: ["haravan", "customers"]
+            asset_key: ["ingestion", "haravan", "customers"]
 
       - name: products
         meta:
           dagster:
-            asset_key: ["haravan", "products"]
+            asset_key: ["ingestion", "haravan", "products"]
 
       - name: product_variants
         meta:
@@ -27,39 +27,39 @@ sources:
       - name: custom_collections
         meta:
           dagster:
-            asset_key: ["haravan", "custom_collections"]
+            asset_key: ["ingestion", "haravan", "custom_collections"]
 
       - name: smart_collections
         meta:
           dagster:
-            asset_key: ["haravan", "smart_collections"]
+            asset_key: ["ingestion", "haravan", "smart_collections"]
 
       - name: collection_product
         meta:
           dagster:
-            asset_key: ["haravan", "collection_product"]
+            asset_key: ["ingestion", "haravan", "collection_product"]
 
       - name: locations
         meta:
           dagster:
-            asset_key: ["haravan", "locations"]
+            asset_key: ["ingestion", "haravan", "locations"]
 
       - name: inventory_locations
         meta:
           dagster:
-            asset_key: ["haravan", "inventory_locations"]
+            asset_key: ["ingestion", "haravan", "inventory_locations"]
 
       - name: events
         meta:
           dagster:
-            asset_key: ["haravan", "events"]
+            asset_key: ["ingestion", "haravan", "events"]
 
       - name: users
         meta:
           dagster:
-            asset_key: ["haravan", "users"]
+            asset_key: ["ingestion", "haravan", "users"]
 
       - name: inventory_locations_balance_daily_snapshot
         meta:
           dagster:
-            asset_key: [ "haravan", "inventory_locations_balance_daily_snapshot" ]
+            asset_key: ["ingestion", "haravan", "inventory_locations_balance_daily_snapshot"]

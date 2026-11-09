@@ -7,114 +7,114 @@ sources:
       - name: designs
         meta:
           dagster:
-            asset_key: ["nocodb", "designs"]
+            asset_key: ["ingestion", "nocodb", "designs"]
 
       - name: design_details
         meta:
           dagster:
-            asset_key: ["nocodb", "design_details"]
+            asset_key: ["ingestion", "nocodb", "design_details"]
 
       - name: design_design_images
         meta:
           dagster:
-            asset_key: ["nocodb", "design_design_images"]
+            asset_key: ["ingestion", "nocodb", "design_design_images"]
 
       - name: diamonds
         meta:
           dagster:
-            asset_key: ["nocodb", "diamonds"]
+            asset_key: ["ingestion", "nocodb", "diamonds"]
 
       - name: moissanite
         meta:
           dagster:
-            asset_key: ["nocodb", "moissanite"]
+            asset_key: ["ingestion", "nocodb", "moissanite"]
 
       - name: diamond_price_list
         meta:
           dagster:
-            asset_key: ["nocodb", "diamond_price_list"]
+            asset_key: ["ingestion", "nocodb", "diamond_price_list"]
 
       - name: products
         meta:
           dagster:
-            asset_key: ["nocodb", "products"]
+            asset_key: ["ingestion", "nocodb", "products"]
 
       - name: variants
         meta:
           dagster:
-            asset_key: ["nocodb", "variants"]
+            asset_key: ["ingestion", "nocodb", "variants"]
 
       - name: variant_serials
         meta:
           dagster:
-            asset_key: ["nocodb", "variant_serials"]
+            asset_key: ["ingestion", "nocodb", "variant_serials"]
 
       - name: variant_serials_diamonds
         meta:
           dagster:
-            asset_key: ["nocodb", "variant_serials_diamonds"]
+            asset_key: ["ingestion", "nocodb", "variant_serials_diamonds"]
 
       - name: wedding_rings
         meta:
           dagster:
-            asset_key: ["nocodb", "wedding_rings"]
+            asset_key: ["ingestion", "nocodb", "wedding_rings"]
 
       - name: temporary_products
         meta:
           dagster:
-            asset_key: ["nocodb", "temporary_products"]
+            asset_key: ["ingestion", "nocodb", "temporary_products"]
 
       - name: jewelries
         meta:
           dagster:
-            asset_key: ["nocodb", "jewelries"]
+            asset_key: ["ingestion", "nocodb", "jewelries"]
 
       - name: variants_haravan_collection
         meta:
           dagster:
-            asset_key: ["nocodb", "variants_haravan_collection"]
+            asset_key: ["ingestion", "nocodb", "variants_haravan_collection"]
 
       - name: products_haravan_collection
         meta:
           dagster:
-            asset_key: ["nocodb", "products_haravan_collection"]
+            asset_key: ["ingestion", "nocodb", "products_haravan_collection"]
 
       - name: diamonds_haravan_collection
         meta:
           dagster:
-            asset_key: ["nocodb", "diamonds_haravan_collection"]
+            asset_key: ["ingestion", "nocodb", "diamonds_haravan_collection"]
 
       - name: collections
         meta:
           dagster:
-            asset_key: ["nocodb", "collections"]
+            asset_key: ["ingestion", "nocodb", "collections"]
 
       - name: haravan_collections
         meta:
           dagster:
-            asset_key: ["nocodb", "haravan_collections"]
+            asset_key: ["ingestion", "nocodb", "haravan_collections"]
 
       - name: diamonds_history
         meta:
           dagster:
-            asset_key: ["nocodb", "diamonds_history"]
+            asset_key: ["ingestion", "nocodb", "diamonds_history"]
 
       - name: diamonds_history_diamonds
         meta:
           dagster:
-            asset_key: ["nocodb", "diamonds_history_diamonds"]
+            asset_key: ["ingestion", "nocodb", "diamonds_history_diamonds"]
 
       - name: ecom_360
         meta:
           dagster:
-            asset_key: ["nocodb", "ecom_360"]
+            asset_key: ["ingestion", "nocodb", "ecom_360"]
 
       - name: sets
         meta:
           dagster:
-            asset_key: ["nocodb", "sets"]
+            asset_key: ["ingestion", "nocodb", "sets"]
 
       - name: design_set
         meta:
           dagster:
-            asset_key: ["nocodb", "design_set"]
+            asset_key: ["ingestion", "nocodb", "design_set"]
