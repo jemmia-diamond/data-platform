@@ -13,8 +13,9 @@ with appointment_order as (
 
 -- revenue split between sales persons (Appointment Sales Split child table in ERPNext).
 -- percentage is the source of truth (commission_amount can go stale), one sales person can
--- have several rows. Ratios are normalized by the appointment's total percentage so the
--- shares always add back up to the full order_revenue.
+-- have several rows. Revenue uses the ERP percentage as-is (not normalized): a split that
+-- totals less than 100% leaves the rest uncredited. The appointment itself is credited
+-- equally across the split sales persons (appointment_credit = 1 / number of sales persons).
 appointment_sales_splits as (
     select
         appointment_id,
@@ -29,7 +30,7 @@ appointment_sales_splits as (
 split_totals as (
     select
         appointment_id,
-        sum(percentage) as total_percentage
+        count(*) as sales_person_count
     from appointment_sales_splits
     group by 1
 ),
@@ -40,7 +41,8 @@ appointment_sales as (
     select
         ao.appointment_id,
         coalesce(s.sales_person_id, ao.appointment_sales_person_id) as sales_person_id,
-        coalesce(s.percentage / t.total_percentage, 1) as split_ratio,
+        coalesce(s.percentage / 100.0, 1) as split_ratio,
+        coalesce(1.0 / t.sales_person_count, 1) as appointment_credit,
         (s.appointment_id is not null) as is_split
     from appointment_order ao
     left join split_totals t
@@ -79,6 +81,7 @@ select
     end as appointment_sales_person_position,
     asl.is_split,
     round(asl.split_ratio * 100, 2) as split_percentage,
+    round(asl.appointment_credit, 4) as appointment_credit,
     ao.status,
     ao.status_display,
     ao.at_store_transformed,
