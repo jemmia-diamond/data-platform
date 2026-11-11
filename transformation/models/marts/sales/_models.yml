@@ -364,7 +364,9 @@ models:
       Appointment Sales Split child table (percentage-based). Appointments without split rows
       credit the primary sales person 100%.
       Grain: 1 row = 1 appointment x 1 credited sales person. Use count(distinct appointment_id)
-      to count appointments; sum(order_revenue) adds back up to fct_sales_appointment_order.order_revenue.
+      to count appointments, or sum(appointment_credit) for split-weighted counts. order_revenue uses
+      the ERP percentage as-is, so it only adds back up to fct_sales_appointment_order.order_revenue
+      when the split totals 100%.
     columns:
       - name: appointment_sales_key
         description: "Primary key — appointment_id:appointment_sales_person_id."
@@ -386,9 +388,13 @@ models:
         tests:
           - not_null
       - name: split_percentage
-        description: "Share of the appointment credited to this sales person (0-100), normalized so an appointment's rows always total 100."
+        description: "Revenue share credited to this sales person (ERP percentage as-is, 0-100; 100 when not split). Not normalized: an appointment's rows may total less or more than 100."
+      - name: appointment_credit
+        description: "Appointment count credited to this sales person: 1 / number of split sales persons (1 when not split). Rounded to 4 decimals, so sum(appointment_credit) per appointment is 1 (0.9999 for 3 sales persons)."
+        tests:
+          - not_null
       - name: order_revenue
-        description: "This sales person's share (split_percentage) of fct_sales_appointment_order.order_revenue. Summing across appointments and sales persons never double counts."
+        description: "This sales person's share (split_percentage) of fct_sales_appointment_order.order_revenue. Equals the full revenue summed across sales persons only when the split totals 100%."
         tests:
           - not_null
       - name: order_group_revenue
